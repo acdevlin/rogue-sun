@@ -1,4 +1,5 @@
 import { Scene, GameObjects } from 'phaser';
+import { getSceneScale } from '../utils/SceneScaling';
 
 export class MainMenu extends Scene
 {
@@ -13,16 +14,17 @@ export class MainMenu extends Scene
 
     create ()
     {
-        const centerX = this.cameras.main.centerX;
-        const centerY = this.cameras.main.centerY;
+        const { centerX, centerY, scale } = getSceneScale(this);
 
         this.background = this.add.image(centerX, centerY, 'background');
+        this.background.setScale(scale);
 
-        this.logo = this.add.image(centerX, centerY - 84, 'logo');
+        this.logo = this.add.image(centerX, centerY - (84 * scale), 'logo');
+        this.logo.setScale(scale);
 
-        this.title = this.add.text(centerX, centerY + 76, 'Main Menu', {
-            fontFamily: 'Arial Black', fontSize: 38, color: '#ffffff',
-            stroke: '#000000', strokeThickness: 8,
+        this.title = this.add.text(centerX, centerY + (76 * scale), 'Main Menu', {
+            fontFamily: 'Arial Black', fontSize: Math.round(38 * scale), color: '#ffffff',
+            stroke: '#000000', strokeThickness: Math.round(8 * scale),
             align: 'center'
         }).setOrigin(0.5);
 

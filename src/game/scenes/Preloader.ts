@@ -1,4 +1,5 @@
 import { Scene } from 'phaser';
+import { getSceneScale } from '../utils/SceneScaling';
 
 export class Preloader extends Scene
 {
@@ -9,17 +10,19 @@ export class Preloader extends Scene
 
     init ()
     {
-        const centerX = this.cameras.main.centerX;
-        const centerY = this.cameras.main.centerY;
+        const { centerX, centerY, scale } = getSceneScale(this);
 
         //  We loaded this image in our Boot Scene, so we can display it here
-        this.add.image(centerX, centerY, 'background');
+        const bg = this.add.image(centerX, centerY, 'background');
+        bg.setScale(scale);
 
         //  A simple progress bar. This is the outline of the bar.
-        this.add.rectangle(centerX, centerY, 468, 32).setStrokeStyle(1, 0xffffff);
+        const barWidth = Math.round(468 * scale);
+        const barHeight = Math.round(32 * scale);
+        this.add.rectangle(centerX, centerY, barWidth, barHeight).setStrokeStyle(1, 0xffffff);
 
         //  This is the progress bar itself. It will increase in size from the left based on the % of progress.
-        const bar = this.add.rectangle(centerX - 230, centerY, 4, 28, 0xffffff);
+        const bar = this.add.rectangle(centerX - (230 * scale), centerY, 4, Math.round(28 * scale), 0xffffff);
 
         //  Use the 'progress' event emitted by the LoaderPlugin to update the loading bar
         this.load.on('progress', (progress: number) => {

@@ -1,4 +1,5 @@
 import { Scene } from 'phaser';
+import { getSceneScale } from '../utils/SceneScaling';
 
 export class GameOver extends Scene
 {
@@ -13,18 +14,18 @@ export class GameOver extends Scene
 
     create ()
     {
-        this.camera = this.cameras.main
-        this.camera.setBackgroundColor(0xff0000);
+        this.camera = this.cameras.main;
+        const { centerX, centerY, scale } = getSceneScale(this);
 
-        const centerX = this.camera.centerX;
-        const centerY = this.camera.centerY;
+        this.camera.setBackgroundColor(0xff0000);
 
         this.background = this.add.image(centerX, centerY, 'background');
         this.background.setAlpha(0.5);
+        this.background.setScale(scale);
 
         this.gameover_text = this.add.text(centerX, centerY, 'Game Over', {
-            fontFamily: 'Arial Black', fontSize: 64, color: '#ffffff',
-            stroke: '#000000', strokeThickness: 8,
+            fontFamily: 'Arial Black', fontSize: Math.round(64 * scale), color: '#ffffff',
+            stroke: '#000000', strokeThickness: Math.round(8 * scale),
             align: 'center'
         });
         this.gameover_text.setOrigin(0.5);
