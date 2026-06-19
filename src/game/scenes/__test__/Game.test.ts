@@ -198,7 +198,7 @@ describe("Game scene", () => {
       game.timeline.readyQueue.push(a);
 
       game.update(0, 16);
-      expect(game.acting.setText).toHaveBeenCalledWith(
+      expect(game.currentlyActingHeader.setText).toHaveBeenCalledWith(
         expect.stringContaining(a.name),
       );
     });
@@ -208,7 +208,10 @@ describe("Game scene", () => {
       game.timeline.readyQueue.push(players[0]);
 
       game.update(0, 16);
-      expect(game.acting.setStroke).toHaveBeenCalledWith("#44ff44", 6);
+      expect(game.currentlyActingHeader.setStroke).toHaveBeenCalledWith(
+        "#44ff44",
+        6,
+      );
     });
 
     it("shows red stroke for enemy actions", () => {
@@ -216,7 +219,10 @@ describe("Game scene", () => {
       game.timeline.readyQueue.push(enemies[0]);
 
       game.update(0, 16);
-      expect(game.acting.setStroke).toHaveBeenCalledWith("#ff4444", 6);
+      expect(game.currentlyActingHeader.setStroke).toHaveBeenCalledWith(
+        "#ff4444",
+        6,
+      );
     });
   });
 
@@ -238,11 +244,13 @@ describe("Game scene", () => {
       // After step(), a is popped and becomes acting; b is still in ready queue
       expect(game.actingActor).toBe(a);
 
-      expect(game.actors[0].label.setText).toHaveBeenCalledWith(
+      expect(game.actorsUi[0].label.setText).toHaveBeenCalledWith(
         "Fighter [ACTING]",
       );
-      expect(game.actors[1].label.setText).toHaveBeenCalledWith("Mage [READY]");
-      expect(game.actors[2].label.setText).toHaveBeenCalledWith("Thief");
+      expect(game.actorsUi[1].label.setText).toHaveBeenCalledWith(
+        "Mage [READY]",
+      );
+      expect(game.actorsUi[2].label.setText).toHaveBeenCalledWith("Thief");
     });
 
     it("preserves actors at 100% progress when another actor joins ready queue", () => {
@@ -283,12 +291,14 @@ describe("Game scene", () => {
 
       game.update(0, 16);
 
-      expect(game.actors[0].label.setText).toHaveBeenCalledWith(
+      expect(game.actorsUi[0].label.setText).toHaveBeenCalledWith(
         "Fighter [ACTING]",
       );
 
       // Actor at 100% shows [READY] even if not yet in the ready queue
-      expect(game.actors[1].label.setText).toHaveBeenCalledWith("Mage [READY]");
+      expect(game.actorsUi[1].label.setText).toHaveBeenCalledWith(
+        "Mage [READY]",
+      );
     });
   });
 

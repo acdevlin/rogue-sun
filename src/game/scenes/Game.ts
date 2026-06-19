@@ -11,24 +11,33 @@ interface ActorUI {
   label: Phaser.GameObjects.Text;
   pct: Phaser.GameObjects.Text;
 }
-
+/**
+ * The main game scene, showing individual actors (both enemies and allies) taking
+ * turns based on their speed and readiness threshold.
+ */
 export class Game extends Scene {
   timeline: TimelineSystem;
-  actors: ActorUI[] = [];
-  acting: Phaser.GameObjects.Text;
-  actingBg: Phaser.GameObjects.Rectangle;
+  actorsUi: ActorUI[] = [];
+  currentlyActingHeader: Phaser.GameObjects.Text;
+  currentlyActingBg: Phaser.GameObjects.Rectangle;
   actingActor: ActionActor | null = null;
 
+  /**
+   * Default constructor.
+   */
   constructor() {
     super("Game");
   }
 
+  /**
+   * Initializes all game objects, including timeline system and UI elements.
+   */
   create() {
     this.timeline = new TimelineSystem();
     const { width } = this.cameras.main;
     const cx = width / 2;
 
-    this.acting = this.add
+    this.currentlyActingHeader = this.add
       .text(cx, 20, "", {
         fontFamily: "Arial Black",
         fontSize: "30px",
@@ -38,7 +47,7 @@ export class Game extends Scene {
         align: "center",
       })
       .setOrigin(0.5);
-    this.actingBg = this.add
+    this.currentlyActingBg = this.add
       .rectangle(cx, 20, 0, 0, 0xcccccc)
       .setOrigin(0.5)
       .setDepth(-1)
@@ -69,48 +78,76 @@ export class Game extends Scene {
     players.forEach((d, i) => {
       const a = new ActionActor(d.name, d.speed, true);
       this.timeline.addActor(a);
-      this.createUI(a, 40, sy + i * gap, bw, bh, 0x00aa00);
+      this.createActorUIElement(a, 40, sy + i * gap, bw, bh, 0x00aa00);
     });
     enemies.forEach((d, i) => {
       const a = new ActionActor(d.name, d.speed, false);
       this.timeline.addActor(a);
-      this.createUI(a, width - 40 - bw, sy + i * gap, bw, bh, 0xaa0000);
+      this.createActorUIElement(
+        a,
+        width - 40 - bw,
+        sy + i * gap,
+        bw,
+        bh,
+        0xaa0000,
+      );
     });
   }
 
-  createUI(
-    a: ActionActor,
+  /**
+   * Creates UI elements for an actor.
+   *
+   * @param actor The ActionActor to create UI for.
+   * @param x The x-coordinate of the top-left corner of the UI card.
+   * @param y The y-coordinate of the top-left corner of the UI card.
+   * @param width The width of the UI card.
+   * @param height The height of the UI card.
+   * @param color The color of the progress bar fill.
+   */
+  createActorUIElement(
+    actor: ActionActor,
     x: number,
     y: number,
-    w: number,
-    h: number,
-    c: number,
+    width: number,
+    height: number,
+    color: number,
   ) {
     const card = this.add
-      .rectangle(x + w / 2, y + 1, w + 14, 46, 0x2a2a2a)
+      .rectangle(x + width / 2, y + 1, width + 14, 46, 0x2a2a2a)
       .setStrokeStyle(1, 0x444444)
       .setOrigin(0.5)
       .setDepth(-2);
     const bg = this.add
-      .rectangle(x + w / 2, y + h / 2, w, h, 0x222222)
+      .rectangle(x + width / 2, y + height / 2, width, height, 0x222222)
       .setOrigin(0.5);
-    const fill = this.add.rectangle(x + 1, y + 1, 0, h - 2, c).setOrigin(0, 0);
+    const fill = this.add
+      .rectangle(x + 1, y + 1, 0, height - 2, color)
+      .setOrigin(0, 0);
     const highlight = this.add
-      .rectangle(x + w / 2, y + h / 2, w + 6, h + 6)
+      .rectangle(x + width / 2, y + height / 2, width + 6, height + 6)
       .setStrokeStyle(2, 0xffff00)
       .setOrigin(0.5)
       .setDepth(-1)
       .setVisible(false);
-    const label = this.add.text(x + 4, y - 18, a.name, {
+    const label = this.add.text(x + 4, y - 18, actor.name, {
       fontSize: "13px",
       color: "#ccc",
     });
     const pct = this.add
-      .text(x + w - 2, y + h / 2, "0%", { fontSize: "12px", color: "#fff" })
+      .text(x + width - 2, y + height / 2, "0%", {
+        fontSize: "12px",
+        color: "#fff",
+      })
       .setOrigin(1, 0.5);
-    this.actors.push({ actor: a, card, fill, bg, highlight, label, pct });
+    this.actorsUi.push({ actor, card, fill, bg, highlight, label, pct });
   }
 
+  /**
+   * Overrides the default update loop to handle timeline progression and actor turns.
+   *
+   * @param _t Unused parameter for current time, required by Phaser's update signature.
+   * @param dt Delta time in milliseconds since the last update, used to advance the timeline.
+   */
   update(_t: number, dt: number) {
     if (this.actingActor) {
       // Actor is currently acting, update the UI and wait for their turn to complete
@@ -135,18 +172,21 @@ export class Game extends Scene {
   private startActorTurn(actor: ActionActor) {
     this.actingActor = actor;
     const text = `${actor.name}'s turn!`;
-    this.acting
+    this.currentlyActingHeader
       .setText(text)
       .setStroke(actor.isPlayer ? "#44ff44" : "#ff4444", 6);
-    const w = this.acting.width;
-    this.actingBg.setSize(w + 20, this.acting.height + 10).setVisible(true);
+    const w = this.currentlyActingHeader.width;
+    this.currentlyActingBg
+      .setSize(w + 20, this.currentlyActingHeader.height + 10)
+      .setVisible(true);
     this.syncUI();
     this.time.delayedCall(500, () => this.completeAction());
   }
 
   /**
-   * Advances the timeline by dt seconds and preserves progress for actors
-   * that are not newly added to the ready queue
+   * Advances the timeline and handles ready queue updates.
+   *
+   * @param dt The delta time in milliseconds to advance the timeline.
    */
   private advanceTimelineAndHandleReadyQueue(dt: number) {
     // Snapshot current progress for all actors before updating
@@ -175,40 +215,46 @@ export class Game extends Scene {
     this.syncUI();
   }
 
+  /**
+   * Updates UI elements for all actors at the current timeline state.
+   */
   private syncUI() {
     // Update all actor UI elements to reflect their current state
-    for (const ui of this.actors) {
+    for (const actorUi of this.actorsUi) {
       // Calculate progress percentage (0-100%)
-      const pct = ui.actor.progress / ui.actor.readyThreshold;
+      const pct = actorUi.actor.progress / actorUi.actor.readyThreshold;
 
       // Update the progress bar fill width
-      ui.fill.width = pct * (ui.bg.width - 2);
-      ui.pct.setText(`${Math.round(pct * 100)}%`);
+      actorUi.fill.width = pct * (actorUi.bg.width - 2);
+      actorUi.pct.setText(`${Math.round(pct * 100)}%`);
 
       // Determine if actor is acting or ready
-      const acting = ui.actor === this.actingActor;
-      const ready = ui.actor.isReady();
+      const acting = actorUi.actor === this.actingActor;
+      const ready = actorUi.actor.isReady();
 
       let actorName: string;
       if (acting) {
-        actorName = `${ui.actor.name} [ACTING]`;
+        actorName = `${actorUi.actor.name} [ACTING]`;
       } else if (ready) {
-        actorName = `${ui.actor.name} [READY]`;
+        actorName = `${actorUi.actor.name} [READY]`;
       } else {
-        actorName = ui.actor.name;
+        actorName = actorUi.actor.name;
       }
-      ui.label.setText(actorName);
-      ui.label.setColor(acting || ready ? "#ffff00" : "#cccccc");
-      ui.highlight.setVisible(acting);
+      actorUi.label.setText(actorName);
+      actorUi.label.setColor(acting || ready ? "#ffff00" : "#cccccc");
+      actorUi.highlight.setVisible(acting);
     }
   }
 
+  /**
+   * Cleanup after an actor's turn is completed.
+   */
   completeAction() {
     if (this.actingActor) {
       this.actingActor.reset();
       this.actingActor = null;
-      this.acting.setText("");
-      this.actingBg.setVisible(false);
+      this.currentlyActingHeader.setText("");
+      this.currentlyActingBg.setVisible(false);
       // Immediately sync UI to show any remaining ready actors
       this.syncUI();
     }

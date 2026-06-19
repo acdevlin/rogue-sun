@@ -1,52 +1,49 @@
-import { Scene } from 'phaser';
-import { getSceneScale } from '../utils/SceneScaling';
+import { Scene } from "phaser";
+import { getSceneScale } from "../utils/SceneScaling";
 
-export class Preloader extends Scene
-{
-    constructor ()
-    {
-        super('Preloader');
-    }
+/**
+ * Preloader scene — displays a progress bar while loading game assets.
+ * Transitions to MainMenu once all assets are loaded.
+ */
+export class Preloader extends Scene {
+  constructor() {
+    super("Preloader");
+  }
 
-    init ()
-    {
-        const { centerX, centerY, scale } = getSceneScale(this);
+  /**
+   * Sets up the background and progress bar UI before assets begin loading.
+   */
+  init() {
+    const { centerX, centerY, scale } = getSceneScale(this);
 
-        //  We loaded this image in our Boot Scene, so we can display it here
-        const bg = this.add.image(centerX, centerY, 'background');
-        bg.setScale(scale);
+    const bg = this.add.image(centerX, centerY, "background");
+    bg.setScale(scale);
 
-        //  A simple progress bar. This is the outline of the bar.
-        const barWidth = Math.round(468 * scale);
-        const barHeight = Math.round(32 * scale);
-        this.add.rectangle(centerX, centerY, barWidth, barHeight).setStrokeStyle(1, 0xffffff);
+    const barWidth = Math.round(468 * scale);
+    const barHeight = Math.round(32 * scale);
+    this.add
+      .rectangle(centerX, centerY, barWidth, barHeight)
+      .setStrokeStyle(1, 0xffffff);
 
-        //  This is the progress bar itself. It will increase in size from the left based on the % of progress.
-        const bar = this.add.rectangle(centerX - (230 * scale), centerY, 4, Math.round(28 * scale), 0xffffff);
+    const bar = this.add.rectangle(
+      centerX - 230 * scale,
+      centerY,
+      4,
+      Math.round(28 * scale),
+      0xffffff,
+    );
 
-        //  Use the 'progress' event emitted by the LoaderPlugin to update the loading bar
-        this.load.on('progress', (progress: number) => {
+    this.load.on("progress", (progress: number) => {
+      bar.width = 4 + 460 * progress;
+    });
+  }
 
-            //  Update the progress bar (our bar is 464px wide, so 100% = 464px)
-            bar.width = 4 + (460 * progress);
+  preload() {
+    this.load.setPath("assets");
+    this.load.image("logo", "logo.png");
+  }
 
-        });
-    }
-
-    preload ()
-    {
-        //  Load the assets for the game - Replace with your own assets
-        this.load.setPath('assets');
-
-        this.load.image('logo', 'logo.png');
-    }
-
-    create ()
-    {
-        //  When all the assets have loaded, it's often worth creating global objects here that the rest of the game can use.
-        //  For example, you can define global animations here, so we can use them in other scenes.
-
-        //  Move to the MainMenu. You could also swap this for a Scene Transition, such as a camera fade.
-        this.scene.start('MainMenu');
-    }
+  create() {
+    this.scene.start("MainMenu");
+  }
 }
