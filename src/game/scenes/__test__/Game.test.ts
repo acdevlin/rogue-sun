@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ActionActor } from "../../systems/ActionActor";
 import { Game } from "../Game";
+import * as CONSTS from "../../../constants";
 import { ActorPosition, ActorController } from "../../../constants";
 
 vi.mock("phaser", () => {
@@ -49,12 +50,15 @@ describe("Game scene", () => {
 
   describe("completeAction", () => {
     it("resets actingActor to null", () => {
-      const a = new ActionActor(
-        ActorController.PLAYER,
-        "Test",
-        30,
-        ActorPosition.FRONTLINE,
-      );
+      const a = new ActionActor({
+        controller: ActorController.PLAYER,
+        name: "Test",
+        speed: 30,
+        health: 100,
+        stamina: 100,
+        energy: 100,
+        position: ActorPosition.FRONTLINE,
+      });
       a.progress = 100;
       game.actingActor = a;
       game.completeAction();
@@ -62,12 +66,15 @@ describe("Game scene", () => {
     });
 
     it("resets the acting actor progress and ready state", () => {
-      const a = new ActionActor(
-        ActorController.PLAYER,
-        "Test",
-        30,
-        ActorPosition.FRONTLINE,
-      );
+      const a = new ActionActor({
+        controller: ActorController.PLAYER,
+        name: "Test",
+        speed: 30,
+        health: 100,
+        stamina: 100,
+        energy: 100,
+        position: ActorPosition.FRONTLINE,
+      });
       a.progress = 100;
       game.actingActor = a;
       game.completeAction();
@@ -77,18 +84,24 @@ describe("Game scene", () => {
     });
 
     it("does not affect other actors", () => {
-      const a = new ActionActor(
-        ActorController.PLAYER,
-        "Actor",
-        30,
-        ActorPosition.FRONTLINE,
-      );
-      const b = new ActionActor(
-        ActorController.ENEMY,
-        "Bystander",
-        25,
-        ActorPosition.FRONTLINE,
-      );
+      const a = new ActionActor({
+        controller: ActorController.PLAYER,
+        name: "Actor",
+        speed: 30,
+        health: 100,
+        stamina: 100,
+        energy: 100,
+        position: ActorPosition.FRONTLINE,
+      });
+      const b = new ActionActor({
+        controller: ActorController.ENEMY,
+        name: "Bystander",
+        speed: 25,
+        health: 100,
+        stamina: 100,
+        energy: 100,
+        position: ActorPosition.FRONTLINE,
+      });
       b.progress = 50;
       game.timeline.addActor(b);
       game.actingActor = a;
@@ -158,18 +171,24 @@ describe("Game scene", () => {
   describe("update - progress snapshot", () => {
     it("reverts non-ready actors when a new actor becomes ready", () => {
       game.timeline.actors = [];
-      const fast = new ActionActor(
-        ActorController.PLAYER,
-        "Fast",
-        80,
-        ActorPosition.FRONTLINE,
-      );
-      const slow = new ActionActor(
-        ActorController.ENEMY,
-        "Slow",
-        5,
-        ActorPosition.FRONTLINE,
-      );
+      const fast = new ActionActor({
+        controller: ActorController.PLAYER,
+        name: "Fast",
+        speed: 80,
+        health: 100,
+        stamina: 100,
+        energy: 100,
+        position: ActorPosition.FRONTLINE,
+      });
+      const slow = new ActionActor({
+        controller: ActorController.ENEMY,
+        name: "Slow",
+        speed: 5,
+        health: 100,
+        stamina: 100,
+        energy: 100,
+        position: ActorPosition.FRONTLINE,
+      });
       game.timeline.addActor(fast);
       game.timeline.addActor(slow);
       fast.progress = 10;
@@ -187,18 +206,24 @@ describe("Game scene", () => {
 
     it("does not revert the actor who became ready", () => {
       game.timeline.actors = [];
-      const a = new ActionActor(
-        ActorController.PLAYER,
-        "Speedster",
-        90,
-        ActorPosition.FRONTLINE,
-      );
-      const b = new ActionActor(
-        ActorController.ENEMY,
-        "Normal",
-        20,
-        ActorPosition.FRONTLINE,
-      );
+      const a = new ActionActor({
+        controller: ActorController.PLAYER,
+        name: "Speedster",
+        speed: 90,
+        health: 100,
+        stamina: 100,
+        energy: 100,
+        position: ActorPosition.FRONTLINE,
+      });
+      const b = new ActionActor({
+        controller: ActorController.ENEMY,
+        name: "Normal",
+        speed: 20,
+        health: 100,
+        stamina: 100,
+        energy: 100,
+        position: ActorPosition.FRONTLINE,
+      });
       game.timeline.addActor(a);
       game.timeline.addActor(b);
 
@@ -208,18 +233,24 @@ describe("Game scene", () => {
 
     it("does not apply revert when no one became ready", () => {
       game.timeline.actors = [];
-      const a = new ActionActor(
-        ActorController.PLAYER,
-        "Slowpoke",
-        5,
-        ActorPosition.FRONTLINE,
-      );
-      const b = new ActionActor(
-        ActorController.ENEMY,
-        "Snail",
-        3,
-        ActorPosition.FRONTLINE,
-      );
+      const a = new ActionActor({
+        controller: ActorController.PLAYER,
+        name: "Slowpoke",
+        speed: 5,
+        health: 100,
+        stamina: 100,
+        energy: 100,
+        position: ActorPosition.FRONTLINE,
+      });
+      const b = new ActionActor({
+        controller: ActorController.ENEMY,
+        name: "Snail",
+        speed: 3,
+        health: 100,
+        stamina: 100,
+        energy: 100,
+        position: ActorPosition.FRONTLINE,
+      });
       game.timeline.addActor(a);
       game.timeline.addActor(b);
       b.progress = 10;
@@ -232,18 +263,24 @@ describe("Game scene", () => {
 
     it("handles all actors already at progress zero", () => {
       game.timeline.actors = [];
-      const a = new ActionActor(
-        ActorController.PLAYER,
-        "A",
-        50,
-        ActorPosition.FRONTLINE,
-      );
-      const b = new ActionActor(
-        ActorController.ENEMY,
-        "B",
-        30,
-        ActorPosition.FRONTLINE,
-      );
+      const a = new ActionActor({
+        controller: ActorController.PLAYER,
+        name: "A",
+        speed: 50,
+        health: 100,
+        stamina: 100,
+        energy: 100,
+        position: ActorPosition.FRONTLINE,
+      });
+      const b = new ActionActor({
+        controller: ActorController.ENEMY,
+        name: "B",
+        speed: 30,
+        health: 100,
+        stamina: 100,
+        energy: 100,
+        position: ActorPosition.FRONTLINE,
+      });
       game.timeline.addActor(a);
       game.timeline.addActor(b);
 
@@ -324,18 +361,24 @@ describe("Game scene", () => {
       // This addresses the twin enemy scenario where same-speed actors both
       // reach 100% but only one joins ready queue per update.
       game.timeline.actors = [];
-      const twin1 = new ActionActor(
-        ActorController.ENEMY,
-        "Twin1",
-        25,
-        ActorPosition.FRONTLINE,
-      );
-      const twin2 = new ActionActor(
-        ActorController.ENEMY,
-        "Twin2",
-        25,
-        ActorPosition.FRONTLINE,
-      );
+      const twin1 = new ActionActor({
+        controller: ActorController.ENEMY,
+        name: "Twin1",
+        speed: 25,
+        health: 100,
+        stamina: 100,
+        energy: 100,
+        position: ActorPosition.FRONTLINE,
+      });
+      const twin2 = new ActionActor({
+        controller: ActorController.ENEMY,
+        name: "Twin2",
+        speed: 25,
+        health: 100,
+        stamina: 100,
+        energy: 100,
+        position: ActorPosition.FRONTLINE,
+      });
       game.timeline.addActor(twin1);
       game.timeline.addActor(twin2);
 
@@ -380,18 +423,24 @@ describe("Game scene", () => {
   describe("update with acting actor", () => {
     it("other actor does not progress while someone is acting", () => {
       game.timeline.actors = [];
-      const a = new ActionActor(
-        ActorController.PLAYER,
-        "A",
-        100,
-        ActorPosition.FRONTLINE,
-      );
-      const b = new ActionActor(
-        ActorController.ENEMY,
-        "B",
-        60,
-        ActorPosition.FRONTLINE,
-      );
+      const a = new ActionActor({
+        controller: ActorController.PLAYER,
+        name: "A",
+        speed: 100,
+        health: 100,
+        stamina: 100,
+        energy: 100,
+        position: ActorPosition.FRONTLINE,
+      });
+      const b = new ActionActor({
+        controller: ActorController.ENEMY,
+        name: "B",
+        speed: 60,
+        health: 100,
+        stamina: 100,
+        energy: 100,
+        position: ActorPosition.FRONTLINE,
+      });
       game.timeline.addActor(a);
       game.timeline.addActor(b);
 
@@ -450,6 +499,94 @@ describe("Game scene", () => {
       game.update(0, 16);
       expect(game.actingActor).not.toBeNull();
       expect(game.actingActor).not.toBe(a);
+    });
+  });
+
+  describe("actor UI elements", () => {
+    it("every card has HP, SP, and EP stat texts", () => {
+      expect(game.actorsUi.length).toBeGreaterThan(0);
+      for (const ui of game.actorsUi) {
+        expect(ui.healthTxt).toBeTruthy();
+        expect(ui.staminaTxt).toBeTruthy();
+        expect(ui.energyTxt).toBeTruthy();
+      }
+    });
+
+    it("stat texts show colored HP, SP, EP values", () => {
+      game.update(0, 16);
+      for (const ui of game.actorsUi) {
+        expect(ui.healthTxt.setText).toHaveBeenCalledWith(
+          expect.stringMatching(/^HP \d+\/\d+$/),
+        );
+        expect(ui.staminaTxt.setText).toHaveBeenCalledWith(
+          expect.stringMatching(/^SP \d+\/\d+$/),
+        );
+        expect(ui.energyTxt.setText).toHaveBeenCalledWith(
+          expect.stringMatching(/^EP \d+\/\d+$/),
+        );
+      }
+    });
+  });
+
+  describe("highlight dimensions", () => {
+    it("highlight encompasses the full card, not just the progress bar", () => {
+      const rectSpy = vi.spyOn(game.add, "rectangle");
+      game = new Game();
+      game.create();
+
+      // Index 0 is currentlyActingBg; each actor creates 4 more: card, bg, fill, highlight
+      for (let i = 0; i < game.actorsUi.length; i++) {
+        const card = rectSpy.mock.calls[1 + i * 4] as number[];
+        const highlight = rectSpy.mock.calls[1 + i * 4 + 3] as number[];
+
+        // Same center — card center at (x + w/2, y + 1)
+        expect(highlight[0]).toBe(card[0]);
+        expect(highlight[1]).toBe(card[1]);
+
+        // Highlight is HIGHLIGHT_EXTRA bigger on all sides
+        expect(highlight[2]).toBe(card[2] + CONSTS.HIGHLIGHT_EXTRA);
+        expect(highlight[3]).toBe(card[3] + CONSTS.HIGHLIGHT_EXTRA);
+      }
+    });
+
+    it("center differs from progress bar when not card-aligned", () => {
+      const rectSpy = vi.spyOn(game.add, "rectangle");
+      game = new Game();
+      game.create();
+
+      // Index 0 is currentlyActingBg; per-actor: 1=card, 2=bg, 3=fill, 4=highlight
+      for (let i = 0; i < game.actorsUi.length; i++) {
+        const bg = rectSpy.mock.calls[1 + i * 4 + 1] as number[]; // 2nd per-actor rect
+        const highlight = rectSpy.mock.calls[1 + i * 4 + 3] as number[]; // 4th per-actor rect
+        expect(highlight[1]).not.toBe(bg[1]);
+      }
+    });
+  });
+
+  describe("card overlap", () => {
+    it("no character cards overlap one another", () => {
+      const rectSpy = vi.spyOn(game.add, "rectangle");
+      game = new Game();
+      game.create();
+
+      const centers: { x: number; y: number }[] = [];
+      // Index 0 is currentlyActingBg; per-actor: 1=card, 2=bg, 3=fill, 4=highlight
+      for (let i = 0; i < game.actorsUi.length; i++) {
+        const card = rectSpy.mock.calls[1 + i * 4] as number[];
+        centers.push({ x: card[0], y: card[1] });
+      }
+
+      const halfW = (CONSTS.CARD_W + CONSTS.CARD_EXTRA_W) / 2;
+      const halfH = CONSTS.CARD_HEIGHT / 2;
+
+      for (let i = 0; i < centers.length; i++) {
+        for (let j = i + 1; j < centers.length; j++) {
+          const dx = Math.abs(centers[i].x - centers[j].x);
+          const dy = Math.abs(centers[i].y - centers[j].y);
+          const overlap = dx < halfW + halfW && dy < halfH + halfH;
+          expect(overlap).toBe(false);
+        }
+      }
     });
   });
 });

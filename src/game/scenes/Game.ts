@@ -10,7 +10,9 @@ interface ActorUI {
   bg: Phaser.GameObjects.Rectangle;
   highlight: Phaser.GameObjects.Rectangle;
   label: Phaser.GameObjects.Text;
-  pct: Phaser.GameObjects.Text;
+  healthTxt: Phaser.GameObjects.Text;
+  staminaTxt: Phaser.GameObjects.Text;
+  energyTxt: Phaser.GameObjects.Text;
 }
 
 /**
@@ -59,63 +61,107 @@ export class Game extends Scene {
       {
         name: "Fighter",
         speed: CONSTS.SPD_FIGHTER,
+        health: 120,
+        stamina: 80,
+        energy: 50,
         position: CONSTS.ActorPosition.FRONTLINE,
       },
       {
         name: "Mage",
         speed: CONSTS.SPD_MAGE,
+        health: 80,
+        stamina: 60,
+        energy: 120,
         position: CONSTS.ActorPosition.BACKLINE,
       },
       {
         name: "Thief",
         speed: CONSTS.SPD_THIEF,
+        health: 90,
+        stamina: 120,
+        energy: 60,
         position: CONSTS.ActorPosition.FLANK,
       },
       {
         name: "Slacker",
         speed: CONSTS.SPD_SLACKER,
+        health: 150,
+        stamina: 50,
+        energy: 50,
         position: CONSTS.ActorPosition.MIDLINE,
+      },
+      {
+        name: "Summoner",
+        speed: CONSTS.SPD_MAGE,
+        health: 70,
+        stamina: 100,
+        energy: 150,
+        position: CONSTS.ActorPosition.BACKLINE,
       },
     ];
     const enemies = [
       {
         name: "Goblin",
         speed: CONSTS.SPD_GOBLIN,
+        health: 60,
+        stamina: 40,
+        energy: 20,
         position: CONSTS.ActorPosition.FLANK,
       },
       {
         name: "Orc",
         speed: CONSTS.SPD_ORC,
+        health: 100,
+        stamina: 80,
+        energy: 40,
         position: CONSTS.ActorPosition.BACKLINE,
       },
       {
         name: "Skeleton",
         speed: CONSTS.SPD_SKELETON,
+        health: 50,
+        stamina: 30,
+        energy: 30,
         position: CONSTS.ActorPosition.MIDLINE,
       },
       {
         name: "Dragon",
         speed: CONSTS.SPD_DRAGON,
+        health: 200,
+        stamina: 150,
+        energy: 100,
         position: CONSTS.ActorPosition.FLANK,
       },
       {
         name: "Bat",
         speed: CONSTS.SPD_BAT,
+        health: 30,
+        stamina: 20,
+        energy: 10,
         position: CONSTS.ActorPosition.FRONTLINE,
       },
       {
         name: "Slime",
         speed: CONSTS.SPD_SLIME,
+        health: 80,
+        stamina: 50,
+        energy: 20,
         position: CONSTS.ActorPosition.BACKLINE,
       },
       {
         name: "Twin 1",
         speed: CONSTS.SPD_TWIN,
+        health: 70,
+        stamina: 40,
+        energy: 30,
         position: CONSTS.ActorPosition.MIDLINE,
       },
       {
         name: "Twin 2",
         speed: CONSTS.SPD_TWIN,
+        health: 70,
+        stamina: 40,
+        energy: 30,
         position: CONSTS.ActorPosition.MIDLINE,
       },
     ];
@@ -126,12 +172,15 @@ export class Game extends Scene {
     const sy = CONSTS.CARD_START_Y;
 
     players.forEach((d, i) => {
-      const a = new ActionActor(
-        CONSTS.ActorController.PLAYER,
-        d.name,
-        d.speed,
-        d.position,
-      );
+      const a = new ActionActor({
+        controller: CONSTS.ActorController.PLAYER,
+        name: d.name,
+        speed: d.speed,
+        health: d.health,
+        stamina: d.stamina,
+        energy: d.energy,
+        position: d.position,
+      });
       this.timeline.addActor(a);
       this.createActorUIElement(
         a,
@@ -139,16 +188,19 @@ export class Game extends Scene {
         sy + i * gap,
         bw,
         bh,
-        CONSTS.PLAYER_FILL,
+        CONSTS.PROGRESS_FILL,
       );
     });
     enemies.forEach((d, i) => {
-      const a = new ActionActor(
-        CONSTS.ActorController.ENEMY,
-        d.name,
-        d.speed,
-        d.position,
-      );
+      const a = new ActionActor({
+        controller: CONSTS.ActorController.ENEMY,
+        name: d.name,
+        speed: d.speed,
+        health: d.health,
+        stamina: d.stamina,
+        energy: d.energy,
+        position: d.position,
+      });
       this.timeline.addActor(a);
       this.createActorUIElement(
         a,
@@ -156,7 +208,7 @@ export class Game extends Scene {
         sy + i * gap,
         bw,
         bh,
-        CONSTS.ENEMY_FILL,
+        CONSTS.PROGRESS_FILL,
       );
     });
   }
@@ -205,9 +257,9 @@ export class Game extends Scene {
     const highlight = this.add
       .rectangle(
         x + width / 2,
-        y + height / 2,
-        width + CONSTS.HIGHLIGHT_EXTRA,
-        height + CONSTS.HIGHLIGHT_EXTRA,
+        y + 1,
+        width + CONSTS.CARD_EXTRA_W + CONSTS.HIGHLIGHT_EXTRA,
+        CONSTS.CARD_HEIGHT + CONSTS.HIGHLIGHT_EXTRA,
       )
       .setStrokeStyle(CONSTS.HIGHLIGHT_STROKE_W, CONSTS.HIGHLIGHT_COLOR)
       .setOrigin(0.5)
@@ -222,13 +274,37 @@ export class Game extends Scene {
         color: CONSTS.LABEL_COLOR,
       },
     );
-    const pct = this.add
-      .text(x + width - CONSTS.PCT_X, y + height / 2, "0%", {
-        fontSize: `${CONSTS.UI_FONT}px`,
-        color: CONSTS.PCT_COLOR,
-      })
-      .setOrigin(1, 0.5);
-    this.actorsUi.push({ actor, card, fill, bg, highlight, label, pct });
+
+    const statX = x + CONSTS.STAT_TXT_X;
+    const fmt: Phaser.Types.GameObjects.Text.TextStyle = {
+      fontSize: `${CONSTS.UI_FONT - 2}px`,
+      color: "#ccc",
+    };
+
+    const healthTxt = this.add.text(statX, y + CONSTS.STAT_HP_Y, "", {
+      ...fmt,
+      color: "#ff4444",
+    });
+    const staminaTxt = this.add.text(statX, y + CONSTS.STAT_SP_Y, "", {
+      ...fmt,
+      color: "#ffcc00",
+    });
+    const energyTxt = this.add.text(statX, y + CONSTS.STAT_EP_Y, "", {
+      ...fmt,
+      color: "#66ccff",
+    });
+
+    this.actorsUi.push({
+      actor,
+      card,
+      fill,
+      bg,
+      highlight,
+      label,
+      healthTxt,
+      staminaTxt,
+      energyTxt,
+    });
   }
 
   /**
@@ -310,10 +386,13 @@ export class Game extends Scene {
    */
   private syncUI() {
     for (const actorUi of this.actorsUi) {
-      const pct = actorUi.actor.progress / actorUi.actor.readyThreshold;
+      const a = actorUi.actor;
+      actorUi.fill.width =
+        (a.progress / a.readyThreshold) * (actorUi.bg.width - 2);
 
-      actorUi.fill.width = pct * (actorUi.bg.width - 2);
-      actorUi.pct.setText(`${Math.round(pct * 100)}%`);
+      actorUi.healthTxt.setText(`HP ${a.health}/${a.health}`);
+      actorUi.staminaTxt.setText(`SP ${a.stamina}/${a.stamina}`);
+      actorUi.energyTxt.setText(`EP ${a.energy}/${a.energy}`);
 
       const acting = actorUi.actor === this.actingActor;
       const ready = actorUi.actor.isReady();

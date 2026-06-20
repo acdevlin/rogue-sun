@@ -10,17 +10,20 @@ import {
  */
 export class ActionActor {
   /** Display name. */
-  name: string;
+  name: string = "Actor";
   /** Speed value used to calculate progress accumulation per second. */
-  speed: number;
+  speed: number = 10;
+  health: number = 100;
+  stamina: number = 100;
+  energy: number = 100;
   /** Current progress toward "readiness" (from 0 to readyThreshold). */
-  progress = 0;
+  progress: number = 0;
   /** Progress value at which the actor becomes ready to act. */
-  readonly readyThreshold = READY_THRESHOLD;
+  readonly readyThreshold: number = READY_THRESHOLD;
   /** Whether this actor belongs to the player's party. */
-  controller: ActorController;
+  controller: ActorController | null = null;
   /** The position of the actor in the combat formation. */
-  position: ActorPosition;
+  position: ActorPosition | null = null;
 
   /**
    * Default constructor.
@@ -30,16 +33,22 @@ export class ActionActor {
    * @param position The position of the actor in the combat formation.
    * @param isPlayer Whether this actor belongs to the player's party.
    */
-  constructor(
-    controller: ActorController,
-    name: string,
-    speed: number,
-    position: ActorPosition,
-  ) {
-    this.controller = controller;
-    this.name = name;
-    this.speed = speed;
-    this.position = position;
+  constructor(params: {
+    controller: ActorController;
+    name: string;
+    speed: number;
+    health: number;
+    stamina: number;
+    energy: number;
+    position: ActorPosition;
+  }) {
+    this.controller = params.controller;
+    this.name = params.name;
+    this.speed = params.speed;
+    this.health = params.health;
+    this.stamina = params.stamina;
+    this.energy = params.energy;
+    this.position = params.position;
   }
 
   /**

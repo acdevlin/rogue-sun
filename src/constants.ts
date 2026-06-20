@@ -50,11 +50,11 @@ export const HEADER_BG_PAD_X = 20;
 export const HEADER_BG_PAD_Y = 10;
 
 /** Width of each actor's progress bar. */
-export const CARD_W = 200;
+export const CARD_W = 180;
 /** Height of each actor's progress bar. */
-export const CARD_H = 20;
+export const CARD_H = 12;
 /** Vertical gap between actor cards. */
-export const CARD_GAP = 56;
+export const CARD_GAP = 94;
 /** Y-position of the first actor card. */
 export const CARD_START_Y = 80;
 /** X-position offset for player cards from the left edge, and right margin for enemy cards. */
@@ -62,7 +62,7 @@ export const PLAYER_X = 40;
 /** Extra width added to the card rectangle beyond the progress bar width. */
 export const CARD_EXTRA_W = 14;
 /** Height of the card rectangle surrounding each progress bar. */
-export const CARD_HEIGHT = 46;
+export const CARD_HEIGHT = 92;
 /** Background color of the card rectangle. */
 export const CARD_BG = 0x2a2a2a;
 /** Stroke color of the card rectangle. */
@@ -82,14 +82,12 @@ export const HIGHLIGHT_COLOR = 0xffff00;
 /** X-offset of the actor name label from the left edge of the card. */
 export const LABEL_X = 4;
 /** Y-offset of the actor name label above the top of the progress bar. */
-export const LABEL_Y = 18;
+export const LABEL_Y = 40;
 /** X-offset of the percentage text from the right edge of the progress bar. */
 export const PCT_X = 2;
 
-/** Fill color for player progress bars. */
-export const PLAYER_FILL = 0x00aa00;
-/** Fill color for enemy progress bars. */
-export const ENEMY_FILL = 0xaa0000;
+/** Fill color for all progress bars (both player and enemy). */
+export const PROGRESS_FILL = 0xcccccc;
 /** Stroke color for the acting header when a player is acting. */
 export const PLAYER_ACTING_STROKE = "#44ff44";
 /** Stroke color for the acting header when an enemy is acting. */
@@ -105,6 +103,15 @@ export const UI_FONT = 14;
 export const LABEL_COLOR = "#ccc";
 /** Color of the percentage progress text. */
 export const PCT_COLOR = "#fff";
+
+/** X-offset for stat text from the card left edge. */
+export const STAT_TXT_X = 2;
+/** Y-offset from the y-param to the health text. */
+export const STAT_HP_Y = -14;
+/** Y-offset from the y-param to the stamina text. */
+export const STAT_SP_Y = 18;
+/** Y-offset from the y-param to the energy text. */
+export const STAT_EP_Y = 34;
 
 /** Delay in milliseconds before an actor's action completes. */
 export const TURN_DELAY = 500;
