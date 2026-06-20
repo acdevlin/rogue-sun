@@ -1,3 +1,5 @@
+import { READY_THRESHOLD } from "../../constants";
+
 /**
  * Represents a single combatant in the timeline-based turn system.
  * Tracks progress toward readiness based on speed and elapsed time.
@@ -10,7 +12,7 @@ export class ActionActor {
   /** Current progress toward "readiness" (from 0 to readyThreshold). */
   progress = 0;
   /** Progress value at which the actor becomes ready to act. */
-  readonly readyThreshold = 100;
+  readonly readyThreshold = READY_THRESHOLD;
   /** Whether this actor belongs to the player's party. */
   isPlayer: boolean;
 

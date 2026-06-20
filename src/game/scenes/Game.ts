@@ -1,6 +1,7 @@
 import { Scene } from "phaser";
 import { ActionActor } from "../systems/ActionActor";
 import { TimelineSystem } from "../systems/TimelineSystem";
+import * as CONSTS from "../../constants";
 
 interface ActorUI {
   actor: ActionActor;
@@ -11,6 +12,10 @@ interface ActorUI {
   label: Phaser.GameObjects.Text;
   pct: Phaser.GameObjects.Text;
 }
+/**
+ * The main game scene, showing individual actors (both enemies and allies) taking
+ * turns based on their speed and readiness threshold.
+ */
 /**
  * The main game scene, showing individual actors (both enemies and allies) taking
  * turns based on their speed and readiness threshold.
@@ -38,58 +43,65 @@ export class Game extends Scene {
     const cx = width / 2;
 
     this.currentlyActingHeader = this.add
-      .text(cx, 20, "", {
+      .text(cx, CONSTS.HEADER_Y, "", {
         fontFamily: "Arial Black",
-        fontSize: "30px",
+        fontSize: CONSTS.HEADER_FONT,
         color: "#ffffff",
         stroke: "#000000",
-        strokeThickness: 6,
+        strokeThickness: CONSTS.HEADER_STROKE,
         align: "center",
       })
       .setOrigin(0.5);
     this.currentlyActingBg = this.add
-      .rectangle(cx, 20, 0, 0, 0xcccccc)
+      .rectangle(cx, CONSTS.HEADER_Y, 0, 0, CONSTS.HEADER_BG)
       .setOrigin(0.5)
       .setDepth(-1)
       .setVisible(false);
 
     const players = [
-      { name: "Fighter", speed: 30 },
-      { name: "Mage", speed: 22 },
-      { name: "Thief", speed: 35 },
-      { name: "Slacker", speed: 6 },
+      { name: "Fighter", speed: CONSTS.SPD_FIGHTER },
+      { name: "Mage", speed: CONSTS.SPD_MAGE },
+      { name: "Thief", speed: CONSTS.SPD_THIEF },
+      { name: "Slacker", speed: CONSTS.SPD_SLACKER },
     ];
     const enemies = [
-      { name: "Goblin", speed: 28 },
-      { name: "Orc", speed: 12 },
-      { name: "Skeleton", speed: 20 },
-      { name: "Dragon", speed: 8 },
-      { name: "Bat", speed: 40 },
-      { name: "Slime", speed: 15 },
-      { name: "Twin 1", speed: 25 },
-      { name: "Twin 2", speed: 25 },
+      { name: "Goblin", speed: CONSTS.SPD_GOBLIN },
+      { name: "Orc", speed: CONSTS.SPD_ORC },
+      { name: "Skeleton", speed: CONSTS.SPD_SKELETON },
+      { name: "Dragon", speed: CONSTS.SPD_DRAGON },
+      { name: "Bat", speed: CONSTS.SPD_BAT },
+      { name: "Slime", speed: CONSTS.SPD_SLIME },
+      { name: "Twin 1", speed: CONSTS.SPD_TWIN },
+      { name: "Twin 2", speed: CONSTS.SPD_TWIN },
     ];
 
-    const bw = 200;
-    const bh = 20;
-    const gap = 56;
-    const sy = 80;
+    const bw = CONSTS.CARD_W;
+    const bh = CONSTS.CARD_H;
+    const gap = CONSTS.CARD_GAP;
+    const sy = CONSTS.CARD_START_Y;
 
     players.forEach((d, i) => {
       const a = new ActionActor(d.name, d.speed, true);
       this.timeline.addActor(a);
-      this.createActorUIElement(a, 40, sy + i * gap, bw, bh, 0x00aa00);
+      this.createActorUIElement(
+        a,
+        CONSTS.PLAYER_X,
+        sy + i * gap,
+        bw,
+        bh,
+        CONSTS.PLAYER_FILL,
+      );
     });
     enemies.forEach((d, i) => {
       const a = new ActionActor(d.name, d.speed, false);
       this.timeline.addActor(a);
       this.createActorUIElement(
         a,
-        width - 40 - bw,
+        width - CONSTS.PLAYER_X - bw,
         sy + i * gap,
         bw,
         bh,
-        0xaa0000,
+        CONSTS.ENEMY_FILL,
       );
     });
   }
@@ -113,30 +125,52 @@ export class Game extends Scene {
     color: number,
   ) {
     const card = this.add
-      .rectangle(x + width / 2, y + 1, width + 14, 46, 0x2a2a2a)
-      .setStrokeStyle(1, 0x444444)
+      .rectangle(
+        x + width / 2,
+        y + 1,
+        width + CONSTS.CARD_EXTRA_W,
+        CONSTS.CARD_HEIGHT,
+        CONSTS.CARD_BG,
+      )
+      .setStrokeStyle(CONSTS.CARD_STROKE_W, CONSTS.CARD_STROKE)
       .setOrigin(0.5)
       .setDepth(-2);
     const bg = this.add
-      .rectangle(x + width / 2, y + height / 2, width, height, 0x222222)
+      .rectangle(x + width / 2, y + height / 2, width, height, CONSTS.FILL_BG)
       .setOrigin(0.5);
     const fill = this.add
-      .rectangle(x + 1, y + 1, 0, height - 2, color)
+      .rectangle(
+        x + CONSTS.FILL_INSET,
+        y + CONSTS.FILL_INSET,
+        0,
+        height - CONSTS.FILL_INSET * 2,
+        color,
+      )
       .setOrigin(0, 0);
     const highlight = this.add
-      .rectangle(x + width / 2, y + height / 2, width + 6, height + 6)
-      .setStrokeStyle(2, 0xffff00)
+      .rectangle(
+        x + width / 2,
+        y + height / 2,
+        width + CONSTS.HIGHLIGHT_EXTRA,
+        height + CONSTS.HIGHLIGHT_EXTRA,
+      )
+      .setStrokeStyle(CONSTS.HIGHLIGHT_STROKE_W, CONSTS.HIGHLIGHT_COLOR)
       .setOrigin(0.5)
       .setDepth(-1)
       .setVisible(false);
-    const label = this.add.text(x + 4, y - 18, actor.name, {
-      fontSize: "13px",
-      color: "#ccc",
-    });
+    const label = this.add.text(
+      x + CONSTS.LABEL_X,
+      y - CONSTS.LABEL_Y,
+      actor.name,
+      {
+        fontSize: `${CONSTS.UI_FONT}px`,
+        color: CONSTS.LABEL_COLOR,
+      },
+    );
     const pct = this.add
-      .text(x + width - 2, y + height / 2, "0%", {
-        fontSize: "12px",
-        color: "#fff",
+      .text(x + width - CONSTS.PCT_X, y + height / 2, "0%", {
+        fontSize: `${CONSTS.UI_FONT}px`,
+        color: CONSTS.PCT_COLOR,
       })
       .setOrigin(1, 0.5);
     this.actorsUi.push({ actor, card, fill, bg, highlight, label, pct });
@@ -150,19 +184,16 @@ export class Game extends Scene {
    */
   update(_t: number, dt: number) {
     if (this.actingActor) {
-      // Actor is currently acting, update the UI and wait for their turn to complete
       this.syncUI();
       return;
     }
 
     const next = this.timeline.step();
     if (next) {
-      // Another actor can take their turn in next timeline step
       this.startActorTurn(next);
       return;
     }
 
-    // Advance the timeline and process any actors moving to the ready queue
     this.advanceTimelineAndHandleReadyQueue(dt);
   }
 
@@ -174,13 +205,21 @@ export class Game extends Scene {
     const text = `${actor.name}'s turn!`;
     this.currentlyActingHeader
       .setText(text)
-      .setStroke(actor.isPlayer ? "#44ff44" : "#ff4444", 6);
+      .setStroke(
+        actor.isPlayer
+          ? CONSTS.PLAYER_ACTING_STROKE
+          : CONSTS.ENEMY_ACTING_STROKE,
+        CONSTS.HEADER_STROKE,
+      );
     const w = this.currentlyActingHeader.width;
     this.currentlyActingBg
-      .setSize(w + 20, this.currentlyActingHeader.height + 10)
+      .setSize(
+        w + CONSTS.HEADER_BG_PAD_X,
+        this.currentlyActingHeader.height + CONSTS.HEADER_BG_PAD_Y,
+      )
       .setVisible(true);
     this.syncUI();
-    this.time.delayedCall(500, () => this.completeAction());
+    this.time.delayedCall(CONSTS.TURN_DELAY, () => this.completeAction());
   }
 
   /**
@@ -189,7 +228,6 @@ export class Game extends Scene {
    * @param dt The delta time in milliseconds to advance the timeline.
    */
   private advanceTimelineAndHandleReadyQueue(dt: number) {
-    // Snapshot current progress for all actors before updating
     const progressSnapshot = new Map<ActionActor, number>();
     for (const actor of this.timeline.actors) {
       progressSnapshot.set(actor, actor.progress);
@@ -197,13 +235,10 @@ export class Game extends Scene {
 
     const readyQueueLengthBefore = this.timeline.readyQueue.length;
 
-    // Update timeline; this may move some actors to the ready queue
-    this.timeline.update(dt / 1000);
+    this.timeline.update(dt / CONSTS.MS_TO_S);
 
     const readyQueueLengthAfter = this.timeline.readyQueue.length;
 
-    // If new actors joined the ready queue, restore their progress
-    // but preserve actors that are already at the ready threshold
     if (readyQueueLengthAfter > readyQueueLengthBefore) {
       for (const actor of this.timeline.actors) {
         if (!this.timeline.readyQueue.includes(actor) && !actor.isReady()) {
@@ -219,16 +254,12 @@ export class Game extends Scene {
    * Updates UI elements for all actors at the current timeline state.
    */
   private syncUI() {
-    // Update all actor UI elements to reflect their current state
     for (const actorUi of this.actorsUi) {
-      // Calculate progress percentage (0-100%)
       const pct = actorUi.actor.progress / actorUi.actor.readyThreshold;
 
-      // Update the progress bar fill width
       actorUi.fill.width = pct * (actorUi.bg.width - 2);
       actorUi.pct.setText(`${Math.round(pct * 100)}%`);
 
-      // Determine if actor is acting or ready
       const acting = actorUi.actor === this.actingActor;
       const ready = actorUi.actor.isReady();
 
@@ -241,7 +272,9 @@ export class Game extends Scene {
         actorName = actorUi.actor.name;
       }
       actorUi.label.setText(actorName);
-      actorUi.label.setColor(acting || ready ? "#ffff00" : "#cccccc");
+      actorUi.label.setColor(
+        acting || ready ? CONSTS.LABEL_COLOR_ACTIVE : CONSTS.LABEL_COLOR_IDLE,
+      );
       actorUi.highlight.setVisible(acting);
     }
   }
@@ -255,7 +288,6 @@ export class Game extends Scene {
       this.actingActor = null;
       this.currentlyActingHeader.setText("");
       this.currentlyActingBg.setVisible(false);
-      // Immediately sync UI to show any remaining ready actors
       this.syncUI();
     }
   }

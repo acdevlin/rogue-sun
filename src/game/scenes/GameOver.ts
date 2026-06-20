@@ -1,5 +1,13 @@
 import { Scene } from "phaser";
 import { getSceneScale } from "../utils/SceneScaling";
+import {
+  GAMEOVER_BG,
+  GAMEOVER_ALPHA,
+  GAMEOVER_FONT_SIZE,
+  GAMEOVER_STROKE,
+  GAMEOVER_TEXT_COLOR,
+  GAMEOVER_STROKE_COLOR,
+} from "../../constants";
 
 /**
  * GameOver scene — shown when the player loses.
@@ -18,18 +26,18 @@ export class GameOver extends Scene {
     this.camera = this.cameras.main;
     const { centerX, centerY, scale } = getSceneScale(this);
 
-    this.camera.setBackgroundColor(0xff0000);
+    this.camera.setBackgroundColor(GAMEOVER_BG);
 
     this.background = this.add.image(centerX, centerY, "background");
-    this.background.setAlpha(0.5);
+    this.background.setAlpha(GAMEOVER_ALPHA);
     this.background.setScale(scale);
 
     this.gameover_text = this.add.text(centerX, centerY, "Game Over", {
       fontFamily: "Arial Black",
-      fontSize: Math.round(64 * scale),
-      color: "#ffffff",
-      stroke: "#000000",
-      strokeThickness: Math.round(8 * scale),
+      fontSize: Math.round(GAMEOVER_FONT_SIZE * scale),
+      color: GAMEOVER_TEXT_COLOR,
+      stroke: GAMEOVER_STROKE_COLOR,
+      strokeThickness: Math.round(GAMEOVER_STROKE * scale),
       align: "center",
     });
     this.gameover_text.setOrigin(0.5);

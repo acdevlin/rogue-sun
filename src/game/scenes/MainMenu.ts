@@ -1,5 +1,13 @@
 import { Scene, GameObjects } from "phaser";
 import { getSceneScale } from "../utils/SceneScaling";
+import {
+  LOGO_Y,
+  TITLE_Y,
+  MENU_FONT_SIZE,
+  MENU_STROKE,
+  MENU_TEXT_COLOR,
+  MENU_STROKE_COLOR,
+} from "../../constants";
 
 /**
  * MainMenu scene — shows the game title and logo.
@@ -20,16 +28,16 @@ export class MainMenu extends Scene {
     this.background = this.add.image(centerX, centerY, "background");
     this.background.setScale(scale);
 
-    this.logo = this.add.image(centerX, centerY - 84 * scale, "logo");
+    this.logo = this.add.image(centerX, centerY - LOGO_Y * scale, "logo");
     this.logo.setScale(scale);
 
     this.title = this.add
-      .text(centerX, centerY + 76 * scale, "Main Menu", {
+      .text(centerX, centerY + TITLE_Y * scale, "Main Menu", {
         fontFamily: "Arial Black",
-        fontSize: Math.round(38 * scale),
-        color: "#ffffff",
-        stroke: "#000000",
-        strokeThickness: Math.round(8 * scale),
+        fontSize: Math.round(MENU_FONT_SIZE * scale),
+        color: MENU_TEXT_COLOR,
+        stroke: MENU_STROKE_COLOR,
+        strokeThickness: Math.round(MENU_STROKE * scale),
         align: "center",
       })
       .setOrigin(0.5);

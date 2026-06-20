@@ -4,6 +4,7 @@ import { Game as MainGame } from "./scenes/Game";
 import { MainMenu } from "./scenes/MainMenu";
 import * as Phaser from "phaser";
 import { Preloader } from "./scenes/Preloader";
+import { BG_COLOR } from "../constants";
 
 /**
  * Core Phaser game configuration.
@@ -16,7 +17,7 @@ const config: Phaser.Types.Core.GameConfig = {
     autoCenter: Phaser.Scale.Center.CENTER_BOTH,
   },
   parent: "game-container",
-  backgroundColor: "#028af8",
+  backgroundColor: BG_COLOR,
   dom: {
     createContainer: true,
   },
