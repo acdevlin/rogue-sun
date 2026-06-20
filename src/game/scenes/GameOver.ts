@@ -7,6 +7,7 @@ import {
   GAMEOVER_STROKE,
   GAMEOVER_TEXT_COLOR,
   GAMEOVER_STROKE_COLOR,
+  UI_FONT_FAMILY,
 } from "../../constants";
 
 /**
@@ -33,7 +34,7 @@ export class GameOver extends Scene {
     this.background.setScale(scale);
 
     this.gameover_text = this.add.text(centerX, centerY, "Game Over", {
-      fontFamily: "Arial Black",
+      fontFamily: UI_FONT_FAMILY,
       fontSize: Math.round(GAMEOVER_FONT_SIZE * scale),
       color: GAMEOVER_TEXT_COLOR,
       stroke: GAMEOVER_STROKE_COLOR,

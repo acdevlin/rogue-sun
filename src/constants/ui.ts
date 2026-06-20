@@ -61,6 +61,29 @@ export const LABEL_COLOR_IDLE = "#cccccc";
 
 /** Font size for actor name labels and percentage text (standardized from 13px and 12px). */
 export const UI_FONT = 14;
+/** Font family used for all UI text. */
+export const UI_FONT_FAMILY = "Arial Black";
+
+/** Color of the acting header text. */
+export const HEADER_TEXT_COLOR = "#ffffff";
+/** Stroke color of the acting header text. */
+export const HEADER_STROKE_COLOR = "#000000";
+
+/** Y-offset of the card center from the y-param. */
+export const CARD_Y_OFFSET = 1;
+/** Depth of the card rectangle. */
+export const CARD_DEPTH = -2;
+/** Depth of the highlight rectangle. */
+export const HIGHLIGHT_DEPTH = -1;
+
+/** Font size for stat text. */
+export const STAT_FONT_SIZE = 12;
+/** Color of the HP stat text. */
+export const STAT_HP_COLOR = "#ff4444";
+/** Color of the SP stat text. */
+export const STAT_SP_COLOR = "#ffcc00";
+/** Color of the EP stat text. */
+export const STAT_EP_COLOR = "#66ccff";
 /** Initial color of the actor name label. */
 export const LABEL_COLOR = "#ccc";
 /** Color of the percentage progress text. */

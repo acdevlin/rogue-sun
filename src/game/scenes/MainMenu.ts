@@ -7,6 +7,7 @@ import {
   MENU_STROKE,
   MENU_TEXT_COLOR,
   MENU_STROKE_COLOR,
+  UI_FONT_FAMILY,
 } from "../../constants";
 
 /**
@@ -33,7 +34,7 @@ export class MainMenu extends Scene {
 
     this.title = this.add
       .text(centerX, centerY + TITLE_Y * scale, "Main Menu", {
-        fontFamily: "Arial Black",
+        fontFamily: UI_FONT_FAMILY,
         fontSize: Math.round(MENU_FONT_SIZE * scale),
         color: MENU_TEXT_COLOR,
         stroke: MENU_STROKE_COLOR,

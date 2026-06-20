@@ -43,10 +43,10 @@ export class Game extends Scene {
 
     this.currentlyActingHeader = this.add
       .text(cx, CONSTS.HEADER_Y, "", {
-        fontFamily: "Arial Black",
+        fontFamily: CONSTS.UI_FONT_FAMILY,
         fontSize: CONSTS.HEADER_FONT,
-        color: "#ffffff",
-        stroke: "#000000",
+        color: CONSTS.HEADER_TEXT_COLOR,
+        stroke: CONSTS.HEADER_STROKE_COLOR,
         strokeThickness: CONSTS.HEADER_STROKE,
         align: "center",
       })
@@ -234,14 +234,14 @@ export class Game extends Scene {
     const card = this.add
       .rectangle(
         x + width / 2,
-        y + 1,
+        y + CONSTS.CARD_Y_OFFSET,
         width + CONSTS.CARD_EXTRA_W,
         CONSTS.CARD_HEIGHT,
         CONSTS.CARD_BG,
       )
       .setStrokeStyle(CONSTS.CARD_STROKE_W, CONSTS.CARD_STROKE)
       .setOrigin(0.5)
-      .setDepth(-2);
+      .setDepth(CONSTS.CARD_DEPTH);
     const bg = this.add
       .rectangle(x + width / 2, y + height / 2, width, height, CONSTS.FILL_BG)
       .setOrigin(0.5);
@@ -257,13 +257,13 @@ export class Game extends Scene {
     const highlight = this.add
       .rectangle(
         x + width / 2,
-        y + 1,
+        y + CONSTS.CARD_Y_OFFSET,
         width + CONSTS.CARD_EXTRA_W + CONSTS.HIGHLIGHT_EXTRA,
         CONSTS.CARD_HEIGHT + CONSTS.HIGHLIGHT_EXTRA,
       )
       .setStrokeStyle(CONSTS.HIGHLIGHT_STROKE_W, CONSTS.HIGHLIGHT_COLOR)
       .setOrigin(0.5)
-      .setDepth(-1)
+      .setDepth(CONSTS.HIGHLIGHT_DEPTH)
       .setVisible(false);
     const label = this.add.text(
       x + CONSTS.LABEL_X,
@@ -277,21 +277,20 @@ export class Game extends Scene {
 
     const statX = x + CONSTS.STAT_TXT_X;
     const fmt: Phaser.Types.GameObjects.Text.TextStyle = {
-      fontSize: `${CONSTS.UI_FONT - 2}px`,
-      color: "#ccc",
+      fontSize: `${CONSTS.STAT_FONT_SIZE}px`,
     };
 
     const healthTxt = this.add.text(statX, y + CONSTS.STAT_HP_Y, "", {
       ...fmt,
-      color: "#ff4444",
+      color: CONSTS.STAT_HP_COLOR,
     });
     const staminaTxt = this.add.text(statX, y + CONSTS.STAT_SP_Y, "", {
       ...fmt,
-      color: "#ffcc00",
+      color: CONSTS.STAT_SP_COLOR,
     });
     const energyTxt = this.add.text(statX, y + CONSTS.STAT_EP_Y, "", {
       ...fmt,
-      color: "#66ccff",
+      color: CONSTS.STAT_EP_COLOR,
     });
 
     this.actorsUi.push({
@@ -388,7 +387,8 @@ export class Game extends Scene {
     for (const actorUi of this.actorsUi) {
       const a = actorUi.actor;
       actorUi.fill.width =
-        (a.progress / a.readyThreshold) * (actorUi.bg.width - 2);
+        (a.progress / a.readyThreshold) *
+        (actorUi.bg.width - CONSTS.FILL_INSET * 2);
 
       actorUi.healthTxt.setText(`HP ${a.health}/${a.health}`);
       actorUi.staminaTxt.setText(`SP ${a.stamina}/${a.stamina}`);
