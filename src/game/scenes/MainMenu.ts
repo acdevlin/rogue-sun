@@ -9,6 +9,7 @@ import {
   MENU_STROKE_COLOR,
   UI_FONT_FAMILY,
 } from "../../constants";
+import { TEXT_RESOLUTION } from "../StartGame";
 
 /**
  * MainMenu scene — shows the game title and logo.
@@ -40,6 +41,7 @@ export class MainMenu extends Scene {
         stroke: MENU_STROKE_COLOR,
         strokeThickness: Math.round(MENU_STROKE * scale),
         align: "center",
+        resolution: TEXT_RESOLUTION,
       })
       .setOrigin(0.5);
 

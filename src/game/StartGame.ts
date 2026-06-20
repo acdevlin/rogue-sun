@@ -6,11 +6,13 @@ import * as Phaser from "phaser";
 import { Preloader } from "./scenes/Preloader";
 import { BG_COLOR } from "../constants";
 
+/** Resolution multiplier for crisp text on high-DPI displays. */
+export const TEXT_RESOLUTION = Math.ceil(globalThis.devicePixelRatio ?? 1);
+
 /**
- * Core Phaser game configuration.
- * Uses auto-renderer, resize scale mode, and registers all scenes.
+ * Core Phaser game configuration. Registers all scenes and configures resolution scaling.
  */
-const config: Phaser.Types.Core.GameConfig = {
+const config: Phaser.Types.Core.GameConfig & { resolution: number } = {
   type: Phaser.AUTO,
   scale: {
     mode: Phaser.Scale.RESIZE,
@@ -21,7 +23,7 @@ const config: Phaser.Types.Core.GameConfig = {
   dom: {
     createContainer: true,
   },
-  antialias: false,
+  resolution: TEXT_RESOLUTION,
   scene: [Boot, Preloader, MainMenu, MainGame, GameOver],
 };
 

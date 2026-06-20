@@ -9,6 +9,7 @@ import {
   GAMEOVER_STROKE_COLOR,
   UI_FONT_FAMILY,
 } from "../../constants";
+import { TEXT_RESOLUTION } from "../StartGame";
 
 /**
  * GameOver scene — shown when the player loses.
@@ -40,6 +41,7 @@ export class GameOver extends Scene {
       stroke: GAMEOVER_STROKE_COLOR,
       strokeThickness: Math.round(GAMEOVER_STROKE * scale),
       align: "center",
+      resolution: TEXT_RESOLUTION,
     });
     this.gameover_text.setOrigin(0.5);
 

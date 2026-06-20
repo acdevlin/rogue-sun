@@ -2,6 +2,7 @@ import { Scene } from "phaser";
 import { ActionActor } from "../systems/ActionActor";
 import { TimelineSystem } from "../systems/TimelineSystem";
 import * as CONSTS from "../../constants";
+import { TEXT_RESOLUTION } from "../StartGame";
 
 interface ActorUI {
   actor: ActionActor;
@@ -49,6 +50,7 @@ export class Game extends Scene {
         stroke: CONSTS.HEADER_STROKE_COLOR,
         strokeThickness: CONSTS.HEADER_STROKE,
         align: "center",
+        resolution: TEXT_RESOLUTION,
       })
       .setOrigin(0.5);
     this.currentlyActingBg = this.add
@@ -272,12 +274,14 @@ export class Game extends Scene {
       {
         fontSize: `${CONSTS.UI_FONT}px`,
         color: CONSTS.LABEL_COLOR,
+        resolution: TEXT_RESOLUTION,
       },
     );
 
     const statX = x + CONSTS.STAT_TXT_X;
     const fmt: Phaser.Types.GameObjects.Text.TextStyle = {
       fontSize: `${CONSTS.STAT_FONT_SIZE}px`,
+      resolution: TEXT_RESOLUTION,
     };
 
     const healthTxt = this.add.text(statX, y + CONSTS.STAT_HP_Y, "", {
