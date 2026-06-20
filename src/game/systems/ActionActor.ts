@@ -1,4 +1,8 @@
-import { READY_THRESHOLD } from "../../constants";
+import {
+  READY_THRESHOLD,
+  ActorPosition,
+  ActorController,
+} from "../../constants";
 
 /**
  * Represents a single combatant in the timeline-based turn system.
@@ -14,19 +18,28 @@ export class ActionActor {
   /** Progress value at which the actor becomes ready to act. */
   readonly readyThreshold = READY_THRESHOLD;
   /** Whether this actor belongs to the player's party. */
-  isPlayer: boolean;
+  controller: ActorController;
+  /** The position of the actor in the combat formation. */
+  position: ActorPosition;
 
   /**
    * Default constructor.
    *
    * @param name Display name for the actor.
    * @param speed Base speed for progress accumulation.
+   * @param position The position of the actor in the combat formation.
    * @param isPlayer Whether this actor belongs to the player's party.
    */
-  constructor(name: string, speed: number, isPlayer: boolean) {
+  constructor(
+    controller: ActorController,
+    name: string,
+    speed: number,
+    position: ActorPosition,
+  ) {
+    this.controller = controller;
     this.name = name;
     this.speed = speed;
-    this.isPlayer = isPlayer;
+    this.position = position;
   }
 
   /**

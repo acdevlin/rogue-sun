@@ -12,10 +12,7 @@ interface ActorUI {
   label: Phaser.GameObjects.Text;
   pct: Phaser.GameObjects.Text;
 }
-/**
- * The main game scene, showing individual actors (both enemies and allies) taking
- * turns based on their speed and readiness threshold.
- */
+
 /**
  * The main game scene, showing individual actors (both enemies and allies) taking
  * turns based on their speed and readiness threshold.
@@ -59,20 +56,68 @@ export class Game extends Scene {
       .setVisible(false);
 
     const players = [
-      { name: "Fighter", speed: CONSTS.SPD_FIGHTER },
-      { name: "Mage", speed: CONSTS.SPD_MAGE },
-      { name: "Thief", speed: CONSTS.SPD_THIEF },
-      { name: "Slacker", speed: CONSTS.SPD_SLACKER },
+      {
+        name: "Fighter",
+        speed: CONSTS.SPD_FIGHTER,
+        position: CONSTS.ActorPosition.FRONTLINE,
+      },
+      {
+        name: "Mage",
+        speed: CONSTS.SPD_MAGE,
+        position: CONSTS.ActorPosition.BACKLINE,
+      },
+      {
+        name: "Thief",
+        speed: CONSTS.SPD_THIEF,
+        position: CONSTS.ActorPosition.FLANK,
+      },
+      {
+        name: "Slacker",
+        speed: CONSTS.SPD_SLACKER,
+        position: CONSTS.ActorPosition.MIDLINE,
+      },
     ];
     const enemies = [
-      { name: "Goblin", speed: CONSTS.SPD_GOBLIN },
-      { name: "Orc", speed: CONSTS.SPD_ORC },
-      { name: "Skeleton", speed: CONSTS.SPD_SKELETON },
-      { name: "Dragon", speed: CONSTS.SPD_DRAGON },
-      { name: "Bat", speed: CONSTS.SPD_BAT },
-      { name: "Slime", speed: CONSTS.SPD_SLIME },
-      { name: "Twin 1", speed: CONSTS.SPD_TWIN },
-      { name: "Twin 2", speed: CONSTS.SPD_TWIN },
+      {
+        name: "Goblin",
+        speed: CONSTS.SPD_GOBLIN,
+        position: CONSTS.ActorPosition.FLANK,
+      },
+      {
+        name: "Orc",
+        speed: CONSTS.SPD_ORC,
+        position: CONSTS.ActorPosition.BACKLINE,
+      },
+      {
+        name: "Skeleton",
+        speed: CONSTS.SPD_SKELETON,
+        position: CONSTS.ActorPosition.MIDLINE,
+      },
+      {
+        name: "Dragon",
+        speed: CONSTS.SPD_DRAGON,
+        position: CONSTS.ActorPosition.FLANK,
+      },
+      {
+        name: "Bat",
+        speed: CONSTS.SPD_BAT,
+        position: CONSTS.ActorPosition.FRONTLINE,
+      },
+      {
+        name: "Slime",
+        speed: CONSTS.SPD_SLIME,
+        position: CONSTS.ActorPosition.BACKLINE,
+      },
+      {
+        name: "Twin 1",
+        speed: CONSTS.SPD_TWIN,
+        position: CONSTS.ActorPosition.MIDLINE,
+      },
+      {
+        name: "Twin 2",
+        speed: CONSTS.SPD_TWIN,
+        position: CONSTS.ActorPosition.MIDLINE,
+      },
     ];
 
     const bw = CONSTS.CARD_W;
@@ -81,7 +126,12 @@ export class Game extends Scene {
     const sy = CONSTS.CARD_START_Y;
 
     players.forEach((d, i) => {
-      const a = new ActionActor(d.name, d.speed, true);
+      const a = new ActionActor(
+        CONSTS.ActorController.PLAYER,
+        d.name,
+        d.speed,
+        d.position,
+      );
       this.timeline.addActor(a);
       this.createActorUIElement(
         a,
@@ -93,7 +143,12 @@ export class Game extends Scene {
       );
     });
     enemies.forEach((d, i) => {
-      const a = new ActionActor(d.name, d.speed, false);
+      const a = new ActionActor(
+        CONSTS.ActorController.ENEMY,
+        d.name,
+        d.speed,
+        d.position,
+      );
       this.timeline.addActor(a);
       this.createActorUIElement(
         a,
@@ -206,7 +261,7 @@ export class Game extends Scene {
     this.currentlyActingHeader
       .setText(text)
       .setStroke(
-        actor.isPlayer
+        actor.controller === CONSTS.ActorController.PLAYER
           ? CONSTS.PLAYER_ACTING_STROKE
           : CONSTS.ENEMY_ACTING_STROKE,
         CONSTS.HEADER_STROKE,

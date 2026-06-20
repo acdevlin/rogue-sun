@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ActionActor } from "../../systems/ActionActor";
 import { Game } from "../Game";
+import { ActorPosition, ActorController } from "../../../constants";
 
 vi.mock("phaser", () => {
   const mockObj = () => ({
@@ -48,7 +49,12 @@ describe("Game scene", () => {
 
   describe("completeAction", () => {
     it("resets actingActor to null", () => {
-      const a = new ActionActor("Test", 30, true);
+      const a = new ActionActor(
+        ActorController.PLAYER,
+        "Test",
+        30,
+        ActorPosition.FRONTLINE,
+      );
       a.progress = 100;
       game.actingActor = a;
       game.completeAction();
@@ -56,7 +62,12 @@ describe("Game scene", () => {
     });
 
     it("resets the acting actor progress and ready state", () => {
-      const a = new ActionActor("Test", 30, true);
+      const a = new ActionActor(
+        ActorController.PLAYER,
+        "Test",
+        30,
+        ActorPosition.FRONTLINE,
+      );
       a.progress = 100;
       game.actingActor = a;
       game.completeAction();
@@ -66,8 +77,18 @@ describe("Game scene", () => {
     });
 
     it("does not affect other actors", () => {
-      const a = new ActionActor("Actor", 30, true);
-      const b = new ActionActor("Bystander", 25, false);
+      const a = new ActionActor(
+        ActorController.PLAYER,
+        "Actor",
+        30,
+        ActorPosition.FRONTLINE,
+      );
+      const b = new ActionActor(
+        ActorController.ENEMY,
+        "Bystander",
+        25,
+        ActorPosition.FRONTLINE,
+      );
       b.progress = 50;
       game.timeline.addActor(b);
       game.actingActor = a;
@@ -137,8 +158,18 @@ describe("Game scene", () => {
   describe("update - progress snapshot", () => {
     it("reverts non-ready actors when a new actor becomes ready", () => {
       game.timeline.actors = [];
-      const fast = new ActionActor("Fast", 80, true);
-      const slow = new ActionActor("Slow", 5, false);
+      const fast = new ActionActor(
+        ActorController.PLAYER,
+        "Fast",
+        80,
+        ActorPosition.FRONTLINE,
+      );
+      const slow = new ActionActor(
+        ActorController.ENEMY,
+        "Slow",
+        5,
+        ActorPosition.FRONTLINE,
+      );
       game.timeline.addActor(fast);
       game.timeline.addActor(slow);
       fast.progress = 10;
@@ -156,8 +187,18 @@ describe("Game scene", () => {
 
     it("does not revert the actor who became ready", () => {
       game.timeline.actors = [];
-      const a = new ActionActor("Speedster", 90, true);
-      const b = new ActionActor("Normal", 20, false);
+      const a = new ActionActor(
+        ActorController.PLAYER,
+        "Speedster",
+        90,
+        ActorPosition.FRONTLINE,
+      );
+      const b = new ActionActor(
+        ActorController.ENEMY,
+        "Normal",
+        20,
+        ActorPosition.FRONTLINE,
+      );
       game.timeline.addActor(a);
       game.timeline.addActor(b);
 
@@ -167,8 +208,18 @@ describe("Game scene", () => {
 
     it("does not apply revert when no one became ready", () => {
       game.timeline.actors = [];
-      const a = new ActionActor("Slowpoke", 5, true);
-      const b = new ActionActor("Snail", 3, false);
+      const a = new ActionActor(
+        ActorController.PLAYER,
+        "Slowpoke",
+        5,
+        ActorPosition.FRONTLINE,
+      );
+      const b = new ActionActor(
+        ActorController.ENEMY,
+        "Snail",
+        3,
+        ActorPosition.FRONTLINE,
+      );
       game.timeline.addActor(a);
       game.timeline.addActor(b);
       b.progress = 10;
@@ -181,8 +232,18 @@ describe("Game scene", () => {
 
     it("handles all actors already at progress zero", () => {
       game.timeline.actors = [];
-      const a = new ActionActor("A", 50, true);
-      const b = new ActionActor("B", 30, false);
+      const a = new ActionActor(
+        ActorController.PLAYER,
+        "A",
+        50,
+        ActorPosition.FRONTLINE,
+      );
+      const b = new ActionActor(
+        ActorController.ENEMY,
+        "B",
+        30,
+        ActorPosition.FRONTLINE,
+      );
       game.timeline.addActor(a);
       game.timeline.addActor(b);
 
@@ -204,7 +265,9 @@ describe("Game scene", () => {
     });
 
     it("shows green stroke for player actions", () => {
-      const players = game.timeline.actors.filter((a) => a.isPlayer);
+      const players = game.timeline.actors.filter(
+        (a) => a.controller === ActorController.PLAYER,
+      );
       game.timeline.readyQueue.push(players[0]);
 
       game.update(0, 16);
@@ -215,7 +278,9 @@ describe("Game scene", () => {
     });
 
     it("shows red stroke for enemy actions", () => {
-      const enemies = game.timeline.actors.filter((a) => !a.isPlayer);
+      const enemies = game.timeline.actors.filter(
+        (a) => a.controller !== ActorController.PLAYER,
+      );
       game.timeline.readyQueue.push(enemies[0]);
 
       game.update(0, 16);
@@ -259,8 +324,18 @@ describe("Game scene", () => {
       // This addresses the twin enemy scenario where same-speed actors both
       // reach 100% but only one joins ready queue per update.
       game.timeline.actors = [];
-      const twin1 = new ActionActor("Twin1", 25, false);
-      const twin2 = new ActionActor("Twin2", 25, false);
+      const twin1 = new ActionActor(
+        ActorController.ENEMY,
+        "Twin1",
+        25,
+        ActorPosition.FRONTLINE,
+      );
+      const twin2 = new ActionActor(
+        ActorController.ENEMY,
+        "Twin2",
+        25,
+        ActorPosition.FRONTLINE,
+      );
       game.timeline.addActor(twin1);
       game.timeline.addActor(twin2);
 
@@ -305,8 +380,18 @@ describe("Game scene", () => {
   describe("update with acting actor", () => {
     it("other actor does not progress while someone is acting", () => {
       game.timeline.actors = [];
-      const a = new ActionActor("A", 100, true);
-      const b = new ActionActor("B", 60, false);
+      const a = new ActionActor(
+        ActorController.PLAYER,
+        "A",
+        100,
+        ActorPosition.FRONTLINE,
+      );
+      const b = new ActionActor(
+        ActorController.ENEMY,
+        "B",
+        60,
+        ActorPosition.FRONTLINE,
+      );
       game.timeline.addActor(a);
       game.timeline.addActor(b);
 

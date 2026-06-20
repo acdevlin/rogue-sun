@@ -135,6 +135,24 @@ export const SPD_SLIME = 15;
 /** Speed value for each Twin enemy unit (both use the same speed). */
 export const SPD_TWIN = 25;
 
+/** Positional values for actors. */
+export const ActorPosition = {
+  FRONTLINE: "FRONTLINE",
+  BACKLINE: "BACKLINE",
+  MIDLINE: "MIDLINE",
+  FLANK: "FLANK",
+};
+
+export type ActorPosition = (typeof ActorPosition)[keyof typeof ActorPosition];
+
+export const ActorController = {
+  PLAYER: "PLAYER",
+  ENEMY: "ENEMY",
+};
+
+export type ActorController =
+  (typeof ActorController)[keyof typeof ActorController];
+
 /** Background color for the GameOver scene camera. */
 export const GAMEOVER_BG = 0xff0000;
 /** Alpha value for the background image in the GameOver scene. */
