@@ -10,7 +10,7 @@
   "license": "MIT",
   "licenseUrl": "http://www.opensource.org/licenses/mit-license.php",
   "dependencies": {
-    "phaser": "^4.0.0",
+    "phaser": "^4.2.0",
     "terser": "^5.39.0"
   },
   "devDependencies": {
