@@ -4,7 +4,7 @@ import { Game as MainGame } from "./scenes/Game";
 import { MainMenu } from "./scenes/MainMenu";
 import * as Phaser from "phaser";
 import { Preloader } from "./scenes/Preloader";
-import { BG_COLOR } from "../constants";
+import { BG_COLOR, GAME_WIDTH_SCALE, GAME_HEIGHT_SCALE } from "../constants";
 
 /** Resolution multiplier for crisp text on high-DPI displays. */
 export const TEXT_RESOLUTION = Math.ceil(globalThis.devicePixelRatio ?? 1);
@@ -15,8 +15,10 @@ export const TEXT_RESOLUTION = Math.ceil(globalThis.devicePixelRatio ?? 1);
 const config: Phaser.Types.Core.GameConfig & { resolution: number } = {
   type: Phaser.AUTO,
   scale: {
-    mode: Phaser.Scale.RESIZE,
+    mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.Center.CENTER_BOTH,
+    width: GAME_WIDTH_SCALE,
+    height: GAME_HEIGHT_SCALE,
   },
   parent: "game-container",
   backgroundColor: BG_COLOR,
@@ -25,6 +27,24 @@ const config: Phaser.Types.Core.GameConfig & { resolution: number } = {
   },
   resolution: TEXT_RESOLUTION,
   scene: [Boot, Preloader, MainMenu, MainGame, GameOver],
+  callbacks: {
+    postBoot: (game) => {
+      try {
+        // Force mobile browsers to landscape orientation.
+        game.scale.lockOrientation("landscape");
+      } catch {
+        // Fallback to using a rotation prompt if lockOrientation is not supported.
+        const el = document.body;
+        const toggle = () =>
+          el.classList.toggle(
+            "force-landscape",
+            window.innerHeight > window.innerWidth,
+          );
+        window.addEventListener("resize", toggle);
+        toggle();
+      }
+    },
+  },
 };
 
 /**
