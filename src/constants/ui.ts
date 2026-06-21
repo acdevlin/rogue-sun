@@ -10,6 +10,7 @@ export const HEADER_BG = 0xcccccc;
 export const HEADER_BG_PAD_X = 20;
 /** Vertical padding for the acting header background. */
 export const HEADER_BG_PAD_Y = 10;
+export const HEADER_PARTYCREATION_Y = 40;
 
 /** Width of each actor's progress bar. */
 export const CARD_W = 180;
@@ -119,3 +120,20 @@ export const STAT_HP_Y = -14;
 export const STAT_SP_Y = 18;
 /** Y-offset from the y-param to the energy text. */
 export const STAT_EP_Y = 34;
+
+/** Vertical offset from the bottom of the screen for UI buttons. */
+export const BTN_BOTTOM_OFFSET = 100;
+/** Padding between button text and its background rectangle. */
+export const BTN_PAD = 20;
+/** Fill color for button background. */
+export const BTN_FILL = 0x444444;
+/** Stroke width for button background. */
+export const BTN_STROKE_W = 2;
+/** Stroke color for button background. */
+export const BTN_STROKE = 0xffffff;
+/** Depth for button background rectangle. */
+export const BTN_DEPTH = -1;
+/** Fill color for button background on hover. */
+export const BTN_HOVER_FILL = 0x666666;
+/** Text color for button label on hover. */
+export const BTN_HOVER_TEXT = "#ffff00";

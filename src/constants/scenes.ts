@@ -32,11 +32,14 @@ export const MENU_STROKE_COLOR = "#000000";
 export const GAMEOVER_BG = 0xff0000;
 /** Alpha value for the background image in the GameOver scene. */
 export const GAMEOVER_ALPHA = 0.5;
-/** Font size for the "Game Over" title text. */
-export const GAMEOVER_FONT_SIZE = 64;
+/** Font size for scene title text (used by GameOver, PartyCreation, etc.). */
+export const TITLE_FONT_SIZE = 64;
 /** Stroke thickness for the "Game Over" title text. */
 export const GAMEOVER_STROKE = 8;
-/** Text color for the "Game Over" title. */
-export const GAMEOVER_TEXT_COLOR = "#ffffff";
-/** Stroke color for the "Game Over" title. */
-export const GAMEOVER_STROKE_COLOR = "#000000";
+/** Text color for scene title text (used by GameOver, PartyCreation, etc.). */
+export const TITLE_TEXT_COLOR = "#ffffff";
+/** Stroke color for scene title text (used by GameOver, PartyCreation, etc.). */
+export const TITLE_STROKE_COLOR = "#000000";
+
+/** Background color for the PartyCreation scene camera. */
+export const PARTYCREATION_BG = 0x8866cc;

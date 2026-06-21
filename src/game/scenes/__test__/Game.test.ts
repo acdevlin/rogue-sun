@@ -12,8 +12,11 @@ vi.mock("phaser", () => {
     setVisible: vi.fn().mockReturnThis(),
     setText: vi.fn().mockReturnThis(),
     setColor: vi.fn().mockReturnThis(),
+    setFillStyle: vi.fn().mockReturnThis(),
     setSize: vi.fn().mockReturnThis(),
     setStroke: vi.fn().mockReturnThis(),
+    setInteractive: vi.fn().mockReturnThis(),
+    on: vi.fn().mockReturnThis(),
     width: 0,
     height: 0,
   });
@@ -73,6 +76,42 @@ describe("Game scene", () => {
   beforeEach(() => {
     game = new Game();
     game.create();
+  });
+
+  describe("initial state", () => {
+    it("actingActor is null before create", () => {
+      const g = new Game();
+      expect(g.actingActor).toBeNull();
+    });
+
+    it("actorsUi is empty before create", () => {
+      const g = new Game();
+      expect(g.actorsUi).toEqual([]);
+    });
+
+    it("creates a Retreat button that transitions to PartyCreation", () => {
+      const g = new Game();
+      const rectSpy = vi.spyOn(g.add, "rectangle");
+      g.create();
+
+      expect(g.add.text).toHaveBeenCalledWith(
+        expect.any(Number),
+        expect.any(Number),
+        "Retreat!",
+        expect.any(Object),
+      );
+
+      const rect = rectSpy.mock.results[rectSpy.mock.results.length - 1].value;
+      expect(rect.setStrokeStyle).toHaveBeenCalledWith(2, 0xffffff);
+      expect(rect.setInteractive).toHaveBeenCalledWith({ useHandCursor: true });
+
+      const pointerdown = rect.on.mock.calls.find(
+        (call: unknown[]) => call[0] === "pointerdown",
+      );
+      expect(pointerdown).toBeTruthy();
+      pointerdown![1]();
+      expect(g.scene.start).toHaveBeenCalledWith("PartyCreation");
+    });
   });
 
   describe("completeAction", () => {

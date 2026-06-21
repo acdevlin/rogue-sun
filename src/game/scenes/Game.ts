@@ -1,10 +1,11 @@
-import { Scene } from "phaser";
+import { Scene, GameObjects } from "phaser";
 import { ActionActor } from "../systems/ActionActor";
 import { TimelineSystem } from "../systems/TimelineSystem";
 import * as CONSTS from "../../constants";
 import { TEXT_RESOLUTION } from "../StartGame";
 import { players as playerData } from "../data/playerActorClasses";
 import { enemies as enemyData } from "../data/enemyActorClasses";
+import { createBtn } from "../utils/UiElements";
 
 interface ActorUI {
   actor: ActionActor;
@@ -28,6 +29,8 @@ export class Game extends Scene {
   currentlyActingHeader: Phaser.GameObjects.Text;
   currentlyActingBg: Phaser.GameObjects.Rectangle;
   actingActor: ActionActor | null = null;
+  retreatBtn: GameObjects.Text;
+  retreatBtnBg: GameObjects.Rectangle;
 
   // XXX temporary hardcoded actor data for testing purposes.
   players = playerData;
@@ -44,6 +47,8 @@ export class Game extends Scene {
    * Initializes all game objects, including timeline system and UI elements.
    */
   create() {
+    this.actorsUi = [];
+    this.actingActor = null;
     this.timeline = new TimelineSystem();
     const { width } = this.cameras.main;
     this.createActingHeader(width / 2);
@@ -149,6 +154,17 @@ export class Game extends Scene {
       enemyMaxLane,
       enemyFlankIdx,
     });
+
+    const y = this.cameras.main.height - CONSTS.BTN_BOTTOM_OFFSET;
+    const btn = createBtn({
+      scene: this,
+      cx: width / 2,
+      y,
+      label: "Retreat!",
+      onClick: () => this.scene.start("PartyCreation"),
+    });
+    this.retreatBtn = btn.label;
+    this.retreatBtnBg = btn.bg;
   }
 
   /**

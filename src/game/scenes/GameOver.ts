@@ -3,10 +3,10 @@ import { getSceneScale } from "../utils/SceneScaling";
 import {
   GAMEOVER_BG,
   GAMEOVER_ALPHA,
-  GAMEOVER_FONT_SIZE,
+  TITLE_FONT_SIZE,
   GAMEOVER_STROKE,
-  GAMEOVER_TEXT_COLOR,
-  GAMEOVER_STROKE_COLOR,
+  TITLE_TEXT_COLOR,
+  TITLE_STROKE_COLOR,
   UI_FONT_FAMILY,
 } from "../../constants";
 import { TEXT_RESOLUTION } from "../StartGame";
@@ -36,9 +36,9 @@ export class GameOver extends Scene {
 
     this.gameover_text = this.add.text(centerX, centerY, "Game Over", {
       fontFamily: UI_FONT_FAMILY,
-      fontSize: Math.round(GAMEOVER_FONT_SIZE * scale),
-      color: GAMEOVER_TEXT_COLOR,
-      stroke: GAMEOVER_STROKE_COLOR,
+      fontSize: Math.round(TITLE_FONT_SIZE * scale),
+      color: TITLE_TEXT_COLOR,
+      stroke: TITLE_STROKE_COLOR,
       strokeThickness: Math.round(GAMEOVER_STROKE * scale),
       align: "center",
       resolution: TEXT_RESOLUTION,
