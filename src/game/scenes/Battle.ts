@@ -20,10 +20,10 @@ interface ActorUI {
 }
 
 /**
- * The main game scene, showing individual actors (both enemies and allies) taking
+ * The main battle scene, showing individual actors (both enemies and allies) taking
  * turns based on their speed and readiness threshold.
  */
-export class Game extends Scene {
+export class Battle extends Scene {
   timeline: TimelineSystem;
   actorsUi: ActorUI[] = [];
   currentlyActingHeader: Phaser.GameObjects.Text;
@@ -40,7 +40,7 @@ export class Game extends Scene {
    * Default constructor.
    */
   constructor() {
-    super("Game");
+    super("Battle");
   }
 
   /**

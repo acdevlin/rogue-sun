@@ -1,6 +1,6 @@
 import { Boot } from "./scenes/Boot";
 import { GameOver } from "./scenes/GameOver";
-import { Game as MainGame } from "./scenes/Game";
+import { Battle } from "./scenes/Battle";
 import { PartyCreation } from "./scenes/PartyCreation";
 import { MainMenu } from "./scenes/MainMenu";
 import * as Phaser from "phaser";
@@ -27,7 +27,7 @@ const config: Phaser.Types.Core.GameConfig & { resolution: number } = {
     createContainer: true,
   },
   resolution: TEXT_RESOLUTION,
-  scene: [Boot, Preloader, MainMenu, MainGame, GameOver, PartyCreation],
+  scene: [Boot, Preloader, MainMenu, Battle, GameOver, PartyCreation],
   callbacks: {
     postBoot: (game) => {
       try {

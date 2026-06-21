@@ -43,7 +43,7 @@ export class PartyCreation extends Scene {
       cx: centerX,
       y,
       label: "Start Game",
-      onClick: () => this.scene.start("Game"),
+      onClick: () => this.scene.start("Battle"),
       scale,
     });
     this.startBtn = btn.label;

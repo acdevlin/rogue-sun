@@ -102,6 +102,6 @@ describe("PartyCreation Scene", () => {
     );
     expect(pointerdown).toBeTruthy();
     pointerdown![1]();
-    expect(s.scene.start).toHaveBeenCalledWith("Game");
+    expect(s.scene.start).toHaveBeenCalledWith("Battle");
   });
 });
