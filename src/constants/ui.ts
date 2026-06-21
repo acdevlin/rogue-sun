@@ -18,7 +18,29 @@ export const CARD_H = 12;
 /** Vertical gap between actor cards. */
 export const CARD_GAP = 94;
 /** Y-position of the first actor card. */
-export const CARD_START_Y = 80;
+export const CARD_START_Y = 132;
+/** Y-position for the lane header labels (BACKLINE/MIDLINE/FRONTLINE). */
+export const LANE_HEADER_Y = 55;
+/** Font size for lane header text. */
+export const LANE_HEADER_FONT = 18;
+/** Color for lane header text. */
+export const LANE_HEADER_COLOR = "#ffffff";
+/** Horizontal offset between position lanes (BACKLINE/MIDLINE/FRONTLINE). */
+export const LANE_OFFSET = 210;
+/** Number of primary lanes (BACKLINE, MIDLINE, FRONTLINE). */
+export const NUM_LANES = 3;
+/** Width in pixels for lane guide lines. */
+export const LANE_LINE_W = 1;
+/** Color for lane guide lines. */
+export const LANE_LINE_COLOR = 0x444444;
+/** Y-offset from lane header bottom to the header separator line. */
+export const LANE_HEADER_SEP_Y = 6;
+/** Padding in pixels on each side of the FLANK label within the separator line. */
+export const FLANK_LABEL_PAD = 12;
+/** Fallback width for the FLANK label when rendering context is unavailable (e.g. in tests). */
+export const FLANK_LABEL_FALLBACK_W = 56;
+/** Vertical gap between the bottom of the last non-FLANK card and the first FLANK card. */
+export const FLANK_OFFSET = 34;
 /** X-position offset for player cards from the left edge, and right margin for enemy cards. */
 export const PLAYER_X = 40;
 /** Extra width added to the card rectangle beyond the progress bar width. */

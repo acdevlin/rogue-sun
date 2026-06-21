@@ -19,6 +19,11 @@ vi.mock("phaser", () => {
   });
 
   return {
+    AUTO: 0,
+    Scale: {
+      RESIZE: "resize",
+      Center: { CENTER_BOTH: "center-both" },
+    },
     Scene: class MockScene {
       key: string;
       cameras = {
@@ -40,6 +45,28 @@ vi.mock("phaser", () => {
   };
 });
 
+type ActorParams = {
+  controller: ActorController;
+  name: string;
+  speed: number;
+  health: number;
+  stamina: number;
+  energy: number;
+  position: ActorPosition;
+};
+
+const makeActor = (overrides: Partial<ActorParams> = {}): ActionActor =>
+  new ActionActor({
+    controller: ActorController.PLAYER,
+    name: "Test",
+    speed: 30,
+    health: 100,
+    stamina: 100,
+    energy: 100,
+    position: ActorPosition.FRONTLINE,
+    ...overrides,
+  });
+
 describe("Game scene", () => {
   let game: Game;
 
@@ -50,15 +77,7 @@ describe("Game scene", () => {
 
   describe("completeAction", () => {
     it("resets actingActor to null", () => {
-      const a = new ActionActor({
-        controller: ActorController.PLAYER,
-        name: "Test",
-        speed: 30,
-        health: 100,
-        stamina: 100,
-        energy: 100,
-        position: ActorPosition.FRONTLINE,
-      });
+      const a = makeActor({ name: "Test" });
       a.progress = 100;
       game.actingActor = a;
       game.completeAction();
@@ -66,15 +85,7 @@ describe("Game scene", () => {
     });
 
     it("resets the acting actor progress and ready state", () => {
-      const a = new ActionActor({
-        controller: ActorController.PLAYER,
-        name: "Test",
-        speed: 30,
-        health: 100,
-        stamina: 100,
-        energy: 100,
-        position: ActorPosition.FRONTLINE,
-      });
+      const a = makeActor({ name: "Test" });
       a.progress = 100;
       game.actingActor = a;
       game.completeAction();
@@ -84,23 +95,11 @@ describe("Game scene", () => {
     });
 
     it("does not affect other actors", () => {
-      const a = new ActionActor({
-        controller: ActorController.PLAYER,
-        name: "Actor",
-        speed: 30,
-        health: 100,
-        stamina: 100,
-        energy: 100,
-        position: ActorPosition.FRONTLINE,
-      });
-      const b = new ActionActor({
-        controller: ActorController.ENEMY,
+      const a = makeActor({ name: "Actor" });
+      const b = makeActor({
         name: "Bystander",
+        controller: ActorController.ENEMY,
         speed: 25,
-        health: 100,
-        stamina: 100,
-        energy: 100,
-        position: ActorPosition.FRONTLINE,
       });
       b.progress = 50;
       game.timeline.addActor(b);
@@ -171,23 +170,15 @@ describe("Game scene", () => {
   describe("update - progress snapshot", () => {
     it("reverts non-ready actors when a new actor becomes ready", () => {
       game.timeline.actors = [];
-      const fast = new ActionActor({
-        controller: ActorController.PLAYER,
+      const fast = makeActor({
         name: "Fast",
+        controller: ActorController.PLAYER,
         speed: 80,
-        health: 100,
-        stamina: 100,
-        energy: 100,
-        position: ActorPosition.FRONTLINE,
       });
-      const slow = new ActionActor({
-        controller: ActorController.ENEMY,
+      const slow = makeActor({
         name: "Slow",
+        controller: ActorController.ENEMY,
         speed: 5,
-        health: 100,
-        stamina: 100,
-        energy: 100,
-        position: ActorPosition.FRONTLINE,
       });
       game.timeline.addActor(fast);
       game.timeline.addActor(slow);
@@ -206,23 +197,11 @@ describe("Game scene", () => {
 
     it("does not revert the actor who became ready", () => {
       game.timeline.actors = [];
-      const a = new ActionActor({
-        controller: ActorController.PLAYER,
-        name: "Speedster",
-        speed: 90,
-        health: 100,
-        stamina: 100,
-        energy: 100,
-        position: ActorPosition.FRONTLINE,
-      });
-      const b = new ActionActor({
-        controller: ActorController.ENEMY,
+      const a = makeActor({ name: "Speedster", speed: 90 });
+      const b = makeActor({
         name: "Normal",
+        controller: ActorController.ENEMY,
         speed: 20,
-        health: 100,
-        stamina: 100,
-        energy: 100,
-        position: ActorPosition.FRONTLINE,
       });
       game.timeline.addActor(a);
       game.timeline.addActor(b);
@@ -233,23 +212,11 @@ describe("Game scene", () => {
 
     it("does not apply revert when no one became ready", () => {
       game.timeline.actors = [];
-      const a = new ActionActor({
-        controller: ActorController.PLAYER,
-        name: "Slowpoke",
-        speed: 5,
-        health: 100,
-        stamina: 100,
-        energy: 100,
-        position: ActorPosition.FRONTLINE,
-      });
-      const b = new ActionActor({
-        controller: ActorController.ENEMY,
+      const a = makeActor({ name: "Slowpoke", speed: 5 });
+      const b = makeActor({
         name: "Snail",
+        controller: ActorController.ENEMY,
         speed: 3,
-        health: 100,
-        stamina: 100,
-        energy: 100,
-        position: ActorPosition.FRONTLINE,
       });
       game.timeline.addActor(a);
       game.timeline.addActor(b);
@@ -263,23 +230,11 @@ describe("Game scene", () => {
 
     it("handles all actors already at progress zero", () => {
       game.timeline.actors = [];
-      const a = new ActionActor({
-        controller: ActorController.PLAYER,
-        name: "A",
-        speed: 50,
-        health: 100,
-        stamina: 100,
-        energy: 100,
-        position: ActorPosition.FRONTLINE,
-      });
-      const b = new ActionActor({
-        controller: ActorController.ENEMY,
+      const a = makeActor({ name: "A", speed: 50 });
+      const b = makeActor({
         name: "B",
+        controller: ActorController.ENEMY,
         speed: 30,
-        health: 100,
-        stamina: 100,
-        energy: 100,
-        position: ActorPosition.FRONTLINE,
       });
       game.timeline.addActor(a);
       game.timeline.addActor(b);
@@ -352,7 +307,7 @@ describe("Game scene", () => {
       expect(game.actorsUi[1].label.setText).toHaveBeenCalledWith(
         "Mage [READY]",
       );
-      expect(game.actorsUi[2].label.setText).toHaveBeenCalledWith("Thief");
+      expect(game.actorsUi[2].label.setText).toHaveBeenCalledWith("Slacker");
     });
 
     it("preserves actors at 100% progress when another actor joins ready queue", () => {
@@ -361,23 +316,15 @@ describe("Game scene", () => {
       // This addresses the twin enemy scenario where same-speed actors both
       // reach 100% but only one joins ready queue per update.
       game.timeline.actors = [];
-      const twin1 = new ActionActor({
-        controller: ActorController.ENEMY,
+      const twin1 = makeActor({
         name: "Twin1",
-        speed: 25,
-        health: 100,
-        stamina: 100,
-        energy: 100,
-        position: ActorPosition.FRONTLINE,
-      });
-      const twin2 = new ActionActor({
         controller: ActorController.ENEMY,
-        name: "Twin2",
         speed: 25,
-        health: 100,
-        stamina: 100,
-        energy: 100,
-        position: ActorPosition.FRONTLINE,
+      });
+      const twin2 = makeActor({
+        name: "Twin2",
+        controller: ActorController.ENEMY,
+        speed: 25,
       });
       game.timeline.addActor(twin1);
       game.timeline.addActor(twin2);
@@ -423,23 +370,11 @@ describe("Game scene", () => {
   describe("update with acting actor", () => {
     it("other actor does not progress while someone is acting", () => {
       game.timeline.actors = [];
-      const a = new ActionActor({
-        controller: ActorController.PLAYER,
-        name: "A",
-        speed: 100,
-        health: 100,
-        stamina: 100,
-        energy: 100,
-        position: ActorPosition.FRONTLINE,
-      });
-      const b = new ActionActor({
-        controller: ActorController.ENEMY,
+      const a = makeActor({ name: "A", speed: 100 });
+      const b = makeActor({
         name: "B",
+        controller: ActorController.ENEMY,
         speed: 60,
-        health: 100,
-        stamina: 100,
-        energy: 100,
-        position: ActorPosition.FRONTLINE,
       });
       game.timeline.addActor(a);
       game.timeline.addActor(b);
@@ -564,29 +499,188 @@ describe("Game scene", () => {
   });
 
   describe("card overlap", () => {
-    it("no character cards overlap one another", () => {
+    it("same-side character cards do not overlap one another", () => {
       const rectSpy = vi.spyOn(game.add, "rectangle");
       game = new Game();
       game.create();
 
-      const centers: { x: number; y: number }[] = [];
+      const playerCenters: { x: number; y: number }[] = [];
+      const enemyCenters: { x: number; y: number }[] = [];
       // Index 0 is currentlyActingBg; per-actor: 1=card, 2=bg, 3=fill, 4=highlight
       for (let i = 0; i < game.actorsUi.length; i++) {
         const card = rectSpy.mock.calls[1 + i * 4] as number[];
-        centers.push({ x: card[0], y: card[1] });
+        const isPlayer =
+          game.actorsUi[i].actor.controller === CONSTS.ActorController.PLAYER;
+        (isPlayer ? playerCenters : enemyCenters).push({
+          x: card[0],
+          y: card[1],
+        });
       }
 
       const halfW = (CONSTS.CARD_W + CONSTS.CARD_EXTRA_W) / 2;
       const halfH = CONSTS.CARD_HEIGHT / 2;
 
-      for (let i = 0; i < centers.length; i++) {
-        for (let j = i + 1; j < centers.length; j++) {
-          const dx = Math.abs(centers[i].x - centers[j].x);
-          const dy = Math.abs(centers[i].y - centers[j].y);
-          const overlap = dx < halfW + halfW && dy < halfH + halfH;
-          expect(overlap).toBe(false);
+      const checkGroup = (centers: { x: number; y: number }[]) => {
+        for (let i = 0; i < centers.length; i++) {
+          for (let j = i + 1; j < centers.length; j++) {
+            const dx = Math.abs(centers[i].x - centers[j].x);
+            const dy = Math.abs(centers[i].y - centers[j].y);
+            const overlap = dx < halfW + halfW && dy < halfH + halfH;
+            expect(overlap).toBe(false);
+          }
+        }
+      };
+
+      checkGroup(playerCenters);
+      checkGroup(enemyCenters);
+    });
+  });
+
+  describe("createLanes", () => {
+    it("creates lane header labels for each PRIMARY_LANE on both sides", () => {
+      const g = new Game();
+      const textSpy = vi.spyOn(g.add, "text");
+      g.create();
+
+      const laneHeaders = textSpy.mock.calls.filter(
+        (call: unknown[]) => (call[1] as number) === CONSTS.LANE_HEADER_Y,
+      );
+      expect(laneHeaders.length).toBe(CONSTS.PRIMARY_LANES.length * 2);
+    });
+
+    it("does not draw FLANK separator when no flank actors exist", () => {
+      const g = new Game();
+      g.players = g.players.filter((p) => p.position !== ActorPosition.FLANK);
+      g.enemies = g.enemies.filter((e) => e.position !== ActorPosition.FLANK);
+      const textSpy = vi.spyOn(g.add, "text");
+      g.create();
+
+      const flankCalls = textSpy.mock.calls.filter(
+        (call: unknown[]) => (call[2] as string) === "FLANK",
+      );
+      expect(flankCalls.length).toBe(0);
+    });
+  });
+
+  describe("flank positioning", () => {
+    it("positions flank cards below non-flank cards", () => {
+      const g = new Game();
+      const rectSpy = vi.spyOn(g.add, "rectangle");
+      g.create();
+
+      let lastNonFlankY = -1;
+      let firstFlankY = -1;
+
+      for (let i = 0; i < g.actorsUi.length; i++) {
+        const card = rectSpy.mock.calls[1 + i * 4] as number[];
+        const pos = g.actorsUi[i].actor.position;
+        if (pos === ActorPosition.FLANK) {
+          if (firstFlankY === -1) firstFlankY = card[1];
+        } else {
+          lastNonFlankY = card[1];
         }
       }
+
+      expect(firstFlankY).toBeGreaterThan(lastNonFlankY);
+    });
+
+    it("handles zero flank actors on both sides", () => {
+      const g = new Game();
+      g.players = g.players.filter((p) => p.position !== ActorPosition.FLANK);
+      g.enemies = g.enemies.filter((e) => e.position !== ActorPosition.FLANK);
+
+      expect(() => g.create()).not.toThrow();
+      expect(g.actorsUi.length).toBe(g.players.length + g.enemies.length);
+    });
+
+    it("handles all actors in FLANK position", () => {
+      const g = new Game();
+      g.players = g.players.map((p) => ({
+        ...p,
+        position: ActorPosition.FLANK,
+      }));
+      g.enemies = g.enemies.map((e) => ({
+        ...e,
+        position: ActorPosition.FLANK,
+      }));
+
+      expect(() => g.create()).not.toThrow();
+      expect(g.actorsUi.length).toBe(g.players.length + g.enemies.length);
+    });
+
+    it("both sides use independent maxLane for flank y-offset", () => {
+      const g = new Game();
+      g.players = [
+        {
+          name: "Solo",
+          speed: 10,
+          health: 100,
+          stamina: 100,
+          energy: 100,
+          position: ActorPosition.FRONTLINE,
+        },
+        {
+          name: "Flanker",
+          speed: 10,
+          health: 100,
+          stamina: 100,
+          energy: 100,
+          position: ActorPosition.FLANK,
+        },
+      ];
+      g.enemies = [
+        {
+          name: "Horde1",
+          speed: 10,
+          health: 100,
+          stamina: 100,
+          energy: 100,
+          position: ActorPosition.FRONTLINE,
+        },
+        {
+          name: "Horde2",
+          speed: 10,
+          health: 100,
+          stamina: 100,
+          energy: 100,
+          position: ActorPosition.FRONTLINE,
+        },
+        {
+          name: "Horde3",
+          speed: 10,
+          health: 100,
+          stamina: 100,
+          energy: 100,
+          position: ActorPosition.FRONTLINE,
+        },
+        {
+          name: "Horde Flanker",
+          speed: 10,
+          health: 100,
+          stamina: 100,
+          energy: 100,
+          position: ActorPosition.FLANK,
+        },
+      ];
+
+      const rectSpy = vi.spyOn(g.add, "rectangle");
+      expect(() => g.create()).not.toThrow();
+      // Player has 1 non-flank (maxLane=1), enemy has 3 (maxLane=3)
+      // Flank actors on different sides should have different y
+      const playerFlank = g.actorsUi.find((ui) => ui.actor.name === "Flanker");
+      const enemyFlank = g.actorsUi.find(
+        (ui) => ui.actor.name === "Horde Flanker",
+      );
+      expect(playerFlank).toBeTruthy();
+      expect(enemyFlank).toBeTruthy();
+      // Enemy flank should be lower (more non-flank cards above it)
+      const playerCard =
+        rectSpy.mock.calls[1 + g.actorsUi.indexOf(playerFlank!) * 4];
+      const enemyCard =
+        rectSpy.mock.calls[1 + g.actorsUi.indexOf(enemyFlank!) * 4];
+      expect((enemyCard as number[])[1]).toBeGreaterThan(
+        (playerCard as number[])[1],
+      );
     });
   });
 });

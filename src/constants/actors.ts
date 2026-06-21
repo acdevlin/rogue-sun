@@ -29,8 +29,16 @@ export const ActorPosition = {
   FLANK: "FLANK",
 };
 
+/** Ordered list of primary (non-FLANK) lane positions. */
+export const PRIMARY_LANES = [
+  ActorPosition.BACKLINE,
+  ActorPosition.MIDLINE,
+  ActorPosition.FRONTLINE,
+];
+
 export type ActorPosition = (typeof ActorPosition)[keyof typeof ActorPosition];
 
+/** Controller values that determine how an actor is controlled (player vs AI). */
 export const ActorController = {
   PLAYER: "PLAYER",
   ENEMY: "ENEMY",
