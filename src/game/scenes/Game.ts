@@ -3,6 +3,8 @@ import { ActionActor } from "../systems/ActionActor";
 import { TimelineSystem } from "../systems/TimelineSystem";
 import * as CONSTS from "../../constants";
 import { TEXT_RESOLUTION } from "../StartGame";
+import { players as playerData } from "../data/playerActorClasses";
+import { enemies as enemyData } from "../data/enemyActorClasses";
 
 interface ActorUI {
   actor: ActionActor;
@@ -28,114 +30,8 @@ export class Game extends Scene {
   actingActor: ActionActor | null = null;
 
   // XXX temporary hardcoded actor data for testing purposes.
-  players = [
-    {
-      name: "Fighter",
-      speed: CONSTS.SPD_FIGHTER,
-      health: 120,
-      stamina: 80,
-      energy: 50,
-      position: CONSTS.ActorPosition.FRONTLINE,
-    },
-    {
-      name: "Mage",
-      speed: CONSTS.SPD_MAGE,
-      health: 80,
-      stamina: 60,
-      energy: 120,
-      position: CONSTS.ActorPosition.BACKLINE,
-    },
-    {
-      name: "Thief",
-      speed: CONSTS.SPD_THIEF,
-      health: 90,
-      stamina: 120,
-      energy: 60,
-      position: CONSTS.ActorPosition.FLANK,
-    },
-    {
-      name: "Slacker",
-      speed: CONSTS.SPD_SLACKER,
-      health: 150,
-      stamina: 50,
-      energy: 50,
-      position: CONSTS.ActorPosition.MIDLINE,
-    },
-    {
-      name: "Summoner",
-      speed: CONSTS.SPD_MAGE,
-      health: 70,
-      stamina: 100,
-      energy: 150,
-      position: CONSTS.ActorPosition.BACKLINE,
-    },
-  ];
-  enemies = [
-    {
-      name: "Goblin",
-      speed: CONSTS.SPD_GOBLIN,
-      health: 60,
-      stamina: 40,
-      energy: 20,
-      position: CONSTS.ActorPosition.FLANK,
-    },
-    {
-      name: "Orc",
-      speed: CONSTS.SPD_ORC,
-      health: 100,
-      stamina: 80,
-      energy: 40,
-      position: CONSTS.ActorPosition.BACKLINE,
-    },
-    {
-      name: "Skeleton",
-      speed: CONSTS.SPD_SKELETON,
-      health: 50,
-      stamina: 30,
-      energy: 30,
-      position: CONSTS.ActorPosition.MIDLINE,
-    },
-    {
-      name: "Dragon",
-      speed: CONSTS.SPD_DRAGON,
-      health: 200,
-      stamina: 150,
-      energy: 100,
-      position: CONSTS.ActorPosition.FLANK,
-    },
-    {
-      name: "Bat",
-      speed: CONSTS.SPD_BAT,
-      health: 30,
-      stamina: 20,
-      energy: 10,
-      position: CONSTS.ActorPosition.FRONTLINE,
-    },
-    {
-      name: "Slime",
-      speed: CONSTS.SPD_SLIME,
-      health: 80,
-      stamina: 50,
-      energy: 20,
-      position: CONSTS.ActorPosition.BACKLINE,
-    },
-    {
-      name: "Twin 1",
-      speed: CONSTS.SPD_TWIN,
-      health: 70,
-      stamina: 40,
-      energy: 30,
-      position: CONSTS.ActorPosition.MIDLINE,
-    },
-    {
-      name: "Twin 2",
-      speed: CONSTS.SPD_TWIN,
-      health: 70,
-      stamina: 40,
-      energy: 30,
-      position: CONSTS.ActorPosition.MIDLINE,
-    },
-  ];
+  players = playerData;
+  enemies = enemyData;
 
   /**
    * Default constructor.
