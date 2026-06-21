@@ -26,8 +26,8 @@ export class Preloader extends Scene {
   init() {
     const { centerX, centerY, scale } = getSceneScale(this);
 
-    const bg = this.add.image(centerX, centerY, "background");
-    bg.setScale(scale);
+    const bgImg = this.add.image(centerX, centerY, "background");
+    bgImg.setScale(scale);
 
     const barWidth = Math.round(PRELOADER_BAR_W * scale);
     const barHeight = Math.round(PRELOADER_BAR_H * scale);

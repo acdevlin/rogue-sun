@@ -16,6 +16,15 @@ export default tseslint.config(
     },
     rules: {
       "@typescript-eslint/no-unused-vars": "warn",
+      "id-length": [
+        "warn",
+        {
+          min: 3,
+          exceptions: ["_", "x", "y", "z", "i", "j", "k", "dx", "dy"],
+          exceptionPatterns: ["^_[a-z]"],
+          properties: "never",
+        },
+      ],
       "no-console": "warn",
       semi: ["error", "always"],
       quotes: ["error", "double"],

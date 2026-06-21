@@ -53,8 +53,8 @@ export class Battle extends Scene {
     const { width } = this.cameras.main;
     this.createActingHeader(width / 2);
 
-    const bw = CONSTS.CARD_W;
-    const bh = CONSTS.CARD_H;
+    const cardW = CONSTS.CARD_W;
+    const cardH = CONSTS.CARD_H;
     const gap = CONSTS.CARD_GAP;
 
     const playerLaneCounts: Record<string, number> = {};
@@ -63,37 +63,44 @@ export class Battle extends Scene {
 
     // Creates an ActionActor from raw data and registers it on the timeline.
     const createActor = (
-      d: (typeof this.players)[number],
+      data: (typeof this.players)[number],
       controller: string,
     ) => {
-      const a = new ActionActor({
+      const actor = new ActionActor({
         controller,
-        name: d.name,
-        speed: d.speed,
-        health: d.health,
-        stamina: d.stamina,
-        energy: d.energy,
-        position: d.position,
+        name: data.name,
+        speed: data.speed,
+        health: data.health,
+        stamina: data.stamina,
+        energy: data.energy,
+        position: data.position,
       });
-      this.timeline.addActor(a);
-      return a;
+      this.timeline.addActor(actor);
+      return actor;
     };
 
     // Places a non-flank actor card in the correct lane column (BACKLINE/MIDLINE/FRONTLINE)
     // and stacks it vertically based on how many cards are already in that lane.
     const positionNonFlank = (
-      d: (typeof this.players)[number],
-      a: ActionActor,
+      data: (typeof this.players)[number],
+      actor: ActionActor,
       laneCounts: Record<string, number>,
       isEnemy: boolean,
     ) => {
-      const laneIdx = CONSTS.PRIMARY_LANES.indexOf(d.position);
+      const laneIdx = CONSTS.PRIMARY_LANES.indexOf(data.position);
       const x = isEnemy
-        ? width - CONSTS.PLAYER_X - bw - laneIdx * CONSTS.LANE_OFFSET
+        ? width - CONSTS.PLAYER_X - cardW - laneIdx * CONSTS.LANE_OFFSET
         : CONSTS.PLAYER_X + laneIdx * CONSTS.LANE_OFFSET;
-      const y = CONSTS.CARD_START_Y + (laneCounts[d.position] ?? 0) * gap;
-      laneCounts[d.position] = (laneCounts[d.position] ?? 0) + 1;
-      this.createActorUIElement(a, x, y, bw, bh, CONSTS.PROGRESS_FILL);
+      const y = CONSTS.CARD_START_Y + (laneCounts[data.position] ?? 0) * gap;
+      laneCounts[data.position] = (laneCounts[data.position] ?? 0) + 1;
+      this.createActorUIElement(
+        actor,
+        x,
+        y,
+        cardW,
+        cardH,
+        CONSTS.PROGRESS_FILL,
+      );
     };
 
     // Processes all actors for one side (player or enemy): creates each actor,
@@ -104,12 +111,12 @@ export class Battle extends Scene {
       laneCounts: Record<string, number>,
     ) => {
       const isPlayer = controller === CONSTS.ActorController.PLAYER;
-      for (const d of data) {
-        const a = createActor(d, controller);
-        if (d.position === CONSTS.ActorPosition.FLANK) {
-          flankActors.push({ actor: a, isPlayer });
+      for (const entry of data) {
+        const actor = createActor(entry, controller);
+        if (entry.position === CONSTS.ActorPosition.FLANK) {
+          flankActors.push({ actor, isPlayer });
         } else {
-          positionNonFlank(d, a, laneCounts, !isPlayer);
+          positionNonFlank(entry, actor, laneCounts, !isPlayer);
         }
       }
     };
@@ -133,20 +140,27 @@ export class Battle extends Scene {
     // Position flank actors in a horizontal row across primary lane columns,
     // starting from FRONTLINE inward. All flank cards sit below the last
     // non-flank card with a FLANK_OFFSET gap.
-    for (const { actor: a, isPlayer } of flankActors) {
+    for (const { actor, isPlayer } of flankActors) {
       const idx = isPlayer ? playerFlankIdx++ : enemyFlankIdx++;
       const maxLane = isPlayer ? playerMaxLane : enemyMaxLane;
       const lidx = Math.max(0, CONSTS.NUM_LANES - 1 - idx);
       const x = isPlayer
         ? CONSTS.PLAYER_X + lidx * CONSTS.LANE_OFFSET
-        : width - CONSTS.PLAYER_X - bw - lidx * CONSTS.LANE_OFFSET;
+        : width - CONSTS.PLAYER_X - cardW - lidx * CONSTS.LANE_OFFSET;
       const y = CONSTS.CARD_START_Y + maxLane * gap + CONSTS.FLANK_OFFSET;
-      this.createActorUIElement(a, x, y, bw, bh, CONSTS.PROGRESS_FILL);
+      this.createActorUIElement(
+        actor,
+        x,
+        y,
+        cardW,
+        cardH,
+        CONSTS.PROGRESS_FILL,
+      );
     }
 
     // Draw lane header labels, horizontal/vertical guide lines, and flank separators.
     this.createLanes({
-      bw,
+      cardW,
       width,
       gap,
       playerMaxLane,
@@ -170,11 +184,11 @@ export class Battle extends Scene {
   /**
    * Creates the "currently acting" header text and background rectangle.
    *
-   * @param cx Horizontal center of the scene in pixels.
+   * @param centerX Horizontal center of the scene in pixels.
    */
-  private createActingHeader(cx: number) {
+  private createActingHeader(centerX: number) {
     this.currentlyActingHeader = this.add
-      .text(cx, CONSTS.HEADER_Y, "", {
+      .text(centerX, CONSTS.HEADER_Y, "", {
         fontFamily: CONSTS.UI_FONT_FAMILY,
         fontSize: CONSTS.HEADER_FONT,
         color: CONSTS.HEADER_TEXT_COLOR,
@@ -185,7 +199,7 @@ export class Battle extends Scene {
       })
       .setOrigin(0.5);
     this.currentlyActingBg = this.add
-      .rectangle(cx, CONSTS.HEADER_Y, 0, 0, CONSTS.HEADER_BG)
+      .rectangle(centerX, CONSTS.HEADER_Y, 0, 0, CONSTS.HEADER_BG)
       .setOrigin(0.5)
       .setDepth(-1)
       .setVisible(false);
@@ -196,7 +210,7 @@ export class Battle extends Scene {
    */
   private createLanes(opts: {
     /** Card width in pixels, used for layout alignment. */
-    bw: number;
+    cardW: number;
     /** Scene width in pixels, used for enemy-side mirroring. */
     width: number;
     /** Vertical gap between actor cards in pixels. */
@@ -211,7 +225,7 @@ export class Battle extends Scene {
     enemyFlankIdx: number;
   }) {
     const {
-      bw,
+      cardW,
       width,
       gap,
       playerMaxLane,
@@ -219,7 +233,7 @@ export class Battle extends Scene {
       enemyMaxLane,
       enemyFlankIdx,
     } = opts;
-    const laneSpan = (CONSTS.NUM_LANES - 1) * CONSTS.LANE_OFFSET + bw;
+    const laneSpan = (CONSTS.NUM_LANES - 1) * CONSTS.LANE_OFFSET + cardW;
     const laneStyle: Phaser.Types.GameObjects.Text.TextStyle = {
       fontFamily: CONSTS.UI_FONT_FAMILY,
       fontSize: `${CONSTS.LANE_HEADER_FONT}px`,
@@ -227,24 +241,24 @@ export class Battle extends Scene {
       resolution: TEXT_RESOLUTION,
     };
 
-    const drawLaneLabel = (cx: number, name: string) => {
+    const drawLaneLabel = (centerX: number, name: string) => {
       this.add
-        .text(cx, CONSTS.LANE_HEADER_Y, name, laneStyle)
+        .text(centerX, CONSTS.LANE_HEADER_Y, name, laneStyle)
         .setOrigin(0.5, 0);
     };
 
     for (let i = 0; i < CONSTS.NUM_LANES; i++) {
       const name = CONSTS.PRIMARY_LANES[i].toUpperCase();
-      drawLaneLabel(CONSTS.PLAYER_X + i * CONSTS.LANE_OFFSET + bw / 2, name);
+      drawLaneLabel(CONSTS.PLAYER_X + i * CONSTS.LANE_OFFSET + cardW / 2, name);
       drawLaneLabel(
-        width - CONSTS.PLAYER_X - bw / 2 - i * CONSTS.LANE_OFFSET,
+        width - CONSTS.PLAYER_X - cardW / 2 - i * CONSTS.LANE_OFFSET,
         name,
       );
     }
 
     const sepY =
       CONSTS.LANE_HEADER_Y + CONSTS.LANE_HEADER_FONT + CONSTS.LANE_HEADER_SEP_Y;
-    const halfGap = (CONSTS.LANE_OFFSET - bw) / 2;
+    const halfGap = (CONSTS.LANE_OFFSET - cardW) / 2;
     const pad = CONSTS.CARD_Y_OFFSET + CONSTS.CARD_HEIGHT / 2;
 
     const pBot =
@@ -261,10 +275,10 @@ export class Battle extends Scene {
           CONSTS.FLANK_OFFSET / 2
         : CONSTS.CARD_START_Y + Math.max(0, enemyMaxLane - 1) * gap;
 
-    const drawLineHorizontal = (cx: number) => {
+    const drawLineHorizontal = (centerX: number) => {
       this.add
         .rectangle(
-          cx,
+          centerX,
           sepY,
           laneSpan,
           CONSTS.LANE_LINE_W,
@@ -291,11 +305,11 @@ export class Battle extends Scene {
 
     for (let j = 0; j < CONSTS.NUM_LANES - 1; j++) {
       drawLineVertical(
-        CONSTS.PLAYER_X + bw + halfGap + j * CONSTS.LANE_OFFSET,
+        CONSTS.PLAYER_X + cardW + halfGap + j * CONSTS.LANE_OFFSET,
         pBot,
       );
       drawLineVertical(
-        width - CONSTS.PLAYER_X - bw - halfGap - j * CONSTS.LANE_OFFSET,
+        width - CONSTS.PLAYER_X - cardW - halfGap - j * CONSTS.LANE_OFFSET,
         eBot,
       );
     }
@@ -308,9 +322,9 @@ export class Battle extends Scene {
     ) => {
       if (flankIdx === 0) return;
       const flankSepY = nonFlankY + pad + CONSTS.FLANK_OFFSET / 2;
-      const cx = (sideLeft + sideRight) / 2;
+      const centerX = (sideLeft + sideRight) / 2;
       const label = this.add
-        .text(cx, flankSepY, "FLANK", laneStyle)
+        .text(centerX, flankSepY, "FLANK", laneStyle)
         .setOrigin(0.5);
       const gapHalf =
         (label.width || CONSTS.FLANK_LABEL_FALLBACK_W) / 2 +
@@ -318,18 +332,18 @@ export class Battle extends Scene {
 
       this.add
         .rectangle(
-          (cx - gapHalf + sideLeft) / 2,
+          (centerX - gapHalf + sideLeft) / 2,
           flankSepY,
-          cx - gapHalf - sideLeft,
+          centerX - gapHalf - sideLeft,
           CONSTS.LANE_LINE_W,
           CONSTS.LANE_LINE_COLOR,
         )
         .setOrigin(0.5);
       this.add
         .rectangle(
-          (cx + gapHalf + sideRight) / 2,
+          (centerX + gapHalf + sideRight) / 2,
           flankSepY,
-          sideRight - cx - gapHalf,
+          sideRight - centerX - gapHalf,
           CONSTS.LANE_LINE_W,
           CONSTS.LANE_LINE_COLOR,
         )
@@ -379,7 +393,7 @@ export class Battle extends Scene {
       .setStrokeStyle(CONSTS.CARD_STROKE_W, CONSTS.CARD_STROKE)
       .setOrigin(0.5)
       .setDepth(CONSTS.CARD_DEPTH);
-    const bg = this.add
+    const progressBg = this.add
       .rectangle(x + width / 2, y + height / 2, width, height, CONSTS.FILL_BG)
       .setOrigin(0.5);
     const fill = this.add
@@ -436,7 +450,7 @@ export class Battle extends Scene {
       actor,
       card,
       fill,
-      bg,
+      bg: progressBg,
       highlight,
       label,
       healthTxt,
@@ -449,9 +463,9 @@ export class Battle extends Scene {
    * Overrides the default update loop to handle timeline progression and actor turns.
    *
    * @param _t Unused parameter for current time, required by Phaser's update signature.
-   * @param dt Delta time in milliseconds since the last update, used to advance the timeline.
+   * @param deltaMs Delta time in milliseconds since the last update, used to advance the timeline.
    */
-  update(_t: number, dt: number) {
+  update(_t: number, deltaMs: number) {
     if (this.actingActor) {
       this.syncUI();
       return;
@@ -463,7 +477,7 @@ export class Battle extends Scene {
       return;
     }
 
-    this.advanceTimelineAndHandleReadyQueue(dt);
+    this.advanceTimelineAndHandleReadyQueue(deltaMs);
   }
 
   /**
@@ -480,10 +494,10 @@ export class Battle extends Scene {
           : CONSTS.ENEMY_ACTING_STROKE,
         CONSTS.HEADER_STROKE,
       );
-    const w = this.currentlyActingHeader.width;
+    const headerWidth = this.currentlyActingHeader.width;
     this.currentlyActingBg
       .setSize(
-        w + CONSTS.HEADER_BG_PAD_X,
+        headerWidth + CONSTS.HEADER_BG_PAD_X,
         this.currentlyActingHeader.height + CONSTS.HEADER_BG_PAD_Y,
       )
       .setVisible(true);
@@ -494,9 +508,9 @@ export class Battle extends Scene {
   /**
    * Advances the timeline and handles ready queue updates.
    *
-   * @param dt The delta time in milliseconds to advance the timeline.
+   * @param deltaMs The delta time in milliseconds to advance the timeline.
    */
-  private advanceTimelineAndHandleReadyQueue(dt: number) {
+  private advanceTimelineAndHandleReadyQueue(deltaMs: number) {
     const progressSnapshot = new Map<ActionActor, number>();
     for (const actor of this.timeline.actors) {
       progressSnapshot.set(actor, actor.progress);
@@ -504,7 +518,7 @@ export class Battle extends Scene {
 
     const readyQueueLengthBefore = this.timeline.readyQueue.length;
 
-    this.timeline.update(dt / CONSTS.MS_TO_S);
+    this.timeline.update(deltaMs / CONSTS.MS_TO_S);
 
     const readyQueueLengthAfter = this.timeline.readyQueue.length;
 
@@ -524,14 +538,14 @@ export class Battle extends Scene {
    */
   private syncUI() {
     for (const actorUi of this.actorsUi) {
-      const a = actorUi.actor;
+      const actor = actorUi.actor;
       actorUi.fill.width =
-        (a.progress / a.readyThreshold) *
+        (actor.progress / actor.readyThreshold) *
         (actorUi.bg.width - CONSTS.FILL_INSET * 2);
 
-      actorUi.healthTxt.setText(`HP ${a.health}/${a.health}`);
-      actorUi.staminaTxt.setText(`SP ${a.stamina}/${a.stamina}`);
-      actorUi.energyTxt.setText(`EP ${a.energy}/${a.energy}`);
+      actorUi.healthTxt.setText(`HP ${actor.health}/${actor.health}`);
+      actorUi.staminaTxt.setText(`SP ${actor.stamina}/${actor.stamina}`);
+      actorUi.energyTxt.setText(`EP ${actor.energy}/${actor.energy}`);
 
       const acting = actorUi.actor === this.actingActor;
       const ready = actorUi.actor.isReady();

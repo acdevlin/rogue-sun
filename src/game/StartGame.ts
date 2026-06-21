@@ -35,9 +35,9 @@ const config: Phaser.Types.Core.GameConfig & { resolution: number } = {
         game.scale.lockOrientation("landscape");
       } catch {
         // Fallback to using a rotation prompt if lockOrientation is not supported.
-        const el = document.body;
+        const element = document.body;
         const toggle = () =>
-          el.classList.toggle(
+          element.classList.toggle(
             "force-landscape",
             window.innerHeight > window.innerWidth,
           );

@@ -14,21 +14,21 @@ export class TimelineSystem {
   /**
    * Registers an actor into the timeline.
    *
-   * @param a The actor to register.
+   * @param actor The actor to register.
    */
-  addActor(a: ActionActor) {
-    this.actors.push(a);
+  addActor(actor: ActionActor) {
+    this.actors.push(actor);
   }
 
   /**
    * Removes an actor from both the actors list and the ready queue.
    * Safe to call on actors that are not yet in the ready queue.
    *
-   * @param a The actor to remove.
+   * @param actor The actor to remove.
    */
-  removeActor(a: ActionActor) {
-    this.actors = this.actors.filter((x) => x !== a);
-    this.readyQueue = this.readyQueue.filter((x) => x !== a);
+  removeActor(actor: ActionActor) {
+    this.actors = this.actors.filter((x) => x !== actor);
+    this.readyQueue = this.readyQueue.filter((x) => x !== actor);
   }
 
   /**
@@ -37,16 +37,16 @@ export class TimelineSystem {
    * Any actor crossing the threshold is added to the ready queue.
    * Does nothing if the ready queue already has entries.
    *
-   * @param dt Delta time in seconds to advance progress by.
+   * @param deltaSec Delta time in seconds to advance progress by.
    */
-  update(dt: number) {
+  update(deltaSec: number) {
     if (this.readyQueue.length > 0) return;
-    for (const a of this.actors) {
-      if (a.isReady()) continue;
-      a.progress += a.speed * dt;
-      if (a.progress >= a.readyThreshold) {
-        a.progress = a.readyThreshold;
-        this.readyQueue.push(a);
+    for (const actor of this.actors) {
+      if (actor.isReady()) continue;
+      actor.progress += actor.speed * deltaSec;
+      if (actor.progress >= actor.readyThreshold) {
+        actor.progress = actor.readyThreshold;
+        this.readyQueue.push(actor);
       }
     }
   }

@@ -22,20 +22,20 @@ export function createBtn(opts: {
   onClick: () => void;
   scale?: number;
 }): { label: GameObjects.Text; bg: GameObjects.Rectangle } {
-  const s = opts.scale ?? 1;
+  const scaleFactor = opts.scale ?? 1;
   const btn = opts.scene.add
     .text(opts.cx, opts.y, opts.label, {
       fontFamily: CONSTS.UI_FONT_FAMILY,
-      fontSize: Math.round(CONSTS.MENU_FONT_SIZE * s),
+      fontSize: Math.round(CONSTS.MENU_FONT_SIZE * scaleFactor),
       color: CONSTS.MENU_TEXT_COLOR,
       stroke: CONSTS.MENU_STROKE_COLOR,
-      strokeThickness: Math.round(CONSTS.MENU_STROKE * s),
+      strokeThickness: Math.round(CONSTS.MENU_STROKE * scaleFactor),
       align: "center",
       resolution: TEXT_RESOLUTION,
     })
     .setOrigin(0.5);
 
-  const bg = opts.scene.add
+  const btnBg = opts.scene.add
     .rectangle(
       opts.cx,
       opts.y,
@@ -47,17 +47,17 @@ export function createBtn(opts: {
     .setStrokeStyle(CONSTS.BTN_STROKE_W, CONSTS.BTN_STROKE)
     .setInteractive({ useHandCursor: true });
 
-  bg.on("pointerover", () => {
-    bg.setFillStyle(CONSTS.BTN_HOVER_FILL);
+  btnBg.on("pointerover", () => {
+    btnBg.setFillStyle(CONSTS.BTN_HOVER_FILL);
     btn.setColor(CONSTS.BTN_HOVER_TEXT);
   });
 
-  bg.on("pointerout", () => {
-    bg.setFillStyle(CONSTS.BTN_FILL);
+  btnBg.on("pointerout", () => {
+    btnBg.setFillStyle(CONSTS.BTN_FILL);
     btn.setColor(CONSTS.MENU_TEXT_COLOR);
   });
 
-  bg.on("pointerdown", opts.onClick);
+  btnBg.on("pointerdown", opts.onClick);
 
-  return { label: btn, bg };
+  return { label: btn, bg: btnBg };
 }

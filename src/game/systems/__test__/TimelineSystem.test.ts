@@ -26,102 +26,102 @@ const makeActor = (
   });
 
 const makeActors = (
-  ts: TimelineSystem,
+  timeline: TimelineSystem,
   actors: { name: string; speed: number; controller: ActorController }[],
 ) => {
-  for (const a of actors) {
-    ts.addActor(makeActor(a));
+  for (const actor of actors) {
+    timeline.addActor(makeActor(actor));
   }
 };
 
 describe("TimelineSystem", () => {
   describe("Adding and removing actors", () => {
     it("addActor registers actor", () => {
-      const ts = new TimelineSystem();
-      const a = makeActor();
-      ts.addActor(a);
-      expect(ts.actors).toHaveLength(1);
-      expect(ts.actors[0]).toBe(a);
+      const timeline = new TimelineSystem();
+      const actor = makeActor();
+      timeline.addActor(actor);
+      expect(timeline.actors).toHaveLength(1);
+      expect(timeline.actors[0]).toBe(actor);
     });
 
     it("removeActor removes from actors and ready", () => {
-      const ts = new TimelineSystem();
-      const a = makeActor();
-      ts.addActor(a);
-      ts.readyQueue.push(a);
-      ts.removeActor(a);
-      expect(ts.actors).not.toContain(a);
-      expect(ts.readyQueue).not.toContain(a);
+      const timeline = new TimelineSystem();
+      const actor = makeActor();
+      timeline.addActor(actor);
+      timeline.readyQueue.push(actor);
+      timeline.removeActor(actor);
+      expect(timeline.actors).not.toContain(actor);
+      expect(timeline.readyQueue).not.toContain(actor);
     });
 
     it("removeActor handles actor not in ready", () => {
-      const ts = new TimelineSystem();
-      const a = makeActor();
-      ts.addActor(a);
-      ts.removeActor(a);
-      expect(ts.actors).toHaveLength(0);
+      const timeline = new TimelineSystem();
+      const actor = makeActor();
+      timeline.addActor(actor);
+      timeline.removeActor(actor);
+      expect(timeline.actors).toHaveLength(0);
     });
 
     it("removeActor handles non-existent actor gracefully", () => {
-      const ts = new TimelineSystem();
-      const a = makeActor();
-      ts.addActor(a);
-      const b = makeActor({
+      const timeline = new TimelineSystem();
+      const actor = makeActor();
+      timeline.addActor(actor);
+      const other = makeActor({
         controller: ActorController.ENEMY,
         name: "Ghost",
         speed: 10,
       });
-      ts.removeActor(b);
-      expect(ts.actors).toHaveLength(1);
+      timeline.removeActor(other);
+      expect(timeline.actors).toHaveLength(1);
     });
   });
 
   describe("update", () => {
     it("advances progress based on speed and delta time", () => {
-      const ts = new TimelineSystem();
-      makeActors(ts, [
+      const timeline = new TimelineSystem();
+      makeActors(timeline, [
         { name: "Hero", speed: 30, controller: ActorController.PLAYER },
       ]);
-      ts.update(1);
-      expect(ts.actors[0].progress).toBeCloseTo(30);
+      timeline.update(1);
+      expect(timeline.actors[0].progress).toBeCloseTo(30);
     });
 
     it("advances progress correctly over multiple calls", () => {
-      const ts = new TimelineSystem();
-      makeActors(ts, [
+      const timeline = new TimelineSystem();
+      makeActors(timeline, [
         { name: "Hero", speed: 25, controller: ActorController.PLAYER },
       ]);
-      ts.update(0.5);
-      ts.update(0.5);
-      expect(ts.actors[0].progress).toBeCloseTo(25);
+      timeline.update(0.5);
+      timeline.update(0.5);
+      expect(timeline.actors[0].progress).toBeCloseTo(25);
     });
 
     it("marks actor ready and pushes to queue when hitting threshold", () => {
-      const ts = new TimelineSystem();
-      makeActors(ts, [
+      const timeline = new TimelineSystem();
+      makeActors(timeline, [
         { name: "Hero", speed: 100, controller: ActorController.PLAYER },
       ]);
-      ts.update(1);
-      const a = ts.actors[0];
-      expect(a.progress).toBe(100);
-      expect(a.isReady()).toBe(true);
-      expect(ts.readyQueue).toContain(a);
+      timeline.update(1);
+      const actor = timeline.actors[0];
+      expect(actor.progress).toBe(100);
+      expect(actor.isReady()).toBe(true);
+      expect(timeline.readyQueue).toContain(actor);
     });
 
     it("pushes all actors who hit threshold to ready queue", () => {
-      const ts = new TimelineSystem();
-      makeActors(ts, [
+      const timeline = new TimelineSystem();
+      makeActors(timeline, [
         { name: "Fast", speed: 100, controller: ActorController.PLAYER },
         { name: "Slow", speed: 10, controller: ActorController.ENEMY },
       ]);
-      ts.update(1);
-      expect(ts.readyQueue).toHaveLength(1);
-      expect(ts.actors[1].progress).toBe(10);
+      timeline.update(1);
+      expect(timeline.readyQueue).toHaveLength(1);
+      expect(timeline.actors[1].progress).toBe(10);
     });
 
     it("does nothing when ready queue already has items", () => {
-      const ts = new TimelineSystem();
-      makeActors(ts, [
+      const timeline = new TimelineSystem();
+      makeActors(timeline, [
         { name: "Waiting", speed: 30, controller: ActorController.PLAYER },
         {
           name: "ShouldNotProgress",
@@ -129,145 +129,145 @@ describe("TimelineSystem", () => {
           controller: ActorController.ENEMY,
         },
       ]);
-      const w = ts.actors[0];
-      ts.readyQueue.push(w);
-      ts.update(1);
-      expect(ts.actors[1].progress).toBe(0);
+      const waiting = timeline.actors[0];
+      timeline.readyQueue.push(waiting);
+      timeline.update(1);
+      expect(timeline.actors[1].progress).toBe(0);
     });
 
     it("pushes multiple actors to ready when they all hit threshold", () => {
-      const ts = new TimelineSystem();
-      makeActors(ts, [
+      const timeline = new TimelineSystem();
+      makeActors(timeline, [
         { name: "A", speed: 100, controller: ActorController.PLAYER },
         { name: "B", speed: 100, controller: ActorController.ENEMY },
       ]);
-      ts.update(1);
-      expect(ts.readyQueue).toHaveLength(2);
+      timeline.update(1);
+      expect(timeline.readyQueue).toHaveLength(2);
     });
 
     it("handles fractional progress correctly", () => {
-      const ts = new TimelineSystem();
-      makeActors(ts, [
+      const timeline = new TimelineSystem();
+      makeActors(timeline, [
         { name: "Hero", speed: 33, controller: ActorController.PLAYER },
       ]);
-      ts.update(0.3);
-      expect(ts.actors[0].progress).toBeCloseTo(9.9);
+      timeline.update(0.3);
+      expect(timeline.actors[0].progress).toBeCloseTo(9.9);
     });
 
     it("caps progress at threshold when overshooting", () => {
-      const ts = new TimelineSystem();
-      makeActors(ts, [
+      const timeline = new TimelineSystem();
+      makeActors(timeline, [
         { name: "Hero", speed: 200, controller: ActorController.PLAYER },
       ]);
-      ts.update(1);
-      expect(ts.actors[0].progress).toBe(100);
+      timeline.update(1);
+      expect(timeline.actors[0].progress).toBe(100);
     });
 
     it("advances multiple actors before one becomes ready", () => {
-      const ts = new TimelineSystem();
-      makeActors(ts, [
+      const timeline = new TimelineSystem();
+      makeActors(timeline, [
         { name: "Slowpoke", speed: 5, controller: ActorController.PLAYER },
         { name: "AlsoSlow", speed: 7, controller: ActorController.ENEMY },
       ]);
-      ts.update(1);
-      expect(ts.actors[0].progress).toBeCloseTo(5);
-      expect(ts.actors[1].progress).toBeCloseTo(7);
-      expect(ts.readyQueue).toHaveLength(0);
+      timeline.update(1);
+      expect(timeline.actors[0].progress).toBeCloseTo(5);
+      expect(timeline.actors[1].progress).toBeCloseTo(7);
+      expect(timeline.readyQueue).toHaveLength(0);
     });
   });
 
   describe("step", () => {
     it("returns null when ready is empty", () => {
-      const ts = new TimelineSystem();
-      expect(ts.step()).toBeNull();
+      const timeline = new TimelineSystem();
+      expect(timeline.step()).toBeNull();
     });
 
     it("returns and removes the next ready actor", () => {
-      const ts = new TimelineSystem();
-      const a = makeActor();
-      const b = makeActor({
+      const timeline = new TimelineSystem();
+      const actor = makeActor();
+      const other = makeActor({
         controller: ActorController.ENEMY,
         name: "Villain",
         speed: 25,
       });
-      ts.readyQueue.push(a);
-      ts.readyQueue.push(b);
-      expect(ts.step()).toBe(a);
-      expect(ts.readyQueue).toHaveLength(1);
-      expect(ts.readyQueue[0]).toBe(b);
+      timeline.readyQueue.push(actor);
+      timeline.readyQueue.push(other);
+      expect(timeline.step()).toBe(actor);
+      expect(timeline.readyQueue).toHaveLength(1);
+      expect(timeline.readyQueue[0]).toBe(other);
     });
 
     it("returns null after all ready actors are consumed", () => {
-      const ts = new TimelineSystem();
-      const a = makeActor();
-      ts.readyQueue.push(a);
-      ts.step();
-      expect(ts.step()).toBeNull();
+      const timeline = new TimelineSystem();
+      const actor = makeActor();
+      timeline.readyQueue.push(actor);
+      timeline.step();
+      expect(timeline.step()).toBeNull();
     });
 
     it("is idempotent when called on empty queue", () => {
-      const ts = new TimelineSystem();
-      expect(ts.step()).toBeNull();
-      expect(ts.step()).toBeNull();
+      const timeline = new TimelineSystem();
+      expect(timeline.step()).toBeNull();
+      expect(timeline.step()).toBeNull();
     });
 
     it("removes actor from ready queue on step", () => {
-      const ts = new TimelineSystem();
-      const a = makeActor();
-      ts.readyQueue.push(a);
-      ts.step();
-      expect(ts.readyQueue).toHaveLength(0);
+      const timeline = new TimelineSystem();
+      const actor = makeActor();
+      timeline.readyQueue.push(actor);
+      timeline.step();
+      expect(timeline.readyQueue).toHaveLength(0);
     });
   });
 
   describe("integration: update + step", () => {
     it("full cycle: accumulate → ready → step → reset → accumulate", () => {
-      const ts = new TimelineSystem();
-      makeActors(ts, [
+      const timeline = new TimelineSystem();
+      makeActors(timeline, [
         { name: "Hero", speed: 50, controller: ActorController.PLAYER },
       ]);
-      const a = ts.actors[0];
+      const actor = timeline.actors[0];
 
-      ts.update(2);
-      expect(a.progress).toBe(100);
-      expect(a.isReady()).toBe(true);
+      timeline.update(2);
+      expect(actor.progress).toBe(100);
+      expect(actor.isReady()).toBe(true);
 
-      const popped = ts.step();
-      expect(popped).toBe(a);
-      expect(ts.readyQueue).toHaveLength(0);
+      const popped = timeline.step();
+      expect(popped).toBe(actor);
+      expect(timeline.readyQueue).toHaveLength(0);
 
-      a.reset();
-      expect(a.progress).toBe(0);
-      expect(a.isReady()).toBe(false);
+      actor.reset();
+      expect(actor.progress).toBe(0);
+      expect(actor.isReady()).toBe(false);
 
-      ts.update(1);
-      expect(a.progress).toBeCloseTo(50);
+      timeline.update(1);
+      expect(actor.progress).toBeCloseTo(50);
     });
 
     it("second actor becomes ready after first exhausted", () => {
-      const ts = new TimelineSystem();
-      const a = makeActor();
-      const b = makeActor({
+      const timeline = new TimelineSystem();
+      const actor = makeActor();
+      const other = makeActor({
         controller: ActorController.ENEMY,
         name: "B",
         speed: 50,
       });
-      ts.addActor(a);
-      ts.addActor(b);
-      b.progress = 90;
+      timeline.addActor(actor);
+      timeline.addActor(other);
+      other.progress = 90;
 
-      ts.update(1);
-      expect(b.isReady()).toBe(true);
-      expect(b.progress).toBe(100);
+      timeline.update(1);
+      expect(other.isReady()).toBe(true);
+      expect(other.progress).toBe(100);
 
-      ts.step();
-      expect(ts.readyQueue).toHaveLength(0);
-      b.reset();
-      expect(b.progress).toBe(0);
+      timeline.step();
+      expect(timeline.readyQueue).toHaveLength(0);
+      other.reset();
+      expect(other.progress).toBe(0);
 
-      ts.update(3);
-      expect(a.progress).toBe(100);
-      expect(a.isReady()).toBe(true);
+      timeline.update(3);
+      expect(actor.progress).toBe(100);
+      expect(actor.isReady()).toBe(true);
     });
   });
 });
