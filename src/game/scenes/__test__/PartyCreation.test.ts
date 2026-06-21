@@ -1,5 +1,6 @@
 import { PartyCreation } from "../PartyCreation";
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import * as CONSTS from "../../../constants";
 
 vi.mock("phaser", () => {
   const mockObj = () => ({
@@ -24,10 +25,10 @@ vi.mock("phaser", () => {
       key: string;
       cameras = {
         main: {
-          width: 800,
-          height: 600,
-          centerX: 400,
-          centerY: 300,
+          width: CONSTS.SCENE_800_600_W,
+          height: CONSTS.SCENE_800_600_H,
+          centerX: CONSTS.SCENE_800_600_CX,
+          centerY: CONSTS.SCENE_800_600_CY,
           setBackgroundColor: vi.fn(),
         },
       };
@@ -75,33 +76,38 @@ describe("PartyCreation Scene", () => {
   });
 
   it("creates a clickable rectangle behind the button", () => {
-    const s = new PartyCreation();
-    const rectSpy = vi.spyOn(s.add, "rectangle");
-    s.create();
+    const partyCreation = new PartyCreation();
+    const rectSpy = vi.spyOn(partyCreation.add, "rectangle");
+    partyCreation.create();
 
     expect(rectSpy).toHaveBeenCalledWith(
       expect.any(Number),
       expect.any(Number),
       expect.any(Number),
       expect.any(Number),
-      0x444444,
+      CONSTS.BTN_FILL,
     );
     const rect = rectSpy.mock.results[0].value;
-    expect(rect.setStrokeStyle).toHaveBeenCalledWith(2, 0xffffff);
+    expect(rect.setStrokeStyle).toHaveBeenCalledWith(
+      CONSTS.BTN_STROKE_W,
+      CONSTS.BTN_STROKE,
+    );
     expect(rect.setInteractive).toHaveBeenCalledWith({ useHandCursor: true });
   });
 
   it("transitions to Game scene on button click", () => {
-    const s = new PartyCreation();
-    const rectSpy = vi.spyOn(s.add, "rectangle");
-    s.create();
+    const partyCreation = new PartyCreation();
+    const rectSpy = vi.spyOn(partyCreation.add, "rectangle");
+    partyCreation.create();
 
     const rect = rectSpy.mock.results[0].value;
+    // Find the pointerdown event registration and invoke its callback
+    // (mock calls store args as [eventName, handler], so [1] is the handler fn)
     const pointerdown = rect.on.mock.calls.find(
-      (call: unknown[]) => call[0] === "pointerdown",
+      (call: string[]) => call[0] === "pointerdown",
     );
     expect(pointerdown).toBeTruthy();
     pointerdown![1]();
-    expect(s.scene.start).toHaveBeenCalledWith("Battle");
+    expect(partyCreation.scene.start).toHaveBeenCalledWith("Battle");
   });
 });

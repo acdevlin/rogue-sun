@@ -140,8 +140,10 @@ describe("createBtn", () => {
       onClick,
     });
     const rect = scene.add.rectangle.mock.results[0].value;
+    // Find the pointerdown event registration and invoke its callback
+    // (mock calls store args as [eventName, handler], so [1] is the handler fn)
     const pointerdown = rect.on.mock.calls.find(
-      (c: string[]) => c[0] === "pointerdown",
+      (call: string[]) => call[0] === "pointerdown",
     );
     expect(pointerdown).toBeTruthy();
     pointerdown![1]();
@@ -187,7 +189,7 @@ describe("createBtn", () => {
     const rect = scene.add.rectangle.mock.results[0].value;
     const btn = scene.add.text.mock.results[0].value;
     const over = rect.on.mock.calls.find(
-      (c: string[]) => c[0] === "pointerover",
+      (call: string[]) => call[0] === "pointerover",
     );
     over![1]();
     expect(rect.setFillStyle).toHaveBeenCalledWith(CONSTS.BTN_HOVER_FILL);
@@ -205,7 +207,9 @@ describe("createBtn", () => {
     });
     const rect = scene.add.rectangle.mock.results[0].value;
     const btn = scene.add.text.mock.results[0].value;
-    const out = rect.on.mock.calls.find((c: string[]) => c[0] === "pointerout");
+    const out = rect.on.mock.calls.find(
+      (call: string[]) => call[0] === "pointerout",
+    );
     out![1]();
     expect(rect.setFillStyle).toHaveBeenCalledWith(CONSTS.BTN_FILL);
     expect(btn.setColor).toHaveBeenCalledWith(CONSTS.MENU_TEXT_COLOR);
