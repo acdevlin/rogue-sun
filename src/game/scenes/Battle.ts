@@ -5,7 +5,7 @@ import * as CONSTS from "../../constants";
 import { TEXT_RESOLUTION } from "../StartGame";
 import { players as playerData } from "../data/playerActorClasses";
 import { enemies as enemyData } from "../data/enemyActorClasses";
-import { createBtn } from "../utils/UiElements";
+import { createBtn, createLaneBlock } from "../utils/UiElements";
 
 interface ActorUI {
   actor: ActionActor;
@@ -158,15 +158,28 @@ export class Battle extends Scene {
       );
     }
 
-    // Draw lane header labels, horizontal/vertical guide lines, and flank separators.
-    this.createLanes({
+    const pLaneSpan = (CONSTS.NUM_LANES - 1) * CONSTS.LANE_OFFSET + cardW;
+    createLaneBlock({
+      scene: this,
+      laneLeft: CONSTS.PLAYER_X,
       cardW,
-      width,
       gap,
-      playerMaxLane,
-      playerFlankIdx,
-      enemyMaxLane,
-      enemyFlankIdx,
+      maxLane: playerMaxLane,
+      flankIdx: playerFlankIdx,
+      headerY: CONSTS.LANE_HEADER_Y,
+      startY: CONSTS.CARD_START_Y,
+      controller: CONSTS.ActorController.PLAYER,
+    });
+    createLaneBlock({
+      scene: this,
+      laneLeft: width - CONSTS.PLAYER_X - pLaneSpan,
+      cardW,
+      gap,
+      maxLane: enemyMaxLane,
+      flankIdx: enemyFlankIdx,
+      headerY: CONSTS.LANE_HEADER_Y,
+      startY: CONSTS.CARD_START_Y,
+      controller: CONSTS.ActorController.ENEMY,
     });
 
     const y = this.cameras.main.height - CONSTS.BTN_BOTTOM_OFFSET;
@@ -203,165 +216,6 @@ export class Battle extends Scene {
       .setOrigin(0.5)
       .setDepth(-1)
       .setVisible(false);
-  }
-
-  /**
-   * Draws lane headers, guide lines, and flank separators.
-   */
-  private createLanes(opts: {
-    /** Card width in pixels, used for layout alignment. */
-    cardW: number;
-    /** Scene width in pixels, used for enemy-side mirroring. */
-    width: number;
-    /** Vertical gap between actor cards in pixels. */
-    gap: number;
-    /** Maximum actor count in any single player lane, used to compute vertical extent. */
-    playerMaxLane: number;
-    /** Number of player flank actors (0 if none). */
-    playerFlankIdx: number;
-    /** Maximum actor count in any single enemy lane. */
-    enemyMaxLane: number;
-    /** Number of enemy flank actors (0 if none). */
-    enemyFlankIdx: number;
-  }) {
-    const {
-      cardW,
-      width,
-      gap,
-      playerMaxLane,
-      playerFlankIdx,
-      enemyMaxLane,
-      enemyFlankIdx,
-    } = opts;
-    const laneSpan = (CONSTS.NUM_LANES - 1) * CONSTS.LANE_OFFSET + cardW;
-    const laneStyle: Phaser.Types.GameObjects.Text.TextStyle = {
-      fontFamily: CONSTS.UI_FONT_FAMILY,
-      fontSize: `${CONSTS.LANE_HEADER_FONT}px`,
-      color: CONSTS.LANE_HEADER_COLOR,
-      resolution: TEXT_RESOLUTION,
-    };
-
-    const drawLaneLabel = (centerX: number, name: string) => {
-      this.add
-        .text(centerX, CONSTS.LANE_HEADER_Y, name, laneStyle)
-        .setOrigin(0.5, 0);
-    };
-
-    for (let i = 0; i < CONSTS.NUM_LANES; i++) {
-      const name = CONSTS.PRIMARY_LANES[i].toUpperCase();
-      drawLaneLabel(CONSTS.PLAYER_X + i * CONSTS.LANE_OFFSET + cardW / 2, name);
-      drawLaneLabel(
-        width - CONSTS.PLAYER_X - cardW / 2 - i * CONSTS.LANE_OFFSET,
-        name,
-      );
-    }
-
-    const sepY =
-      CONSTS.LANE_HEADER_Y + CONSTS.LANE_HEADER_FONT + CONSTS.LANE_HEADER_SEP_Y;
-    const halfGap = (CONSTS.LANE_OFFSET - cardW) / 2;
-    const pad = CONSTS.CARD_Y_OFFSET + CONSTS.CARD_HEIGHT / 2;
-
-    const pBot =
-      playerFlankIdx > 0
-        ? CONSTS.CARD_START_Y +
-          Math.max(0, playerMaxLane - 1) * gap +
-          CONSTS.FLANK_OFFSET / 2
-        : CONSTS.CARD_START_Y + Math.max(0, playerMaxLane - 1) * gap;
-
-    const eBot =
-      enemyFlankIdx > 0
-        ? CONSTS.CARD_START_Y +
-          Math.max(0, enemyMaxLane - 1) * gap +
-          CONSTS.FLANK_OFFSET / 2
-        : CONSTS.CARD_START_Y + Math.max(0, enemyMaxLane - 1) * gap;
-
-    const drawLineHorizontal = (centerX: number) => {
-      this.add
-        .rectangle(
-          centerX,
-          sepY,
-          laneSpan,
-          CONSTS.LANE_LINE_W,
-          CONSTS.LANE_LINE_COLOR,
-        )
-        .setOrigin(0.5);
-    };
-
-    const drawLineVertical = (x: number, bot: number) => {
-      const len = bot + pad - sepY;
-      this.add
-        .rectangle(
-          x,
-          sepY + len / 2,
-          CONSTS.LANE_LINE_W,
-          len,
-          CONSTS.LANE_LINE_COLOR,
-        )
-        .setOrigin(0.5);
-    };
-
-    drawLineHorizontal(CONSTS.PLAYER_X + laneSpan / 2);
-    drawLineHorizontal(width - CONSTS.PLAYER_X - laneSpan / 2);
-
-    for (let j = 0; j < CONSTS.NUM_LANES - 1; j++) {
-      drawLineVertical(
-        CONSTS.PLAYER_X + cardW + halfGap + j * CONSTS.LANE_OFFSET,
-        pBot,
-      );
-      drawLineVertical(
-        width - CONSTS.PLAYER_X - cardW - halfGap - j * CONSTS.LANE_OFFSET,
-        eBot,
-      );
-    }
-
-    const drawFlankSection = (
-      sideLeft: number,
-      sideRight: number,
-      flankIdx: number,
-      nonFlankY: number,
-    ) => {
-      if (flankIdx === 0) return;
-      const flankSepY = nonFlankY + pad + CONSTS.FLANK_OFFSET / 2;
-      const centerX = (sideLeft + sideRight) / 2;
-      const label = this.add
-        .text(centerX, flankSepY, "FLANK", laneStyle)
-        .setOrigin(0.5);
-      const gapHalf =
-        (label.width || CONSTS.FLANK_LABEL_FALLBACK_W) / 2 +
-        CONSTS.FLANK_LABEL_PAD;
-
-      this.add
-        .rectangle(
-          (centerX - gapHalf + sideLeft) / 2,
-          flankSepY,
-          centerX - gapHalf - sideLeft,
-          CONSTS.LANE_LINE_W,
-          CONSTS.LANE_LINE_COLOR,
-        )
-        .setOrigin(0.5);
-      this.add
-        .rectangle(
-          (centerX + gapHalf + sideRight) / 2,
-          flankSepY,
-          sideRight - centerX - gapHalf,
-          CONSTS.LANE_LINE_W,
-          CONSTS.LANE_LINE_COLOR,
-        )
-        .setOrigin(0.5);
-    };
-
-    drawFlankSection(
-      CONSTS.PLAYER_X,
-      CONSTS.PLAYER_X + laneSpan,
-      playerFlankIdx,
-      CONSTS.CARD_START_Y + Math.max(0, playerMaxLane - 1) * gap,
-    );
-    drawFlankSection(
-      width - CONSTS.PLAYER_X - laneSpan,
-      width - CONSTS.PLAYER_X,
-      enemyFlankIdx,
-      CONSTS.CARD_START_Y + Math.max(0, enemyMaxLane - 1) * gap,
-    );
   }
 
   /**

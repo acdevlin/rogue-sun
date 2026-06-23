@@ -4,50 +4,6 @@ import { Battle } from "../Battle";
 import * as CONSTS from "../../../constants";
 import { ActorPosition, ActorController } from "../../../constants";
 
-vi.mock("phaser", () => {
-  const mockObj = () => ({
-    setOrigin: vi.fn().mockReturnThis(),
-    setStrokeStyle: vi.fn().mockReturnThis(),
-    setDepth: vi.fn().mockReturnThis(),
-    setVisible: vi.fn().mockReturnThis(),
-    setText: vi.fn().mockReturnThis(),
-    setColor: vi.fn().mockReturnThis(),
-    setFillStyle: vi.fn().mockReturnThis(),
-    setSize: vi.fn().mockReturnThis(),
-    setStroke: vi.fn().mockReturnThis(),
-    setInteractive: vi.fn().mockReturnThis(),
-    on: vi.fn().mockReturnThis(),
-    width: 0,
-    height: 0,
-  });
-
-  return {
-    AUTO: 0,
-    Scale: {
-      RESIZE: "resize",
-      Center: { CENTER_BOTH: "center-both" },
-    },
-    Scene: class MockScene {
-      key: string;
-      cameras = {
-        main: { width: 800, height: 600, centerX: 400, centerY: 300 },
-      };
-      add = {
-        text: vi.fn(() => mockObj()),
-        rectangle: vi.fn(() => mockObj()),
-      };
-      time = {
-        delayedCall: vi.fn(),
-      };
-      scene = { start: vi.fn() };
-
-      constructor(key: string) {
-        this.key = key;
-      }
-    },
-  };
-});
-
 type ActorParams = {
   controller: ActorController;
   name: string;

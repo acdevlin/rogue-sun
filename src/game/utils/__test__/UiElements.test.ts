@@ -1,34 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import type { Scene } from "phaser";
 
-vi.mock("phaser", () => {
-  class Scene {
-    scene = { start: vi.fn() };
-    load = { image: vi.fn() };
-    cameras = { main: { centerX: 0, centerY: 0, width: 0, height: 0 } };
-    add = { text: vi.fn(), rectangle: vi.fn() };
-    constructor(_key?: string) {
-      void _key;
-    }
-  }
-  const GameObjects = { Text: class {}, Rectangle: class {} };
-  return {
-    Scene,
-    GameObjects,
-    default: { Scene, GameObjects },
-    AUTO: 0,
-    Scale: { FIT: undefined, Center: { CENTER_BOTH: undefined } },
-    Game: class {
-      constructor(_cfg?: unknown) {
-        void _cfg;
-      }
-      scale = { lockOrientation: vi.fn() };
-    },
-    Types: {},
-  };
-});
-
-import { createBtn } from "../UiElements";
+import { createBtn, createActorCard, createLaneBlock } from "../UiElements";
 import * as CONSTS from "../../../constants";
 
 const mockObj = () => ({
@@ -274,5 +247,237 @@ describe("createBtn", () => {
       CONSTS.TEXT_H + CONSTS.BTN_PAD,
       CONSTS.BTN_FILL,
     );
+  });
+});
+
+describe("createLaneBlock", () => {
+  const headerY = 55;
+  const startY = 132;
+  const gap = 94;
+
+  it("draws lane header labels for each PRIMARY_LANE", () => {
+    const scene = makeScene();
+    createLaneBlock({
+      scene: scene as unknown as Scene,
+      laneLeft: 40,
+      cardW: CONSTS.CARD_W,
+      gap,
+      maxLane: 2,
+      flankIdx: 0,
+      headerY,
+      startY,
+      controller: CONSTS.ActorController.PLAYER,
+    });
+    const textCalls = (scene.add.text as ReturnType<typeof vi.fn>).mock
+      .calls as unknown[][];
+    const headers = textCalls.filter((call: unknown[]) => call[1] === headerY);
+    expect(headers.length).toBe(CONSTS.PRIMARY_LANES.length);
+  });
+
+  it("draws header separator rectangle", () => {
+    const scene = makeScene();
+    createLaneBlock({
+      scene: scene as unknown as Scene,
+      laneLeft: 40,
+      cardW: CONSTS.CARD_W,
+      gap,
+      maxLane: 2,
+      flankIdx: 0,
+      headerY,
+      startY,
+      controller: CONSTS.ActorController.PLAYER,
+    });
+    const rectSpy = scene.add.rectangle as ReturnType<typeof vi.fn>;
+    const lineRects = rectSpy.mock.calls.filter(
+      (call: unknown[]) => call[4] === CONSTS.LANE_LINE_COLOR,
+    );
+    expect(lineRects.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("draws FLANK section when flankIdx > 0", () => {
+    const scene = makeScene();
+    createLaneBlock({
+      scene: scene as unknown as Scene,
+      laneLeft: 40,
+      cardW: CONSTS.CARD_W,
+      gap,
+      maxLane: 2,
+      flankIdx: 1,
+      headerY,
+      startY,
+      controller: CONSTS.ActorController.PLAYER,
+    });
+    const textCalls = (scene.add.text as ReturnType<typeof vi.fn>).mock
+      .calls as unknown[][];
+    const flankLabel = textCalls.find((call: unknown[]) => call[2] === "FLANK");
+    expect(flankLabel).toBeTruthy();
+  });
+
+  it("does NOT draw FLANK when flankIdx === 0", () => {
+    const scene = makeScene();
+    createLaneBlock({
+      scene: scene as unknown as Scene,
+      laneLeft: 40,
+      cardW: CONSTS.CARD_W,
+      gap,
+      maxLane: 2,
+      flankIdx: 0,
+      headerY,
+      startY,
+      controller: CONSTS.ActorController.PLAYER,
+    });
+    const textCalls = (scene.add.text as ReturnType<typeof vi.fn>).mock
+      .calls as unknown[][];
+    const flankLabel = textCalls.find((call: unknown[]) => call[2] === "FLANK");
+    expect(flankLabel).toBeUndefined();
+  });
+
+  it("reverses lane order for non-PLAYER controller", () => {
+    const scene = makeScene();
+    const laneLeft = 40;
+    const cardW = CONSTS.CARD_W;
+    const laneSpan = (CONSTS.NUM_LANES - 1) * CONSTS.LANE_OFFSET + cardW;
+    createLaneBlock({
+      scene: scene as unknown as Scene,
+      laneLeft,
+      cardW,
+      gap,
+      maxLane: 2,
+      flankIdx: 0,
+      headerY,
+      startY,
+      controller: CONSTS.ActorController.ENEMY,
+    });
+    const textCalls = (scene.add.text as ReturnType<typeof vi.fn>).mock
+      .calls as unknown[][];
+    const headers = textCalls.filter((call: unknown[]) => call[1] === headerY);
+    // For enemy, BACKLINE is rightmost at laneLeft + laneSpan - cardW / 2
+    const backlineCall = headers.find(
+      (call: unknown[]) => call[2] === "BACKLINE",
+    );
+    expect(backlineCall![0]).toBe(laneLeft + laneSpan - cardW / 2);
+  });
+
+  it("returns laneSpan, blockCx, and bot", () => {
+    const scene = makeScene();
+    const result = createLaneBlock({
+      scene: scene as unknown as Scene,
+      laneLeft: 40,
+      controller: CONSTS.ActorController.PLAYER,
+      cardW: CONSTS.CARD_W,
+      gap,
+      maxLane: 2,
+      flankIdx: 1,
+      headerY,
+      startY,
+    });
+    expect(result.laneSpan).toBeGreaterThan(0);
+    expect(result.blockCx).toBeGreaterThan(0);
+    expect(result.bot).toBeGreaterThan(0);
+  });
+});
+
+describe("createActorCard", () => {
+  const cardOpts = {
+    x: 100,
+    y: 200,
+    w: CONSTS.CARD_W,
+    name: "Hero",
+    health: 50,
+    stamina: 30,
+    energy: 20,
+  };
+
+  it("creates a card rectangle at correct position and size", () => {
+    const scene = makeScene();
+    createActorCard({ scene: scene as unknown as Scene, ...cardOpts });
+    expect(scene.add.rectangle).toHaveBeenCalledWith(
+      100 + CONSTS.CARD_W / 2,
+      200 + CONSTS.CARD_Y_OFFSET,
+      CONSTS.CARD_W + CONSTS.CARD_EXTRA_W,
+      CONSTS.CARD_HEIGHT,
+      CONSTS.CARD_BG,
+    );
+  });
+
+  it("applies stroke, origin, and depth to the card", () => {
+    const scene = makeScene();
+    createActorCard({ scene: scene as unknown as Scene, ...cardOpts });
+    const rect = scene.add.rectangle.mock.results[0].value;
+    expect(rect.setStrokeStyle).toHaveBeenCalledWith(
+      CONSTS.CARD_STROKE_W,
+      CONSTS.CARD_STROKE,
+    );
+    expect(rect.setOrigin).toHaveBeenCalledWith(0.5);
+    expect(rect.setDepth).toHaveBeenCalledWith(CONSTS.CARD_DEPTH);
+  });
+
+  it("creates name label text with correct color", () => {
+    const scene = makeScene();
+    createActorCard({ scene: scene as unknown as Scene, ...cardOpts });
+    expect(scene.add.text).toHaveBeenCalledWith(
+      100 + CONSTS.LABEL_X,
+      200 - CONSTS.LABEL_Y,
+      "Hero",
+      expect.objectContaining({
+        fontSize: `${CONSTS.UI_FONT}px`,
+        color: CONSTS.LABEL_COLOR,
+      }),
+    );
+  });
+
+  it("creates HP stat text showing health value", () => {
+    const scene = makeScene();
+    createActorCard({ scene: scene as unknown as Scene, ...cardOpts });
+    expect(scene.add.text).toHaveBeenCalledWith(
+      100 + CONSTS.STAT_TXT_X,
+      200 + CONSTS.STAT_HP_Y,
+      "HP 50",
+      expect.objectContaining({
+        fontSize: `${CONSTS.STAT_FONT_SIZE}px`,
+        color: CONSTS.STAT_HP_COLOR,
+      }),
+    );
+  });
+
+  it("creates SP stat text showing stamina value", () => {
+    const scene = makeScene();
+    createActorCard({ scene: scene as unknown as Scene, ...cardOpts });
+    expect(scene.add.text).toHaveBeenCalledWith(
+      100 + CONSTS.STAT_TXT_X,
+      200 + CONSTS.STAT_SP_Y,
+      "SP 30",
+      expect.objectContaining({
+        fontSize: `${CONSTS.STAT_FONT_SIZE}px`,
+        color: CONSTS.STAT_SP_COLOR,
+      }),
+    );
+  });
+
+  it("creates EP stat text showing energy value", () => {
+    const scene = makeScene();
+    createActorCard({ scene: scene as unknown as Scene, ...cardOpts });
+    expect(scene.add.text).toHaveBeenCalledWith(
+      100 + CONSTS.STAT_TXT_X,
+      200 + CONSTS.STAT_EP_Y,
+      "EP 20",
+      expect.objectContaining({
+        fontSize: `${CONSTS.STAT_FONT_SIZE}px`,
+        color: CONSTS.STAT_EP_COLOR,
+      }),
+    );
+  });
+
+  it("returns card, label, healthTxt, staminaTxt, energyTxt", () => {
+    const scene = makeScene();
+    const result = createActorCard({
+      scene: scene as unknown as Scene,
+      ...cardOpts,
+    });
+    expect(result.card).toBeTruthy();
+    expect(result.label).toBeTruthy();
+    expect(result.healthTxt).toBeTruthy();
+    expect(result.staminaTxt).toBeTruthy();
+    expect(result.energyTxt).toBeTruthy();
   });
 });
