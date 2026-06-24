@@ -51,10 +51,11 @@ export class Battle extends Scene {
   /**
    * Initializes all game objects, including timeline system and UI elements.
    */
-  create() {
+  create(playerData?: { players?: PlayerActorData[] }) {
     this.actorsUi = [];
     this.actingActor = null;
     this.timeline = new TimelineSystem();
+    if (playerData?.players) this.players = playerData.players;
     const { width } = this.cameras.main;
     this.createActingHeader(width / 2);
 

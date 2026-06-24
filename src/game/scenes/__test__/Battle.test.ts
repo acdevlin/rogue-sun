@@ -69,6 +69,28 @@ describe("Battle scene", () => {
       expect(battle.actorsUi).toEqual([]);
     });
 
+    it("uses custom players when data.players is provided", () => {
+      const battle = new Battle();
+      const custom = [
+        {
+          name: "Custom",
+          alias: "Custom",
+          speed: 10,
+          health: 50,
+          stamina: 50,
+          energy: 50,
+          position: ActorPosition.FRONTLINE,
+        },
+      ];
+      battle.create({ players: custom });
+      expect(battle.players).toBe(custom);
+      expect(battle.players).toHaveLength(1);
+    });
+
+    it("falls back to default players when no data is provided", () => {
+      expect(scene.players.length).toBeGreaterThan(1);
+    });
+
     it("creates a Retreat button that transitions to PartyCreation", () => {
       const battle = new Battle();
       const rectSpy = vi.spyOn(battle.add, "rectangle");

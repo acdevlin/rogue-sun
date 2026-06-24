@@ -8,6 +8,8 @@ import {
   createLaneBlock,
 } from "../utils/UiElements";
 import { players } from "../data/playerActorClasses";
+import { PlayerTeamService } from "../services/PlayerTeamService";
+import type { TeamMember } from "../data/TeamMember";
 
 export class PartyCreation extends Scene {
   camera: Cameras.Scene2D.Camera;
@@ -15,6 +17,8 @@ export class PartyCreation extends Scene {
   title: GameObjects.Text;
   startBtn: GameObjects.Text;
   startBtnBg: GameObjects.Rectangle;
+  savedTeamsLabel: GameObjects.Text;
+  savedTeamsEntries: GameObjects.Text[] = [];
 
   constructor() {
     super("PartyCreation");
@@ -43,18 +47,80 @@ export class PartyCreation extends Scene {
     this.title.setOrigin(0.5);
 
     this.createPartyLanes();
+    this.renderSavedTeams();
 
     const y = this.camera.height - CONSTS.BTN_BOTTOM_OFFSET;
+    const service = new PlayerTeamService();
     const btn = createBtn({
       scene: this,
       cx: centerX,
       y,
       label: "Start Game",
-      onClick: () => this.scene.start("Battle"),
+      onClick: async () => {
+        const members: TeamMember[] = players.map((player) => ({
+          actorClassId: player.name,
+          position: player.position,
+        }));
+        const teams = await service.readAll();
+        const curTeam = teams.find((team) => team.name === "Current Party");
+        if (curTeam) {
+          await service.update(curTeam.id, { members });
+        } else {
+          await service.create({ name: "Current Party", members });
+        }
+        this.scene.start("Battle", { players });
+      },
       scale,
     });
     this.startBtn = btn.label;
     this.startBtnBg = btn.bg;
+  }
+
+  private renderSavedTeams() {
+    const service = new PlayerTeamService();
+    const rightX = this.cameras.main.width - 280;
+    const headerY = CONSTS.HEADER_PARTYCREATION_Y + 90;
+    const style = {
+      fontFamily: CONSTS.UI_FONT_FAMILY,
+      fontSize: "18px",
+      color: CONSTS.LANE_HEADER_COLOR,
+      resolution: TEXT_RESOLUTION,
+    };
+
+    this.savedTeamsLabel = this.add
+      .text(rightX, headerY, "Saved Teams", style)
+      .setOrigin(0, 0);
+
+    service.readAll().then((teams) => {
+      this.savedTeamsEntries.forEach((entry) => entry.destroy());
+      this.savedTeamsEntries = [];
+
+      if (teams.length === 0) {
+        const entry = this.add.text(
+          rightX + 6,
+          headerY + 28,
+          "No saved teams",
+          {
+            ...style,
+            fontSize: "14px",
+            color: "#999999",
+          },
+        );
+        this.savedTeamsEntries.push(entry);
+        return;
+      }
+
+      const listStyle = { ...style, fontSize: "14px" };
+      for (let i = 0; i < teams.length; i++) {
+        const entry = this.add.text(
+          rightX + 6,
+          headerY + 28 + i * 26,
+          `  ${teams[i].name}`,
+          listStyle,
+        );
+        this.savedTeamsEntries.push(entry);
+      }
+    });
   }
 
   private createPartyLanes() {
