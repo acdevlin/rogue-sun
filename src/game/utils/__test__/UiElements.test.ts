@@ -358,7 +358,7 @@ describe("createLaneBlock", () => {
     expect(backlineCall![0]).toBe(laneLeft + laneSpan - cardW / 2);
   });
 
-  it("returns laneSpan, blockCx, and bot", () => {
+  it("returns laneSpan, blockCx, bot, and objects", () => {
     const scene = makeScene();
     const result = createLaneBlock({
       scene: scene as unknown as Scene,
@@ -374,6 +374,7 @@ describe("createLaneBlock", () => {
     expect(result.laneSpan).toBeGreaterThan(0);
     expect(result.blockCx).toBeGreaterThan(0);
     expect(result.bot).toBeGreaterThan(0);
+    expect(result.objects.length).toBeGreaterThan(0);
   });
 });
 

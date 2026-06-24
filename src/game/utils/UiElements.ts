@@ -107,13 +107,16 @@ export type LaneBlockLayout = {
   blockCx: number;
   /** Bottom Y-position of the last card or flank separator in the block. */
   bot: number;
+  /** All game objects created for this lane block. */
+  objects: GameObjects.GameObject[];
 };
 
 /**
- * Draws the decorative lane structure for one side: lane header labels,
- * a horizontal header separator line, vertical guide lines between lanes,
- * and an optional FLANK section (label + separator lines) when flank actors
- * are present.
+ * Draws the empty lane grid structure: lane header labels, a horizontal
+ * header separator line, vertical guide lines between lanes, and an optional
+ * FLANK section (label + separator lines) when flank actors are present.
+ * Does **not** place character cards — callers use the returned
+ * {@link LaneBlockLayout} to position cards via {@link createActorCard}.
  *
  * Lane order is left-to-right for `ActorController.PLAYER` and
  * right-to-left for any other controller value, placing BACKLINE at the
@@ -124,6 +127,7 @@ export type LaneBlockLayout = {
  *   (e.g. to place actor cards at the correct positions).
  */
 export function createLaneBlock(opts: LaneBlockOpts): LaneBlockLayout {
+  // Lane block layout dimensions
   const laneSpan = (CONSTS.NUM_LANES - 1) * CONSTS.LANE_OFFSET + opts.cardW;
   const halfGap = (CONSTS.LANE_OFFSET - opts.cardW) / 2;
   const pad = CONSTS.CARD_Y_OFFSET + CONSTS.CARD_HEIGHT / 2;
@@ -144,48 +148,60 @@ export function createLaneBlock(opts: LaneBlockOpts): LaneBlockLayout {
     resolution: TEXT_RESOLUTION,
   };
 
+  // Reverse lane order for enemy side (right-to-left)
   const reversed = opts.controller !== CONSTS.ActorController.PLAYER;
+  const objects: GameObjects.GameObject[] = [];
 
+  // Lane header labels (BACKLINE, MIDLINE, FRONTLINE)
   for (let i = 0; i < CONSTS.NUM_LANES; i++) {
     const xPos = reversed
       ? opts.laneLeft + laneSpan - opts.cardW / 2 - i * CONSTS.LANE_OFFSET
       : opts.laneLeft + opts.cardW / 2 + i * CONSTS.LANE_OFFSET;
-    opts.scene.add
-      .text(
-        xPos,
-        opts.headerY,
-        CONSTS.PRIMARY_LANES[i].toUpperCase(),
-        laneStyle,
-      )
-      .setOrigin(0.5, 0);
+    objects.push(
+      opts.scene.add
+        .text(
+          xPos,
+          opts.headerY,
+          CONSTS.PRIMARY_LANES[i].toUpperCase(),
+          laneStyle,
+        )
+        .setOrigin(0.5, 0),
+    );
   }
 
-  opts.scene.add
-    .rectangle(
-      blockCx,
-      sepY,
-      laneSpan,
-      CONSTS.LANE_LINE_W,
-      CONSTS.LANE_LINE_COLOR,
-    )
-    .setOrigin(0.5);
+  // Horizontal separator below lane headers
+  objects.push(
+    opts.scene.add
+      .rectangle(
+        blockCx,
+        sepY,
+        laneSpan,
+        CONSTS.LANE_LINE_W,
+        CONSTS.LANE_LINE_COLOR,
+      )
+      .setOrigin(0.5),
+  );
 
+  // Vertical guide lines between lanes
   for (let j = 0; j < CONSTS.NUM_LANES - 1; j++) {
     const lineX = reversed
       ? opts.laneLeft + laneSpan - opts.cardW - halfGap - j * CONSTS.LANE_OFFSET
       : opts.laneLeft + opts.cardW + halfGap + j * CONSTS.LANE_OFFSET;
     const len = bot + pad - sepY;
-    opts.scene.add
-      .rectangle(
-        lineX,
-        sepY + len / 2,
-        CONSTS.LANE_LINE_W,
-        len,
-        CONSTS.LANE_LINE_COLOR,
-      )
-      .setOrigin(0.5);
+    objects.push(
+      opts.scene.add
+        .rectangle(
+          lineX,
+          sepY + len / 2,
+          CONSTS.LANE_LINE_W,
+          len,
+          CONSTS.LANE_LINE_COLOR,
+        )
+        .setOrigin(0.5),
+    );
   }
 
+  // FLANK section: label centered between two horizontal separator lines
   if (opts.flankIdx > 0) {
     const lastNonFlankY =
       opts.startY + Math.max(0, opts.maxLane - 1) * opts.gap;
@@ -198,29 +214,53 @@ export function createLaneBlock(opts: LaneBlockOpts): LaneBlockLayout {
       (label.width || CONSTS.FLANK_LABEL_FALLBACK_W) / 2 +
       CONSTS.FLANK_LABEL_PAD;
 
-    opts.scene.add
-      .rectangle(
-        (blockCx - gapHalf + opts.laneLeft) / 2,
-        flankSepY,
-        blockCx - gapHalf - opts.laneLeft,
-        CONSTS.LANE_LINE_W,
-        CONSTS.LANE_LINE_COLOR,
-      )
-      .setOrigin(0.5);
-    opts.scene.add
-      .rectangle(
-        (blockCx + gapHalf + opts.laneLeft + laneSpan) / 2,
-        flankSepY,
-        opts.laneLeft + laneSpan - blockCx - gapHalf,
-        CONSTS.LANE_LINE_W,
-        CONSTS.LANE_LINE_COLOR,
-      )
-      .setOrigin(0.5);
+    objects.push(label);
+    // Left FLANK separator line
+    objects.push(
+      opts.scene.add
+        .rectangle(
+          (blockCx - gapHalf + opts.laneLeft) / 2,
+          flankSepY,
+          blockCx - gapHalf - opts.laneLeft,
+          CONSTS.LANE_LINE_W,
+          CONSTS.LANE_LINE_COLOR,
+        )
+        .setOrigin(0.5),
+    );
+    // Right FLANK separator line
+    objects.push(
+      opts.scene.add
+        .rectangle(
+          (blockCx + gapHalf + opts.laneLeft + laneSpan) / 2,
+          flankSepY,
+          opts.laneLeft + laneSpan - blockCx - gapHalf,
+          CONSTS.LANE_LINE_W,
+          CONSTS.LANE_LINE_COLOR,
+        )
+        .setOrigin(0.5),
+    );
   }
 
-  return { laneSpan, blockCx, bot };
+  return { laneSpan, blockCx, bot, objects };
 }
 
+/**
+ * Creates a visual actor card: a styled rectangle with a progress bar,
+ * name label, and HP/SP/EP stat texts. Used in PartyCreation and Battle.
+ *
+ * @param opts.scene - The Phaser scene to add elements to.
+ * @param opts.x - X position of the card (left edge).
+ * @param opts.y - Y position of the card (top edge of the progress bar area).
+ * @param opts.w - Width of the progress bar.
+ * @param opts.name - The actor class name (e.g. "Fighter").
+ * @param opts.alias - Optional display alias shown above the class name.
+ * @param opts.health - HP value displayed in the stat text.
+ * @param opts.stamina - SP value displayed in the stat text.
+ * @param opts.energy - EP value displayed in the stat text.
+ * @param opts.fillColor - Optional custom fill color for the progress bar.
+ * @returns An {@link ActorCardUI} object containing all sub-objects
+ *   (card, progressBg, fill, label, healthTxt, staminaTxt, energyTxt).
+ */
 export function createActorCard(opts: {
   scene: Scene;
   x: number;

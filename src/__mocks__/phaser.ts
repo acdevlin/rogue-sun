@@ -8,6 +8,7 @@ const mockObj = () => ({
   setFillStyle: vi.fn().mockReturnThis(),
   setColor: vi.fn().mockReturnThis(),
   setVisible: vi.fn().mockReturnThis(),
+  destroy: vi.fn().mockReturnThis(),
   setText: vi.fn().mockReturnThis(),
   setSize: vi.fn().mockReturnThis(),
   setStroke: vi.fn().mockReturnThis(),
