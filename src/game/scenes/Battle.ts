@@ -53,6 +53,16 @@ export class Battle extends Scene {
     const { width } = this.cameras.main;
     this.createActingHeader(width / 2);
 
+    type ActorData = {
+      name: string;
+      alias?: string;
+      speed: number;
+      health: number;
+      stamina: number;
+      energy: number;
+      position: string;
+    };
+
     const cardW = CONSTS.CARD_W;
     const cardH = CONSTS.CARD_H;
     const gap = CONSTS.CARD_GAP;
@@ -62,13 +72,11 @@ export class Battle extends Scene {
     const flankActors: { actor: ActionActor; isPlayer: boolean }[] = [];
 
     // Creates an ActionActor from raw data and registers it on the timeline.
-    const createActor = (
-      data: (typeof this.players)[number],
-      controller: string,
-    ) => {
+    const createActor = (data: ActorData, controller: string) => {
       const actor = new ActionActor({
         controller,
         name: data.name,
+        alias: data.alias,
         speed: data.speed,
         health: data.health,
         stamina: data.stamina,
@@ -82,7 +90,7 @@ export class Battle extends Scene {
     // Places a non-flank actor card in the correct lane column (BACKLINE/MIDLINE/FRONTLINE)
     // and stacks it vertically based on how many cards are already in that lane.
     const positionNonFlank = (
-      data: (typeof this.players)[number],
+      data: ActorData,
       actor: ActionActor,
       laneCounts: Record<string, number>,
       isEnemy: boolean,
@@ -106,7 +114,7 @@ export class Battle extends Scene {
     // Processes all actors for one side (player or enemy): creates each actor,
     // positions non-flank ones immediately, and queues flank actors for later.
     const deployUnitsToSide = (
-      data: (typeof this.players)[number][],
+      data: ActorData[],
       controller: string,
       laneCounts: Record<string, number>,
     ) => {
@@ -270,10 +278,13 @@ export class Battle extends Scene {
       .setOrigin(0.5)
       .setDepth(CONSTS.HIGHLIGHT_DEPTH)
       .setVisible(false);
+    const displayName = actor.alias
+      ? `${actor.alias}\n${actor.name}`
+      : actor.name;
     const label = this.add.text(
       x + CONSTS.LABEL_X,
       y - CONSTS.LABEL_Y,
-      actor.name,
+      displayName,
       {
         fontSize: `${CONSTS.UI_FONT}px`,
         color: CONSTS.LABEL_COLOR,
@@ -339,7 +350,7 @@ export class Battle extends Scene {
    */
   private startActorTurn(actor: ActionActor) {
     this.actingActor = actor;
-    const text = `${actor.name}'s turn!`;
+    const text = `${actor.alias ?? actor.name}'s turn!`;
     this.currentlyActingHeader
       .setText(text)
       .setStroke(
@@ -404,14 +415,12 @@ export class Battle extends Scene {
       const acting = actorUi.actor === this.actingActor;
       const ready = actorUi.actor.isReady();
 
-      let actorName: string;
-      if (acting) {
-        actorName = `${actorUi.actor.name} [ACTING]`;
-      } else if (ready) {
-        actorName = `${actorUi.actor.name} [READY]`;
-      } else {
-        actorName = actorUi.actor.name;
-      }
+      // Decorate actor's class with ready/acting status. Also display alias for player characters.
+      const actorNameSuffix = acting ? " [ACTING]" : ready ? " [READY]" : "";
+      const actorNameBase = actorUi.actor.alias
+        ? `${actorUi.actor.alias}\n${actorUi.actor.name}`
+        : actorUi.actor.name;
+      const actorName = `${actorNameBase}${actorNameSuffix}`;
       actorUi.label.setText(actorName);
       actorUi.label.setColor(
         acting || ready ? CONSTS.LABEL_COLOR_ACTIVE : CONSTS.LABEL_COLOR_IDLE,

@@ -3,6 +3,7 @@ import * as CONSTS from "../../constants";
 export const players = [
   {
     name: "Fighter",
+    alias: "John Doe",
     speed: CONSTS.SPD_FIGHTER,
     health: 120,
     stamina: 80,
@@ -11,6 +12,7 @@ export const players = [
   },
   {
     name: "Mage",
+    alias: "Jane Doe",
     speed: CONSTS.SPD_MAGE,
     health: 80,
     stamina: 60,
@@ -19,6 +21,7 @@ export const players = [
   },
   {
     name: "Thief",
+    alias: "Frank",
     speed: CONSTS.SPD_THIEF,
     health: 90,
     stamina: 120,
@@ -27,6 +30,7 @@ export const players = [
   },
   {
     name: "Slacker",
+    alias: "Gertrude",
     speed: CONSTS.SPD_SLACKER,
     health: 150,
     stamina: 50,
@@ -35,6 +39,7 @@ export const players = [
   },
   {
     name: "Summoner",
+    alias: "Isaac",
     speed: CONSTS.SPD_MAGE,
     health: 70,
     stamina: 100,

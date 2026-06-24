@@ -426,6 +426,21 @@ describe("createActorCard", () => {
     );
   });
 
+  it("shows alias above class name when alias is provided", () => {
+    const scene = makeScene();
+    createActorCard({
+      scene: scene as unknown as Scene,
+      ...cardOpts,
+      alias: "John",
+    });
+    expect(scene.add.text).toHaveBeenCalledWith(
+      100 + CONSTS.LABEL_X,
+      200 - CONSTS.LABEL_Y,
+      "John\nHero",
+      expect.any(Object),
+    );
+  });
+
   it("creates HP stat text showing health value", () => {
     const scene = makeScene();
     createActorCard({ scene: scene as unknown as Scene, ...cardOpts });

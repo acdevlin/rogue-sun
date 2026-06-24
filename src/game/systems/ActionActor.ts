@@ -9,8 +9,10 @@ import {
  * Tracks progress toward readiness based on speed and elapsed time.
  */
 export class ActionActor {
-  /** Display name. */
+  /** Display name (class name for players, e.g. "Fighter"). */
   name: string = "Actor";
+  /** Personal alias for named characters (e.g. "John Doe"). */
+  alias?: string;
   /** Speed value used to calculate progress accumulation per second. */
   speed: number = 10;
   health: number = 100;
@@ -28,7 +30,8 @@ export class ActionActor {
   /**
    * Default constructor.
    *
-   * @param name Display name for the actor.
+   * @param name Display name (class name for players, e.g. "Fighter").
+   * @param alias Personal alias for named characters (e.g. "John Doe").
    * @param speed Base speed for progress accumulation.
    * @param position The position of the actor in the combat formation.
    * @param isPlayer Whether this actor belongs to the player's party.
@@ -36,6 +39,7 @@ export class ActionActor {
   constructor(params: {
     controller: ActorController;
     name: string;
+    alias?: string;
     speed: number;
     health: number;
     stamina: number;
@@ -44,6 +48,7 @@ export class ActionActor {
   }) {
     this.controller = params.controller;
     this.name = params.name;
+    this.alias = params.alias;
     this.speed = params.speed;
     this.health = params.health;
     this.stamina = params.stamina;

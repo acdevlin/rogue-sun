@@ -276,7 +276,7 @@ describe("Battle scene", () => {
 
       scene.update(0, 16);
       expect(scene.currentlyActingHeader.setText).toHaveBeenCalledWith(
-        expect.stringContaining(actor.name),
+        expect.stringContaining(actor.alias ?? actor.name),
       );
     });
 
@@ -326,12 +326,14 @@ describe("Battle scene", () => {
       expect(scene.actingActor).toBe(fighter);
 
       expect(scene.actorsUi[0].label.setText).toHaveBeenCalledWith(
-        "Fighter [ACTING]",
+        "John Doe\nFighter [ACTING]",
       );
       expect(scene.actorsUi[1].label.setText).toHaveBeenCalledWith(
-        "Mage [READY]",
+        "Jane Doe\nMage [READY]",
       );
-      expect(scene.actorsUi[2].label.setText).toHaveBeenCalledWith("Slacker");
+      expect(scene.actorsUi[2].label.setText).toHaveBeenCalledWith(
+        "Gertrude\nSlacker",
+      );
     });
 
     it("preserves actors at 100% progress when another actor joins ready queue", () => {
@@ -373,12 +375,12 @@ describe("Battle scene", () => {
       scene.update(0, 16);
 
       expect(scene.actorsUi[0].label.setText).toHaveBeenCalledWith(
-        "Fighter [ACTING]",
+        "John Doe\nFighter [ACTING]",
       );
 
       // Actor at 100% shows [READY] even if not yet in the ready queue
       expect(scene.actorsUi[1].label.setText).toHaveBeenCalledWith(
-        "Mage [READY]",
+        "Jane Doe\nMage [READY]",
       );
     });
   });
@@ -634,6 +636,7 @@ describe("Battle scene", () => {
       const battle = new Battle();
       const makeTestActor = (name: string, pos: ActorPosition) => ({
         name,
+        alias: name,
         speed: 10,
         health: 100,
         stamina: 100,

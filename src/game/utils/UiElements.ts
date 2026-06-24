@@ -225,6 +225,7 @@ export function createActorCard(opts: {
   y: number;
   w: number;
   name: string;
+  alias?: string;
   health: number;
   stamina: number;
   energy: number;
@@ -241,10 +242,12 @@ export function createActorCard(opts: {
     .setOrigin(0.5)
     .setDepth(CONSTS.CARD_DEPTH);
 
+  // Show "Alias\nClass" for player characters, plain "Name" for enemies
+  const displayName = opts.alias ? `${opts.alias}\n${opts.name}` : opts.name;
   const label = opts.scene.add.text(
     opts.x + CONSTS.LABEL_X,
     opts.y - CONSTS.LABEL_Y,
-    opts.name,
+    displayName,
     {
       fontSize: `${CONSTS.UI_FONT}px`,
       color: CONSTS.LABEL_COLOR,

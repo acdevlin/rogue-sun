@@ -17,7 +17,7 @@ export const CARD_W = 180;
 /** Height of each actor's progress bar. */
 export const CARD_H = 12;
 /** Vertical gap between actor cards. */
-export const CARD_GAP = 94;
+export const CARD_GAP = 110;
 /** Y-position of the first actor card. */
 export const CARD_START_Y = 132;
 /** Y-position for the lane header labels (BACKLINE/MIDLINE/FRONTLINE). */
@@ -47,7 +47,7 @@ export const PLAYER_X = 40;
 /** Extra width added to the card rectangle beyond the progress bar width. */
 export const CARD_EXTRA_W = 14;
 /** Height of the card rectangle surrounding each progress bar. */
-export const CARD_HEIGHT = 92;
+export const CARD_HEIGHT = 100;
 /** Background color of the card rectangle. */
 export const CARD_BG = 0x2a2a2a;
 /** Stroke color of the card rectangle. */
@@ -67,7 +67,7 @@ export const HIGHLIGHT_COLOR = 0xffff00;
 /** X-offset of the actor name label from the left edge of the card. */
 export const LABEL_X = 4;
 /** Y-offset of the actor name label above the top of the progress bar. */
-export const LABEL_Y = 40;
+export const LABEL_Y = 48;
 /** X-offset of the percentage text from the right edge of the progress bar. */
 export const PCT_X = 2;
 
