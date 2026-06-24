@@ -44,3 +44,8 @@ coverage
 # Script outputs
 *.csv
 species-output/*
+
+# AI stuff
+AGENTS.md
+claude/
+*.ai
