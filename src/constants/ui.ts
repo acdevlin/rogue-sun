@@ -67,7 +67,7 @@ export const HIGHLIGHT_COLOR = 0xffff00;
 /** X-offset of the actor name label from the left edge of the card. */
 export const LABEL_X = 4;
 /** Y-offset of the actor name label above the top of the progress bar. */
-export const LABEL_Y = 48;
+export const LABEL_Y = 40;
 /** X-offset of the percentage text from the right edge of the progress bar. */
 export const PCT_X = 2;
 
@@ -114,12 +114,12 @@ export const PCT_COLOR = "#fff";
 
 /** X-offset for stat text from the card left edge. */
 export const STAT_TXT_X = 2;
-/** Y-offset from the y-param to the health text. */
-export const STAT_HP_Y = -14;
+/** Y-offset from the y-param to the health text (below progress bar). */
+export const STAT_HP_Y = 16;
 /** Y-offset from the y-param to the stamina text. */
-export const STAT_SP_Y = 18;
+export const STAT_SP_Y = 26;
 /** Y-offset from the y-param to the energy text. */
-export const STAT_EP_Y = 34;
+export const STAT_EP_Y = 36;
 
 /** Vertical offset from the bottom of the screen for UI buttons. */
 export const BTN_BOTTOM_OFFSET = 100;

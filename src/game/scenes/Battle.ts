@@ -5,7 +5,11 @@ import * as CONSTS from "../../constants";
 import { TEXT_RESOLUTION } from "../StartGame";
 import { players as playerData } from "../data/playerActorClasses";
 import { enemies as enemyData } from "../data/enemyActorClasses";
-import { createBtn, createLaneBlock } from "../utils/UiElements";
+import {
+  createBtn,
+  createLaneBlock,
+  createActorCard,
+} from "../utils/UiElements";
 
 interface ActorUI {
   actor: ActionActor;
@@ -64,11 +68,10 @@ export class Battle extends Scene {
     };
 
     const cardW = CONSTS.CARD_W;
-    const cardH = CONSTS.CARD_H;
     const gap = CONSTS.CARD_GAP;
 
-    const playerLaneCounts: Record<string, number> = {};
-    const enemyLaneCounts: Record<string, number> = {};
+    const pCounts: Record<string, number> = {};
+    const eCounts: Record<string, number> = {};
     const flankActors: { actor: ActionActor; isPlayer: boolean }[] = [];
 
     // Creates an ActionActor from raw data and registers it on the timeline.
@@ -101,19 +104,12 @@ export class Battle extends Scene {
         : CONSTS.PLAYER_X + laneIdx * CONSTS.LANE_OFFSET;
       const y = CONSTS.CARD_START_Y + (laneCounts[data.position] ?? 0) * gap;
       laneCounts[data.position] = (laneCounts[data.position] ?? 0) + 1;
-      this.createActorUIElement(
-        actor,
-        x,
-        y,
-        cardW,
-        cardH,
-        CONSTS.PROGRESS_FILL,
-      );
+      this.createActorUIElement(actor, x, y, cardW, CONSTS.PROGRESS_FILL);
     };
 
     // Processes all actors for one side (player or enemy): creates each actor,
     // positions non-flank ones immediately, and queues flank actors for later.
-    const deployUnitsToSide = (
+    const deploySide = (
       data: ActorData[],
       controller: string,
       laneCounts: Record<string, number>,
@@ -129,19 +125,11 @@ export class Battle extends Scene {
       }
     };
 
-    deployUnitsToSide(
-      this.players,
-      CONSTS.ActorController.PLAYER,
-      playerLaneCounts,
-    );
-    deployUnitsToSide(
-      this.enemies,
-      CONSTS.ActorController.ENEMY,
-      enemyLaneCounts,
-    );
+    deploySide(this.players, CONSTS.ActorController.PLAYER, pCounts);
+    deploySide(this.enemies, CONSTS.ActorController.ENEMY, eCounts);
 
-    const playerMaxLane = Math.max(...Object.values(playerLaneCounts), 0);
-    const enemyMaxLane = Math.max(...Object.values(enemyLaneCounts), 0);
+    const playerMaxLane = Math.max(...Object.values(pCounts), 0);
+    const enemyMaxLane = Math.max(...Object.values(eCounts), 0);
     let playerFlankIdx = 0;
     let enemyFlankIdx = 0;
 
@@ -156,14 +144,7 @@ export class Battle extends Scene {
         ? CONSTS.PLAYER_X + lidx * CONSTS.LANE_OFFSET
         : width - CONSTS.PLAYER_X - cardW - lidx * CONSTS.LANE_OFFSET;
       const y = CONSTS.CARD_START_Y + maxLane * gap + CONSTS.FLANK_OFFSET;
-      this.createActorUIElement(
-        actor,
-        x,
-        y,
-        cardW,
-        cardH,
-        CONSTS.PROGRESS_FILL,
-      );
+      this.createActorUIElement(actor, x, y, cardW, CONSTS.PROGRESS_FILL);
     }
 
     const pLaneSpan = (CONSTS.NUM_LANES - 1) * CONSTS.LANE_OFFSET + cardW;
@@ -233,7 +214,6 @@ export class Battle extends Scene {
    * @param x The x-coordinate of the top-left corner of the UI card.
    * @param y The y-coordinate of the top-left corner of the UI card.
    * @param width The width of the UI card.
-   * @param height The height of the UI card.
    * @param color The color of the progress bar fill.
    */
   createActorUIElement(
@@ -241,32 +221,23 @@ export class Battle extends Scene {
     x: number,
     y: number,
     width: number,
-    height: number,
     color: number,
   ) {
-    const card = this.add
-      .rectangle(
-        x + width / 2,
-        y + CONSTS.CARD_Y_OFFSET,
-        width + CONSTS.CARD_EXTRA_W,
-        CONSTS.CARD_HEIGHT,
-        CONSTS.CARD_BG,
-      )
-      .setStrokeStyle(CONSTS.CARD_STROKE_W, CONSTS.CARD_STROKE)
-      .setOrigin(0.5)
-      .setDepth(CONSTS.CARD_DEPTH);
-    const progressBg = this.add
-      .rectangle(x + width / 2, y + height / 2, width, height, CONSTS.FILL_BG)
-      .setOrigin(0.5);
-    const fill = this.add
-      .rectangle(
-        x + CONSTS.FILL_INSET,
-        y + CONSTS.FILL_INSET,
-        0,
-        height - CONSTS.FILL_INSET * 2,
-        color,
-      )
-      .setOrigin(0, 0);
+    // Use shared card creation (card rect, progress bar, label, stats)
+    const cardUi = createActorCard({
+      scene: this,
+      x,
+      y,
+      w: width,
+      name: actor.name,
+      alias: actor.alias,
+      health: actor.health,
+      stamina: actor.stamina,
+      energy: actor.energy,
+      fillColor: color,
+    });
+
+    // Battle-only highlight border for the acting actor
     const highlight = this.add
       .rectangle(
         x + width / 2,
@@ -278,49 +249,17 @@ export class Battle extends Scene {
       .setOrigin(0.5)
       .setDepth(CONSTS.HIGHLIGHT_DEPTH)
       .setVisible(false);
-    const displayName = actor.alias
-      ? `${actor.alias}\n${actor.name}`
-      : actor.name;
-    const label = this.add.text(
-      x + CONSTS.LABEL_X,
-      y - CONSTS.LABEL_Y,
-      displayName,
-      {
-        fontSize: `${CONSTS.UI_FONT}px`,
-        color: CONSTS.LABEL_COLOR,
-        resolution: TEXT_RESOLUTION,
-      },
-    );
-
-    const statX = x + CONSTS.STAT_TXT_X;
-    const fmt: Phaser.Types.GameObjects.Text.TextStyle = {
-      fontSize: `${CONSTS.STAT_FONT_SIZE}px`,
-      resolution: TEXT_RESOLUTION,
-    };
-
-    const healthTxt = this.add.text(statX, y + CONSTS.STAT_HP_Y, "", {
-      ...fmt,
-      color: CONSTS.STAT_HP_COLOR,
-    });
-    const staminaTxt = this.add.text(statX, y + CONSTS.STAT_SP_Y, "", {
-      ...fmt,
-      color: CONSTS.STAT_SP_COLOR,
-    });
-    const energyTxt = this.add.text(statX, y + CONSTS.STAT_EP_Y, "", {
-      ...fmt,
-      color: CONSTS.STAT_EP_COLOR,
-    });
 
     this.actorsUi.push({
       actor,
-      card,
-      fill,
-      bg: progressBg,
+      card: cardUi.card,
+      fill: cardUi.fill,
+      bg: cardUi.progressBg,
       highlight,
-      label,
-      healthTxt,
-      staminaTxt,
-      energyTxt,
+      label: cardUi.label,
+      healthTxt: cardUi.healthTxt,
+      staminaTxt: cardUi.staminaTxt,
+      energyTxt: cardUi.energyTxt,
     });
   }
 
@@ -376,21 +315,21 @@ export class Battle extends Scene {
    * @param deltaMs The delta time in milliseconds to advance the timeline.
    */
   private advanceTimelineAndHandleReadyQueue(deltaMs: number) {
-    const progressSnapshot = new Map<ActionActor, number>();
+    const snapshot = new Map<ActionActor, number>();
     for (const actor of this.timeline.actors) {
-      progressSnapshot.set(actor, actor.progress);
+      snapshot.set(actor, actor.progress);
     }
 
-    const readyQueueLengthBefore = this.timeline.readyQueue.length;
+    const lenBefore = this.timeline.readyQueue.length;
 
     this.timeline.update(deltaMs / CONSTS.MS_TO_S);
 
-    const readyQueueLengthAfter = this.timeline.readyQueue.length;
+    const lenAfter = this.timeline.readyQueue.length;
 
-    if (readyQueueLengthAfter > readyQueueLengthBefore) {
+    if (lenAfter > lenBefore) {
       for (const actor of this.timeline.actors) {
         if (!this.timeline.readyQueue.includes(actor) && !actor.isReady()) {
-          actor.setProgress(progressSnapshot.get(actor)!);
+          actor.setProgress(snapshot.get(actor)!);
         }
       }
     }

@@ -65,6 +65,8 @@ export function createBtn(opts: {
 
 export interface ActorCardUI {
   card: GameObjects.Rectangle;
+  progressBg: GameObjects.Rectangle;
+  fill: GameObjects.Rectangle;
   label: GameObjects.Text;
   healthTxt: GameObjects.Text;
   staminaTxt: GameObjects.Text;
@@ -229,6 +231,7 @@ export function createActorCard(opts: {
   health: number;
   stamina: number;
   energy: number;
+  fillColor?: number;
 }): ActorCardUI {
   const card = opts.scene.add
     .rectangle(
@@ -241,6 +244,28 @@ export function createActorCard(opts: {
     .setStrokeStyle(CONSTS.CARD_STROKE_W, CONSTS.CARD_STROKE)
     .setOrigin(0.5)
     .setDepth(CONSTS.CARD_DEPTH);
+
+  // Progress bar background, used as a placeholder in PartyCreation
+  const progressBg = opts.scene.add
+    .rectangle(
+      opts.x + opts.w / 2,
+      opts.y + CONSTS.CARD_H / 2,
+      opts.w,
+      CONSTS.CARD_H,
+      CONSTS.FILL_BG,
+    )
+    .setOrigin(0.5);
+
+  // Progress fill. Starts at 0, Battle scene sets width in syncUI
+  const fill = opts.scene.add
+    .rectangle(
+      opts.x + CONSTS.FILL_INSET,
+      opts.y + CONSTS.FILL_INSET,
+      0,
+      CONSTS.CARD_H - CONSTS.FILL_INSET * 2,
+      opts.fillColor ?? CONSTS.PROGRESS_FILL,
+    )
+    .setOrigin(0, 0);
 
   // Show "Alias\nClass" for player characters, plain "Name" for enemies
   const displayName = opts.alias ? `${opts.alias}\n${opts.name}` : opts.name;
@@ -289,5 +314,5 @@ export function createActorCard(opts: {
     },
   );
 
-  return { card, label, healthTxt, staminaTxt, energyTxt };
+  return { card, progressBg, fill, label, healthTxt, staminaTxt, energyTxt };
 }

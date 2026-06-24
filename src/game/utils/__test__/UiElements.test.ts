@@ -483,16 +483,72 @@ describe("createActorCard", () => {
     );
   });
 
-  it("returns card, label, healthTxt, staminaTxt, energyTxt", () => {
+  it("returns card, bg, fill, label, and stat texts", () => {
     const scene = makeScene();
     const result = createActorCard({
       scene: scene as unknown as Scene,
       ...cardOpts,
     });
     expect(result.card).toBeTruthy();
+    expect(result.progressBg).toBeTruthy();
+    expect(result.fill).toBeTruthy();
     expect(result.label).toBeTruthy();
     expect(result.healthTxt).toBeTruthy();
     expect(result.staminaTxt).toBeTruthy();
     expect(result.energyTxt).toBeTruthy();
+  });
+
+  it("creates progress background rect at correct position, size, and color", () => {
+    const scene = makeScene();
+    createActorCard({ scene: scene as unknown as Scene, ...cardOpts });
+    const bar = scene.add.rectangle.mock.calls[1];
+    expect(bar[0]).toBe(100 + CONSTS.CARD_W / 2);
+    expect(bar[1]).toBe(200 + CONSTS.CARD_H / 2);
+    expect(bar[2]).toBe(CONSTS.CARD_W);
+    expect(bar[3]).toBe(CONSTS.CARD_H);
+    expect(bar[4]).toBe(CONSTS.FILL_BG);
+  });
+
+  it("progress bg origin is set to 0.5", () => {
+    const scene = makeScene();
+    createActorCard({ scene: scene as unknown as Scene, ...cardOpts });
+    const bgRect = scene.add.rectangle.mock.results[1].value;
+    expect(bgRect.setOrigin).toHaveBeenCalledWith(0.5);
+  });
+
+  it("creates progress fill rect starting at zero width", () => {
+    const scene = makeScene();
+    createActorCard({ scene: scene as unknown as Scene, ...cardOpts });
+    const fill = scene.add.rectangle.mock.calls[2];
+    expect(fill[0]).toBe(100 + CONSTS.FILL_INSET);
+    expect(fill[1]).toBe(200 + CONSTS.FILL_INSET);
+    expect(fill[2]).toBe(0);
+    expect(fill[3]).toBe(CONSTS.CARD_H - CONSTS.FILL_INSET * 2);
+    expect(fill[4]).toBe(CONSTS.PROGRESS_FILL);
+  });
+
+  it("progress fill origin is set to (0,0)", () => {
+    const scene = makeScene();
+    createActorCard({ scene: scene as unknown as Scene, ...cardOpts });
+    const fillRect = scene.add.rectangle.mock.results[2].value;
+    expect(fillRect.setOrigin).toHaveBeenCalledWith(0, 0);
+  });
+
+  it("uses default PROGRESS_FILL when fillColor is omitted", () => {
+    const scene = makeScene();
+    createActorCard({ scene: scene as unknown as Scene, ...cardOpts });
+    const fill = scene.add.rectangle.mock.calls[2];
+    expect(fill[4]).toBe(CONSTS.PROGRESS_FILL);
+  });
+
+  it("uses custom fillColor when provided", () => {
+    const scene = makeScene();
+    createActorCard({
+      scene: scene as unknown as Scene,
+      ...cardOpts,
+      fillColor: 0xff0000,
+    });
+    const fill = scene.add.rectangle.mock.calls[2];
+    expect(fill[4]).toBe(0xff0000);
   });
 });

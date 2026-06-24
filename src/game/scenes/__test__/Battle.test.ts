@@ -479,6 +479,39 @@ describe("Battle scene", () => {
         );
       }
     });
+
+    it("syncUI updates fill.width proportional to actor progress", () => {
+      const elem = scene.actorsUi[0];
+      const actor = elem.actor;
+      elem.bg.width = CONSTS.CARD_W;
+      actor.progress = 50;
+      scene.actingActor = actor;
+      scene.update(0, 16);
+      const expected =
+        (50 / actor.readyThreshold) * (CONSTS.CARD_W - CONSTS.FILL_INSET * 2);
+      expect(elem.fill.width).toBeCloseTo(expected);
+    });
+
+    it("fill.width is 0 when actor has no progress", () => {
+      const elem = scene.actorsUi[0];
+      const actor = elem.actor;
+      elem.bg.width = CONSTS.CARD_W;
+      actor.progress = 0;
+      scene.actingActor = actor;
+      scene.update(0, 16);
+      expect(elem.fill.width).toBe(0);
+    });
+
+    it("fill.width is max when actor is at threshold", () => {
+      const elem = scene.actorsUi[0];
+      const actor = elem.actor;
+      elem.bg.width = CONSTS.CARD_W;
+      actor.progress = actor.readyThreshold;
+      scene.actingActor = actor;
+      scene.update(0, 16);
+      const expected = CONSTS.CARD_W - CONSTS.FILL_INSET * 2;
+      expect(elem.fill.width).toBeCloseTo(expected);
+    });
   });
 
   describe("highlight dimensions", () => {
