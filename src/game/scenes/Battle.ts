@@ -3,7 +3,10 @@ import { ActionActor } from "../systems/ActionActor";
 import { TimelineSystem } from "../systems/TimelineSystem";
 import * as CONSTS from "../../constants";
 import { TEXT_RESOLUTION } from "../StartGame";
-import { players as playerData } from "../data/playerActorClasses";
+import {
+  players as playerData,
+  type PlayerActorData,
+} from "../data/playerActorClasses";
 import { enemies as enemyData } from "../data/enemyActorClasses";
 import {
   createBtn,
@@ -57,16 +60,6 @@ export class Battle extends Scene {
     const { width } = this.cameras.main;
     this.createActingHeader(width / 2);
 
-    type ActorData = {
-      name: string;
-      alias?: string;
-      speed: number;
-      health: number;
-      stamina: number;
-      energy: number;
-      position: string;
-    };
-
     const cardW = CONSTS.CARD_W;
     const gap = CONSTS.CARD_GAP;
 
@@ -75,7 +68,7 @@ export class Battle extends Scene {
     const flankActors: { actor: ActionActor; isPlayer: boolean }[] = [];
 
     // Creates an ActionActor from raw data and registers it on the timeline.
-    const createActor = (data: ActorData, controller: string) => {
+    const createActor = (data: PlayerActorData, controller: string) => {
       const actor = new ActionActor({
         controller,
         name: data.name,
@@ -93,7 +86,7 @@ export class Battle extends Scene {
     // Places a non-flank actor card in the correct lane column (BACKLINE/MIDLINE/FRONTLINE)
     // and stacks it vertically based on how many cards are already in that lane.
     const positionNonFlank = (
-      data: ActorData,
+      data: PlayerActorData,
       actor: ActionActor,
       laneCounts: Record<string, number>,
       isEnemy: boolean,
@@ -110,7 +103,7 @@ export class Battle extends Scene {
     // Processes all actors for one side (player or enemy): creates each actor,
     // positions non-flank ones immediately, and queues flank actors for later.
     const deploySide = (
-      data: ActorData[],
+      data: PlayerActorData[],
       controller: string,
       laneCounts: Record<string, number>,
     ) => {

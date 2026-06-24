@@ -1,6 +1,16 @@
 import * as CONSTS from "../../constants";
 
-export const players = [
+export interface PlayerActorData {
+  name: string;
+  alias?: string;
+  speed: number;
+  health: number;
+  stamina: number;
+  energy: number;
+  position: string;
+}
+
+export const players: PlayerActorData[] = [
   {
     name: "Fighter",
     alias: "John Doe",
