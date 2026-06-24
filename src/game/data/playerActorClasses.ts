@@ -1,14 +1,5 @@
 import * as CONSTS from "../../constants";
-
-export interface PlayerActorData {
-  name: string;
-  alias?: string;
-  speed: number;
-  health: number;
-  stamina: number;
-  energy: number;
-  position: string;
-}
+import { PlayerActorData } from "./PlayerActorData";
 
 export const players: PlayerActorData[] = [
   {

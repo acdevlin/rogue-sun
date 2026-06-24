@@ -1,0 +1,99 @@
+import { generateId } from "../utils/TeamUtils";
+import { players } from "../data/playerActorClasses";
+import type { PlayerTeam } from "../data/PlayerTeam";
+
+export class PlayerTeamService {
+  private readonly STORAGE_KEY = "rogue_sun_player_teams";
+
+  async readAll(): Promise<PlayerTeam[]> {
+    const data = localStorage.getItem(this.STORAGE_KEY);
+    if (!data) return [];
+    try {
+      return JSON.parse(data) as PlayerTeam[];
+    } catch {
+      return [];
+    }
+  }
+
+  async create(
+    teamData: Omit<PlayerTeam, "id" | "createdAt" | "lastModified">,
+  ): Promise<PlayerTeam> {
+    const teams = await this.readAll();
+    const newTeam: PlayerTeam = {
+      id: generateId(),
+      name: teamData.name,
+      createdAt: Date.now(),
+      lastModified: Date.now(),
+      members: teamData.members,
+    };
+    await this.writeAll([...teams, newTeam]);
+    return newTeam;
+  }
+
+  async read(teamId: string): Promise<PlayerTeam | null> {
+    const teams = await this.readAll();
+    return teams.find((team) => team.id === teamId) || null;
+  }
+
+  async update(teamId: string, updates: Partial<PlayerTeam>): Promise<boolean> {
+    const teams = await this.readAll();
+    const index = teams.findIndex((team) => team.id === teamId);
+    if (index < 0) return false;
+
+    teams[index] = {
+      ...teams[index],
+      ...updates,
+      lastModified: Date.now(),
+    };
+    await this.writeAll(teams);
+    return true;
+  }
+
+  async delete(teamId: string): Promise<boolean> {
+    const teams = await this.readAll();
+    const filtered = teams.filter((team) => team.id !== teamId);
+    if (filtered.length === teams.length) return false;
+
+    await this.writeAll(filtered);
+    return true;
+  }
+
+  private async writeAll(teams: PlayerTeam[]): Promise<void> {
+    localStorage.setItem(this.STORAGE_KEY, JSON.stringify(teams));
+  }
+
+  validateTeam(team: Partial<PlayerTeam>): {
+    valid: boolean;
+    errors: string[];
+  } {
+    const errors: string[] = [];
+
+    if (!team.name || team.name.trim().length < 2) {
+      errors.push("Team name must be at least 2 characters");
+    }
+
+    if (!team.members || team.members.length === 0) {
+      errors.push("Team must have at least one member");
+    }
+
+    if (team.members) {
+      const classIds = team.members.map((member) => member.actorClassId);
+      const duplicates = classIds.filter(
+        (classId, idx) => classIds.indexOf(classId) !== idx,
+      );
+      if (duplicates.length > 0) {
+        errors.push(
+          `Duplicate class IDs: ${[...new Set(duplicates)].join(", ")}`,
+        );
+      }
+
+      for (const member of team.members) {
+        if (!players.find((cls) => cls.name === member.actorClassId)) {
+          errors.push(`Invalid class ID: ${member.actorClassId}`);
+        }
+      }
+    }
+
+    return { valid: errors.length === 0, errors };
+  }
+}

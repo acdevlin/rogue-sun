@@ -3,10 +3,8 @@ import { ActionActor } from "../systems/ActionActor";
 import { TimelineSystem } from "../systems/TimelineSystem";
 import * as CONSTS from "../../constants";
 import { TEXT_RESOLUTION } from "../StartGame";
-import {
-  players as playerData,
-  type PlayerActorData,
-} from "../data/playerActorClasses";
+import { PlayerActorData } from "../data/PlayerActorData";
+import { players as playerData } from "../data/playerActorClasses";
 import { enemies as enemyData } from "../data/enemyActorClasses";
 import {
   createBtn,
