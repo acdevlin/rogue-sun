@@ -10,6 +10,7 @@ export const HEADER_BG = 0xcccccc;
 export const HEADER_BG_PAD_X = 20;
 /** Vertical padding for the acting header background. */
 export const HEADER_BG_PAD_Y = 10;
+/** Y-position of the title text in the PartyCreation scene. */
 export const HEADER_PARTYCREATION_Y = 40;
 
 /** Width of each actor's progress bar. */
@@ -42,8 +43,8 @@ export const FLANK_LABEL_PAD = 12;
 export const FLANK_LABEL_FALLBACK_W = 56;
 /** Vertical gap between the bottom of the last non-FLANK card and the first FLANK card. */
 export const FLANK_OFFSET = 34;
-/** X-position offset for player cards from the left edge, and right margin for enemy cards. */
-export const PLAYER_X = 40;
+/** Horizontal inset from the screen edge to the start of the lane grid on both player and enemy sides. */
+export const LANE_INSET = 40;
 /** Extra width added to the card rectangle beyond the progress bar width. */
 export const CARD_EXTRA_W = 14;
 /** Height of the card rectangle surrounding each progress bar. */

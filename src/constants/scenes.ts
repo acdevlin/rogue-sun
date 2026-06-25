@@ -19,13 +19,13 @@ export const PRELOADER_BAR_COLOR = 0xffffff;
 export const LOGO_Y = 84;
 /** Title text Y-offset from vertical center on the main menu. */
 export const TITLE_Y = 76;
-/** Title font size on the main menu. */
+/** Font size for UI buttons and the main menu title. */
 export const MENU_FONT_SIZE = 38;
-/** Title stroke thickness on the main menu. */
+/** Stroke thickness for UI buttons and scene titles. */
 export const MENU_STROKE = 8;
-/** Title text color on the main menu. */
+/** Text color for UI buttons, scene titles, and the main menu. */
 export const MENU_TEXT_COLOR = "#ffffff";
-/** Title stroke color on the main menu. */
+/** Stroke color for UI buttons, scene titles, and the main menu. */
 export const MENU_STROKE_COLOR = "#000000";
 
 /** Background color for the GameOver scene camera. */

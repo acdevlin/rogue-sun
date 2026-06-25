@@ -95,8 +95,8 @@ export class Battle extends Scene {
     ) => {
       const laneIdx = CONSTS.PRIMARY_LANES.indexOf(data.position);
       const x = isEnemy
-        ? width - CONSTS.PLAYER_X - cardW - laneIdx * CONSTS.LANE_OFFSET
-        : CONSTS.PLAYER_X + laneIdx * CONSTS.LANE_OFFSET;
+        ? width - CONSTS.LANE_INSET - cardW - laneIdx * CONSTS.LANE_OFFSET
+        : CONSTS.LANE_INSET + laneIdx * CONSTS.LANE_OFFSET;
       const y = CONSTS.CARD_START_Y + (laneCounts[data.position] ?? 0) * gap;
       laneCounts[data.position] = (laneCounts[data.position] ?? 0) + 1;
       this.createActorUIElement(actor, x, y, cardW, CONSTS.PROGRESS_FILL);
@@ -136,8 +136,8 @@ export class Battle extends Scene {
       const maxLane = isPlayer ? playerMaxLane : enemyMaxLane;
       const lidx = Math.max(0, CONSTS.NUM_LANES - 1 - idx);
       const x = isPlayer
-        ? CONSTS.PLAYER_X + lidx * CONSTS.LANE_OFFSET
-        : width - CONSTS.PLAYER_X - cardW - lidx * CONSTS.LANE_OFFSET;
+        ? CONSTS.LANE_INSET + lidx * CONSTS.LANE_OFFSET
+        : width - CONSTS.LANE_INSET - cardW - lidx * CONSTS.LANE_OFFSET;
       const y = CONSTS.CARD_START_Y + maxLane * gap + CONSTS.FLANK_OFFSET;
       this.createActorUIElement(actor, x, y, cardW, CONSTS.PROGRESS_FILL);
     }
@@ -145,7 +145,7 @@ export class Battle extends Scene {
     const pLaneSpan = (CONSTS.NUM_LANES - 1) * CONSTS.LANE_OFFSET + cardW;
     createLaneBlock({
       scene: this,
-      laneLeft: CONSTS.PLAYER_X,
+      laneLeft: CONSTS.LANE_INSET,
       cardW,
       gap,
       maxLane: playerMaxLane,
@@ -156,7 +156,7 @@ export class Battle extends Scene {
     });
     createLaneBlock({
       scene: this,
-      laneLeft: width - CONSTS.PLAYER_X - pLaneSpan,
+      laneLeft: width - CONSTS.LANE_INSET - pLaneSpan,
       cardW,
       gap,
       maxLane: enemyMaxLane,
