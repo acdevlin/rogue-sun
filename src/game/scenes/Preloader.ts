@@ -16,6 +16,9 @@ import {
  * Transitions to MainMenu once all assets are loaded.
  */
 export class Preloader extends Scene {
+  /**
+   * Default constructor.
+   */
   constructor() {
     super("Preloader");
   }
@@ -48,11 +51,17 @@ export class Preloader extends Scene {
     });
   }
 
+  /**
+   * Loads game assets (images, sprites) needed by the MainMenu and beyond.
+   */
   preload() {
     this.load.setPath("assets");
     this.load.image("logo", "logo.png");
   }
 
+  /**
+   * Transitions to the MainMenu scene once all assets have loaded.
+   */
   create() {
     this.scene.start("MainMenu");
   }

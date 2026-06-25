@@ -20,10 +20,17 @@ export class MainMenu extends Scene {
   logo: GameObjects.Image;
   title: GameObjects.Text;
 
+  /**
+   * Default constructor.
+   */
   constructor() {
     super("MainMenu");
   }
 
+  /**
+   * Renders the logo, background image, and title text.
+   * A pointer click transitions to the PartyCreation scene.
+   */
   create() {
     const { centerX, centerY, scale } = getSceneScale(this);
 

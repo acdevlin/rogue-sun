@@ -5,6 +5,11 @@ import type { PlayerTeam } from "../data/PlayerTeam";
 export class PlayerTeamService {
   private readonly STORAGE_KEY = "rogue_sun_player_teams";
 
+  /**
+   * Reads all saved teams from localStorage.
+   *
+   * @returns An array of PlayerTeam objects, or an empty array if none exist.
+   */
   async readAll(): Promise<PlayerTeam[]> {
     const data = localStorage.getItem(this.STORAGE_KEY);
     if (!data) return [];
@@ -15,6 +20,12 @@ export class PlayerTeamService {
     }
   }
 
+  /**
+   * Creates a new team and persists it to localStorage.
+   *
+   * @param teamData - The team name and member list (id and timestamps are generated).
+   * @returns The newly created PlayerTeam.
+   */
   async create(
     teamData: Omit<PlayerTeam, "id" | "createdAt" | "lastModified">,
   ): Promise<PlayerTeam> {
@@ -30,11 +41,24 @@ export class PlayerTeamService {
     return newTeam;
   }
 
+  /**
+   * Reads a single team by its ID.
+   *
+   * @param teamId - The unique identifier of the team.
+   * @returns The matching PlayerTeam, or null if not found.
+   */
   async read(teamId: string): Promise<PlayerTeam | null> {
     const teams = await this.readAll();
     return teams.find((team) => team.id === teamId) || null;
   }
 
+  /**
+   * Partially updates a team's properties. Sets lastModified to the current time.
+   *
+   * @param teamId - The unique identifier of the team to update.
+   * @param updates - Partial team fields to apply.
+   * @returns True if the team was found and updated, false otherwise.
+   */
   async update(teamId: string, updates: Partial<PlayerTeam>): Promise<boolean> {
     const teams = await this.readAll();
     const index = teams.findIndex((team) => team.id === teamId);
@@ -49,6 +73,12 @@ export class PlayerTeamService {
     return true;
   }
 
+  /**
+   * Deletes a team by its ID.
+   *
+   * @param teamId - The unique identifier of the team to delete.
+   * @returns True if the team was found and removed, false otherwise.
+   */
   async delete(teamId: string): Promise<boolean> {
     const teams = await this.readAll();
     const filtered = teams.filter((team) => team.id !== teamId);
@@ -58,10 +88,21 @@ export class PlayerTeamService {
     return true;
   }
 
+  /**
+   * Persists the full team array to localStorage.
+   *
+   * @param teams - The complete list of teams to write.
+   */
   private async writeAll(teams: PlayerTeam[]): Promise<void> {
     localStorage.setItem(this.STORAGE_KEY, JSON.stringify(teams));
   }
 
+  /**
+   * Validates a team's name and members, returning any errors found.
+   *
+   * @param team - The partial team data to validate.
+   * @returns An object with a `valid` boolean and an `errors` string array.
+   */
   validateTeam(team: Partial<PlayerTeam>): {
     valid: boolean;
     errors: string[];

@@ -27,10 +27,18 @@ export class PartyCreation extends Scene {
   // Tracks all game objects created for the current lane display.
   laneObjects: GameObjects.GameObject[] = [];
 
+  /**
+   * Default constructor.
+   */
   constructor() {
     super("PartyCreation");
   }
 
+  /**
+   * Sets up the Party Creation UI: title, saved teams panel, Start Game
+   * button, and initial lane display. Triggers async team initialization
+   * (ensureDefaultTeam → loadInitialTeam) and renders saved teams.
+   */
   create() {
     this.camera = this.cameras.main;
     const { centerX, scale } = getSceneScale(this);

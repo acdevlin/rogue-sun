@@ -30,11 +30,14 @@ export class ActionActor {
   /**
    * Default constructor.
    *
-   * @param name Display name (class name for players, e.g. "Fighter").
-   * @param alias Personal alias for named characters (e.g. "John Doe").
-   * @param speed Base speed for progress accumulation.
-   * @param position The position of the actor in the combat formation.
-   * @param isPlayer Whether this actor belongs to the player's party.
+   * @param params.controller - Whether the actor is player- or enemy-controlled.
+   * @param params.name - Display name (class name, e.g. "Fighter").
+   * @param params.alias - Optional personal alias (e.g. "John Doe").
+   * @param params.speed - Base speed for progress accumulation.
+   * @param params.health - Starting HP.
+   * @param params.stamina - Starting SP.
+   * @param params.energy - Starting EP.
+   * @param params.position - Formation position (FRONTLINE, MIDLINE, etc.).
    */
   constructor(params: {
     controller: ActorController;

@@ -50,6 +50,9 @@ export class Battle extends Scene {
 
   /**
    * Initializes all game objects, including timeline system and UI elements.
+   *
+   * @param playerData - Optional player data passed from the PartyCreation scene
+   *   (e.g. a custom party composition). Falls back to the default player roster.
    */
   create(playerData?: { players?: PlayerActorData[] }) {
     this.actorsUi = [];

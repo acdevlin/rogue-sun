@@ -20,10 +20,17 @@ export class GameOver extends Scene {
   background: Phaser.GameObjects.Image;
   gameover_text: Phaser.GameObjects.Text;
 
+  /**
+   * Default constructor.
+   */
   constructor() {
     super("GameOver");
   }
 
+  /**
+   * Renders the "Game Over" text over a dimmed background.
+   * A pointer click transitions back to the MainMenu.
+   */
   create() {
     this.camera = this.cameras.main;
     const { centerX, centerY, scale } = getSceneScale(this);
