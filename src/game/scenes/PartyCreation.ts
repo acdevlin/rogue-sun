@@ -26,6 +26,7 @@ export class PartyCreation extends Scene {
   currentMembers: PlayerActorData[] = players;
   // Tracks all game objects created for the current lane display.
   laneObjects: GameObjects.GameObject[] = [];
+  teamService = new PlayerTeamService();
 
   /**
    * Default constructor.
@@ -66,7 +67,6 @@ export class PartyCreation extends Scene {
     this.renderSavedTeams();
 
     const y = this.camera.height - CONSTS.BTN_BOTTOM_OFFSET;
-    const service = new PlayerTeamService();
     const btn = createBtn({
       scene: this,
       cx: centerX,
@@ -77,12 +77,12 @@ export class PartyCreation extends Scene {
           actorClassId: member.name,
           position: member.position,
         }));
-        const teams = await service.readAll();
+        const teams = await this.teamService.readAll();
         const curTeam = teams.find((team) => team.name === "Current Party");
         if (curTeam) {
-          await service.update(curTeam.id, { members });
+          await this.teamService.update(curTeam.id, { members });
         } else {
-          await service.create({ name: "Current Party", members });
+          await this.teamService.create({ name: "Current Party", members });
         }
         this.scene.start("Battle", { players: this.currentMembers });
       },
@@ -106,17 +106,18 @@ export class PartyCreation extends Scene {
    *
    * @returns A promise that resolves once the team is saved.
    */
-  private ensureDefaultTeam(): Promise<void> {
-    const service = new PlayerTeamService();
+  private async ensureDefaultTeam(): Promise<void> {
     const members: TeamMember[] = players.map((player) => ({
       actorClassId: player.name,
       position: player.position,
     }));
-    return service.readAll().then((teams) => {
-      const cur = teams.find((team) => team.name === "Default");
-      if (cur) return service.update(cur.id, { members }).then(() => {});
-      return service.create({ name: "Default", members }).then(() => {});
-    });
+    const teams = await this.teamService.readAll();
+    const cur = teams.find((team) => team.name === "Default");
+    if (cur) {
+      await this.teamService.update(cur.id, { members });
+    } else {
+      await this.teamService.create({ name: "Default", members });
+    }
   }
 
   /**
@@ -124,8 +125,7 @@ export class PartyCreation extends Scene {
    * Prefers "Current Party" over "Default". Falls back to the full player roster.
    */
   private loadInitialTeam(): void {
-    const service = new PlayerTeamService();
-    service.readAll().then((teams) => {
+    this.teamService.readAll().then((teams) => {
       const preferred =
         teams.find((team) => team.name === "Current Party") ||
         teams.find((team) => team.name === "Default");
@@ -183,7 +183,6 @@ export class PartyCreation extends Scene {
    * loads that team's composition into the lane display.
    */
   private renderSavedTeams(): void {
-    const service = new PlayerTeamService();
     const rightX = this.cameras.main.width - 280;
     const headerY = CONSTS.HEADER_PARTYCREATION_Y + 90;
     const style = {
@@ -197,7 +196,7 @@ export class PartyCreation extends Scene {
       .text(rightX, headerY, "Saved Teams", style)
       .setOrigin(0, 0);
 
-    service.readAll().then((teams) => {
+    this.teamService.readAll().then((teams) => {
       this.savedTeamsEntries.forEach((entry) => entry.destroy());
       this.savedTeamsEntries = [];
 

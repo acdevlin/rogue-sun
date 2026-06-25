@@ -68,9 +68,6 @@ export const HIGHLIGHT_COLOR = 0xffff00;
 export const LABEL_X = 4;
 /** Y-offset of the actor name label above the top of the progress bar. */
 export const LABEL_Y = 40;
-/** X-offset of the percentage text from the right edge of the progress bar. */
-export const PCT_X = 2;
-
 /** Fill color for all progress bars (both player and enemy). */
 export const PROGRESS_FILL = 0xcccccc;
 /** Stroke color for the acting header when a player is acting. */
@@ -109,9 +106,6 @@ export const STAT_SP_COLOR = "#ffcc00";
 export const STAT_EP_COLOR = "#66ccff";
 /** Initial color of the actor name label. */
 export const LABEL_COLOR = "#ccc";
-/** Color of the percentage progress text. */
-export const PCT_COLOR = "#fff";
-
 /** X-offset for stat text from the card left edge. */
 export const STAT_TXT_X = 2;
 /** Y-offset from the y-param to the health text (below progress bar). */
