@@ -14,31 +14,39 @@ import type { TeamMember } from "../data/TeamMember";
 import type { PlayerTeam } from "../data/PlayerTeam";
 import type { PlayerActorData } from "../data/PlayerActorData";
 
+/**
+ * Tracks a pool card and its associated sub-objects for dragging as a group.
+ */
+interface PoolCardEntry {
+  actor: PlayerActorData;
+  card: GameObjects.Rectangle;
+  objects: (GameObjects.Rectangle | GameObjects.Text)[];
+  origX: number;
+  origY: number;
+}
+
 export class PartyCreation extends Scene {
   camera: Cameras.Scene2D.Camera;
-  background: GameObjects.Image;
   title: GameObjects.Text;
   startBtn: GameObjects.Text;
   startBtnBg: GameObjects.Rectangle;
+  saveBtn: GameObjects.Text;
+  saveBtnBg: GameObjects.Rectangle;
   savedTeamsLabel: GameObjects.Text;
   savedTeamsEntries: GameObjects.Text[] = [];
-  // Currently displayed party members in the lane UI.
-  currentMembers: PlayerActorData[] = players;
-  // Tracks all game objects created for the current lane display.
+  workingMembers: PlayerActorData[] = [];
   laneObjects: GameObjects.GameObject[] = [];
+  poolCards: PoolCardEntry[] = [];
+  drag: { actor: PlayerActorData; origX: number; origY: number } | null = null;
   teamService = new PlayerTeamService();
 
-  /**
-   * Default constructor.
-   */
   constructor() {
     super("PartyCreation");
   }
 
   /**
-   * Sets up the Party Creation UI: title, saved teams panel, Start Game
-   * button, and initial lane display. Triggers async team initialization
-   * (ensureDefaultTeam → loadInitialTeam) and renders saved teams.
+   * Lifecycle hook called when the scene starts. Renders all UI elements,
+   * loads saved teams, and registers drag-and-drop handlers.
    */
   create() {
     this.camera = this.cameras.main;
@@ -46,6 +54,7 @@ export class PartyCreation extends Scene {
 
     this.camera.setBackgroundColor(CONSTS.PARTYCREATION_BG);
 
+    // Render the scene title
     this.title = this.add.text(
       centerX,
       CONSTS.HEADER_PARTYCREATION_Y,
@@ -62,38 +71,63 @@ export class PartyCreation extends Scene {
     );
     this.title.setOrigin(0.5);
 
-    this.currentMembers = players;
+    // Initialize state, ensure the default roster exists, and render UI
+    this.workingMembers = [...players];
+    this.poolCards = [];
     this.ensureDefaultTeam().then(() => this.loadInitialTeam());
+    this.renderPool();
     this.renderSavedTeams();
 
-    const y = this.camera.height - CONSTS.BTN_BOTTOM_OFFSET;
-    const btn = createBtn({
+    // Register drag-and-drop for pool-to-lane interactions
+    this.input.on("dragstart", this.onDragStart, this);
+    this.input.on("drag", this.onDrag, this);
+    this.input.on("dragend", this.onDragEnd, this);
+
+    const btnY = this.camera.height - CONSTS.BTN_BOTTOM_OFFSET;
+
+    // Save Team — prompts for a name and persists the current composition
+    const saveButton = createBtn({
       scene: this,
-      cx: centerX,
-      y,
+      cx: centerX - CONSTS.PARTYCREATION_BTN_SPACING,
+      y: btnY,
+      label: "Save Team",
+      onClick: () => this.promptSaveTeam(),
+      scale,
+    });
+    this.saveBtn = saveButton.label;
+    this.saveBtnBg = saveButton.bg;
+
+    // Start Game — persists the current party then transitions to battle
+    const stBtn = createBtn({
+      scene: this,
+      cx: centerX + CONSTS.PARTYCREATION_BTN_SPACING,
+      y: btnY,
       label: "Start Game",
       onClick: async () => {
-        const members: TeamMember[] = this.currentMembers.map((member) => ({
-          actorClassId: member.name,
-          position: member.position,
+        const members: TeamMember[] = this.workingMembers.map((i) => ({
+          actorClassId: i.name,
+          position: i.position,
         }));
         const teams = await this.teamService.readAll();
-        const curTeam = teams.find((team) => team.name === "Current Party");
-        if (curTeam) {
-          await this.teamService.update(curTeam.id, { members });
+        const cur = teams.find((i) => i.name === CONSTS.TEAM_NAME_CURRENT);
+        if (cur) {
+          await this.teamService.update(cur.id, { members });
         } else {
-          await this.teamService.create({ name: "Current Party", members });
+          await this.teamService.create({
+            name: CONSTS.TEAM_NAME_CURRENT,
+            members,
+          });
         }
-        this.scene.start("Battle", { players: this.currentMembers });
+        this.scene.start("Battle", { players: this.workingMembers });
       },
       scale,
     });
-    this.startBtn = btn.label;
-    this.startBtnBg = btn.bg;
+    this.startBtn = stBtn.label;
+    this.startBtnBg = stBtn.bg;
   }
 
   /**
-   * Destroys all lane game objects: cards, headers, and guide lines.
+   * Destroys all lane cards, headers, and guide lines for a fresh render.
    */
   private clearLanes(): void {
     this.laneObjects.forEach((obj) => obj.destroy());
@@ -101,10 +135,31 @@ export class PartyCreation extends Scene {
   }
 
   /**
-   * Upserts a "Default" team containing all player classes.
-   * Runs on scene create to ensure a baseline team exists.
-   *
-   * @returns A promise that resolves once the team is saved.
+   * Re-renders the lane grid and resets pool visuals after any team change.
+   */
+  private rebuildLanesAndPool(): void {
+    this.clearLanes();
+    this.createPartyLanes(this.workingMembers);
+    this.resetPoolPositions();
+    this.syncPool();
+  }
+
+  /**
+   * Translates all pooled objects back to their original pre-drag positions.
+   */
+  private resetPoolPositions(): void {
+    for (const poolCard of this.poolCards) {
+      const dx = poolCard.origX - poolCard.card.x;
+      const dy = poolCard.origY - poolCard.card.y;
+      for (const obj of poolCard.objects) {
+        obj.x += dx;
+        obj.y += dy;
+      }
+    }
+  }
+
+  /**
+   * Creates or updates the "Default" team with the full player roster.
    */
   private async ensureDefaultTeam(): Promise<void> {
     const members: TeamMember[] = players.map((player) => ({
@@ -112,37 +167,37 @@ export class PartyCreation extends Scene {
       position: player.position,
     }));
     const teams = await this.teamService.readAll();
-    const cur = teams.find((team) => team.name === "Default");
+    const cur = teams.find((team) => team.name === CONSTS.TEAM_NAME_DEFAULT);
     if (cur) {
       await this.teamService.update(cur.id, { members });
     } else {
-      await this.teamService.create({ name: "Default", members });
+      await this.teamService.create({
+        name: CONSTS.TEAM_NAME_DEFAULT,
+        members,
+      });
     }
   }
 
   /**
-   * Reads all saved teams and selects the best one to display on scene start.
-   * Prefers "Current Party" over "Default". Falls back to the full player roster.
+   * Selects "Current Party" on scene start, falling back to "Default" or the full roster.
    */
   private loadInitialTeam(): void {
     this.teamService.readAll().then((teams) => {
       const preferred =
-        teams.find((team) => team.name === "Current Party") ||
-        teams.find((team) => team.name === "Default");
+        teams.find((team) => team.name === CONSTS.TEAM_NAME_CURRENT) ||
+        teams.find((team) => team.name === CONSTS.TEAM_NAME_DEFAULT);
       if (preferred) {
         this.selectTeam(preferred);
       } else {
-        this.createPartyLanes(this.currentMembers);
+        this.workingMembers = [...players];
+        this.rebuildLanesAndPool();
       }
     });
   }
 
   /**
-   * Switches the lane display to show the members of a saved team.
-   * Resolves each TeamMember's actorClassId to its full PlayerActorData
-   * and re-renders the party lanes.
-   *
-   * @param team - The team whose members should be displayed.
+   * Resolves a saved team's member IDs and displays them in the lane grid.
+   * @param team - The saved team to load.
    */
   private selectTeam(team: PlayerTeam): void {
     const resolved: PlayerActorData[] = [];
@@ -153,16 +208,13 @@ export class PartyCreation extends Scene {
       if (found) resolved.push({ ...found, position: member.position });
     }
     if (resolved.length === 0) return;
-    this.currentMembers = resolved;
-    this.clearLanes();
-    this.createPartyLanes(this.currentMembers);
+    this.workingMembers = resolved;
+    this.rebuildLanesAndPool();
   }
 
   /**
-   * Splits an ActorCardUI into its individual game objects and pushes
-   * each into laneObjects so they can be destroyed together on team switch.
-   *
-   * @param card - The composite actor card to flatten.
+   * Splits a composite ActorCardUI into individual objects for tracked cleanup.
+   * @param card - The card UI to flatten.
    */
   private flattenActorCard(card: ActorCardUI): void {
     this.laneObjects.push(
@@ -177,17 +229,89 @@ export class PartyCreation extends Scene {
   }
 
   /**
-   * Renders the "Saved Teams" panel on the right side of the screen.
-   * Teams are sorted with "Current Party" first, then "Default".
-   * Each team name is clickable — hovering highlights it, clicking
-   * loads that team's composition into the lane display.
+   * Renders a horizontal row of available actor cards below the lane grid.
+   */
+  private renderPool(): void {
+    const sceneCx = this.cameras.main.centerX;
+    const cardW = CONSTS.POOL_CARD_W;
+    const gap = CONSTS.POOL_CARD_GAP;
+    const total = players.length;
+    const rowW = total * cardW + (total - 1) * gap;
+    const startX = sceneCx - rowW / 2;
+    const rowY = CONSTS.POOL_ROW_Y;
+
+    for (let i = 0; i < total; i++) {
+      const actor = players[i];
+      const x = startX + i * (cardW + gap);
+      const card = createActorCard({
+        scene: this,
+        x,
+        y: rowY,
+        w: cardW,
+        name: actor.name,
+        alias: actor.alias,
+        health: actor.health,
+        stamina: actor.stamina,
+        energy: actor.energy,
+      });
+      card.card.setInteractive({ useHandCursor: true });
+      // Collect all sub-objects so they move and reset as a group during drag
+      const objects = [
+        card.card,
+        card.progressBg,
+        card.fill,
+        card.label,
+        card.healthTxt,
+        card.staminaTxt,
+        card.energyTxt,
+      ];
+      this.poolCards.push({
+        actor,
+        card: card.card,
+        objects,
+        origX: x,
+        origY: rowY,
+      });
+    }
+
+    this.syncPool();
+  }
+
+  /**
+   * Dims cards for placed actors and enables dragging for available ones.
+   */
+  private syncPool(): void {
+    for (const poolCard of this.poolCards) {
+      const placed = this.workingMembers.some(
+        (i) => i.name === poolCard.actor.name,
+      );
+      for (const obj of poolCard.objects) {
+        obj.setAlpha(placed ? CONSTS.POOL_DIM_ALPHA : 1);
+      }
+      if (placed) {
+        poolCard.card.disableInteractive();
+      } else {
+        poolCard.card.setInteractive({ useHandCursor: true });
+        this.input.setDraggable(poolCard.card);
+      }
+    }
+  }
+
+  /**
+   * Rebuilds the saved teams panel on the right side of the screen.
    */
   private renderSavedTeams(): void {
-    const rightX = this.cameras.main.width - 280;
-    const headerY = CONSTS.HEADER_PARTYCREATION_Y + 90;
+    // Clear any previous entries
+    if (this.savedTeamsLabel) this.savedTeamsLabel.destroy();
+    this.savedTeamsEntries.forEach((entry) => entry.destroy());
+    this.savedTeamsEntries = [];
+
+    const rightX = this.cameras.main.width - CONSTS.SAVED_TEAMS_RIGHT_OFFSET;
+    const headerY =
+      CONSTS.HEADER_PARTYCREATION_Y + CONSTS.SAVED_TEAMS_HEADER_OFFSET;
     const style = {
       fontFamily: CONSTS.UI_FONT_FAMILY,
-      fontSize: "18px",
+      fontSize: `${CONSTS.SAVED_TEAMS_FONT_SIZE}px`,
       color: CONSTS.LANE_HEADER_COLOR,
       resolution: TEXT_RESOLUTION,
     };
@@ -197,14 +321,12 @@ export class PartyCreation extends Scene {
       .setOrigin(0, 0);
 
     this.teamService.readAll().then((teams) => {
-      this.savedTeamsEntries.forEach((entry) => entry.destroy());
-      this.savedTeamsEntries = [];
-
+      // Sort: Current Party first, Default second, then creation order
       const rank = (name: string) => {
         switch (name) {
-          case "Current Party":
+          case CONSTS.TEAM_NAME_CURRENT:
             return 0;
-          case "Default":
+          case CONSTS.TEAM_NAME_DEFAULT:
             return 1;
           default:
             return 2;
@@ -213,27 +335,33 @@ export class PartyCreation extends Scene {
 
       teams.sort((teamA, teamB) => rank(teamA.name) - rank(teamB.name));
 
+      // Show placeholder when no teams have been saved yet
       if (teams.length === 0) {
         const entry = this.add.text(
-          rightX + 6,
-          headerY + 28,
+          rightX + CONSTS.SAVED_TEAMS_ENTRY_PAD_X,
+          headerY + CONSTS.SAVED_TEAMS_ENTRY_PAD_Y,
           "No saved teams",
           {
             ...style,
-            fontSize: "14px",
-            color: "#999999",
+            fontSize: `${CONSTS.SAVED_TEAMS_ENTRY_FONT_SIZE}px`,
+            color: CONSTS.SAVED_TEAMS_MUTED_COLOR,
           },
         );
         this.savedTeamsEntries.push(entry);
         return;
       }
 
-      const listStyle = { ...style, fontSize: "14px" };
+      const listStyle = {
+        ...style,
+        fontSize: `${CONSTS.SAVED_TEAMS_ENTRY_FONT_SIZE}px`,
+      };
       for (let i = 0; i < teams.length; i++) {
         const entry = this.add
           .text(
-            rightX + 6,
-            headerY + 28 + i * 26,
+            rightX + CONSTS.SAVED_TEAMS_ENTRY_PAD_X,
+            headerY +
+              CONSTS.SAVED_TEAMS_ENTRY_PAD_Y +
+              i * CONSTS.SAVED_TEAMS_ENTRY_SPACING,
             `  ${teams[i].name}`,
             listStyle,
           )
@@ -249,25 +377,19 @@ export class PartyCreation extends Scene {
   }
 
   /**
-   * Fills the lane grid with character cards for the given party members.
-   * Calls {@link createLaneBlock} for the decorative grid structure, then
-   * places {@link createActorCard} entries for each member. All created
-   * objects are tracked in {@link laneObjects} for cleanup on team switch.
-   *
-   * @param members - The party members to render in the lanes.
+   * Renders the lane grid showing the current team's actor cards by position.
+   * @param members - The actors to display in the lane grid.
    */
   private createPartyLanes(members: PlayerActorData[]): void {
-    // Layout dimensions for the lane grid
     const cardW = CONSTS.CARD_W;
     const gap = CONSTS.CARD_GAP;
-    const yOff = 40;
+    const yOff = CONSTS.LANE_Y_OFFSET;
     const headerY = CONSTS.LANE_HEADER_Y + yOff;
     const startY = CONSTS.CARD_START_Y + yOff;
     const sceneCx = this.cameras.main.centerX;
     const laneSpan = (CONSTS.NUM_LANES - 1) * CONSTS.LANE_OFFSET + cardW;
     const laneLeft = sceneCx - laneSpan / 2;
 
-    // Partition members into primary lanes vs FLANK section
     const lanePlayers: Record<string, PlayerActorData[]> = {};
     const flankPlayers: PlayerActorData[] = [];
 
@@ -279,13 +401,11 @@ export class PartyCreation extends Scene {
       }
     }
 
-    // Tallest lane determines vertical space used for card placement
     const maxLane = Math.max(
       ...Object.values(lanePlayers).map((x) => x.length),
       0,
     );
 
-    // Draw the empty lane grid (labels, guide lines, flank section)
     const layout = createLaneBlock({
       scene: this,
       laneLeft,
@@ -299,43 +419,199 @@ export class PartyCreation extends Scene {
     });
     this.laneObjects.push(...layout.objects);
 
-    // Place actor cards in each primary lane
     for (const [pos, list] of Object.entries(lanePlayers)) {
       const laneIdx = CONSTS.PRIMARY_LANES.indexOf(pos);
-      // Guard statement in case of unknown lane position
       if (laneIdx < 0) continue;
       const baseX = laneLeft + laneIdx * CONSTS.LANE_OFFSET;
       for (let i = 0; i < list.length; i++) {
-        const card = createActorCard({
-          scene: this,
-          x: baseX,
-          y: startY + i * gap,
-          w: cardW,
-          name: list[i].name,
-          alias: list[i].alias,
-          health: list[i].health,
-          stamina: list[i].stamina,
-          energy: list[i].energy,
-        });
-        this.flattenActorCard(card);
+        this.createLaneCard(list[i], baseX, startY + i * gap, cardW);
       }
     }
 
-    // Place actor cards in the FLANK row below the primary lanes
     for (let flankIdx = 0; flankIdx < flankPlayers.length; flankIdx++) {
       const laneCol = Math.max(0, CONSTS.NUM_LANES - 1 - flankIdx);
-      const card = createActorCard({
-        scene: this,
-        x: laneLeft + laneCol * CONSTS.LANE_OFFSET,
-        y: startY + maxLane * gap + CONSTS.FLANK_OFFSET,
-        w: cardW,
-        name: flankPlayers[flankIdx].name,
-        alias: flankPlayers[flankIdx].alias,
-        health: flankPlayers[flankIdx].health,
-        stamina: flankPlayers[flankIdx].stamina,
-        energy: flankPlayers[flankIdx].energy,
-      });
-      this.flattenActorCard(card);
+      this.createLaneCard(
+        flankPlayers[flankIdx],
+        laneLeft + laneCol * CONSTS.LANE_OFFSET,
+        startY + maxLane * gap + CONSTS.FLANK_OFFSET,
+        cardW,
+      );
     }
+  }
+
+  /**
+   * Creates an actor card in a lane position and wires click-to-remove.
+   * @param member - The actor to display.
+   * @param x - The x-coordinate of the card.
+   * @param y - The y-coordinate of the card.
+   * @param w - The width of the card.
+   */
+  private createLaneCard(
+    member: PlayerActorData,
+    x: number,
+    y: number,
+    w: number,
+  ): void {
+    const card = createActorCard({
+      scene: this,
+      x,
+      y,
+      w,
+      name: member.name,
+      alias: member.alias,
+      health: member.health,
+      stamina: member.stamina,
+      energy: member.energy,
+    });
+    card.card.setInteractive({ useHandCursor: true });
+    card.card.on("pointerdown", () => this.removeFromTeam(member.name));
+    this.flattenActorCard(card);
+  }
+
+  /**
+   * Removes an actor from the working team by name and re-renders.
+   * @param name - The actor class name to remove.
+   */
+  private removeFromTeam(name: string): void {
+    const idx = this.workingMembers.findIndex((i) => i.name === name);
+    if (idx < 0) return;
+    this.workingMembers.splice(idx, 1);
+    this.rebuildLanesAndPool();
+  }
+
+  /**
+   * Initiates a drag operation, recording the dragged actor and its original position.
+   * @param _pointer - The pointer input (unused).
+   * @param obj - The dragged game object (pool card rectangle).
+   */
+  private onDragStart(
+    _pointer: Phaser.Input.Pointer,
+    obj: GameObjects.GameObject,
+  ): void {
+    const poolCard = this.poolCards.find((i) => i.card === obj);
+    if (!poolCard) return;
+    const placed = this.workingMembers.some(
+      (i) => i.name === poolCard.actor.name,
+    );
+    if (placed) return;
+    this.drag = {
+      actor: poolCard.actor,
+      origX: poolCard.card.x,
+      origY: poolCard.card.y,
+    };
+  }
+
+  /**
+   * Updates the dragged pool card's position to follow the pointer.
+   * @param _pointer - The pointer input (unused).
+   * @param obj - The dragged game object (used to resolve the pool card).
+   */
+  private onDrag(
+    _pointer: Phaser.Input.Pointer,
+    obj: GameObjects.GameObject,
+    dragX: number,
+    dragY: number,
+  ): void {
+    const poolCard = this.poolCards.find((i) => i.card === obj);
+    if (!poolCard) return;
+    const dx = dragX - poolCard.card.x;
+    const dy = dragY - poolCard.card.y;
+    for (const obj of poolCard.objects) {
+      obj.x += dx;
+      obj.y += dy;
+    }
+  }
+
+  /**
+   * Completes a drag, placing the actor in the targeted lane or resetting position.
+   * @param pointer - The pointer input used to determine drop position.
+   */
+  private onDragEnd(pointer: Phaser.Input.Pointer): void {
+    if (!this.drag) return;
+    const pos = this.pickDropPos(pointer.x, pointer.y);
+    if (pos) {
+      this.workingMembers.push({ ...this.drag.actor, position: pos });
+      this.rebuildLanesAndPool();
+    } else {
+      this.resetPoolPositions();
+    }
+    this.drag = null;
+  }
+
+  /**
+   * Determines which lane position a pointer drop landed on, or null if outside the lane grid.
+   * @param pointerX - The x-coordinate of the pointer.
+   * @param pointerY - The y-coordinate of the pointer.
+   * @returns The lane position string (e.g. "BACKLINE") or null.
+   */
+  private pickDropPos(pointerX: number, pointerY: number): string | null {
+    const cardW = CONSTS.CARD_W;
+    const gap = CONSTS.CARD_GAP;
+    const yOff = CONSTS.LANE_Y_OFFSET;
+    const headerY = CONSTS.LANE_HEADER_Y + yOff;
+    const startY = CONSTS.CARD_START_Y + yOff;
+    const sceneCx = this.cameras.main.centerX;
+    const laneSpan = (CONSTS.NUM_LANES - 1) * CONSTS.LANE_OFFSET + cardW;
+    const laneLeft = sceneCx - laneSpan / 2;
+    const laneRight = laneLeft + laneSpan;
+
+    if (pointerY < headerY || pointerX < laneLeft || pointerX > laneRight)
+      return null;
+
+    const laneCounts: Record<string, number> = {};
+    for (const member of this.workingMembers) {
+      if (member.position !== CONSTS.ActorPosition.FLANK) {
+        laneCounts[member.position] = (laneCounts[member.position] ?? 0) + 1;
+      }
+    }
+    const maxLane = Math.max(...Object.values(laneCounts), 0);
+    const laneAreaBot =
+      startY + maxLane * gap + CONSTS.CARD_HEIGHT + CONSTS.DROP_HIT_PADDING;
+
+    if (pointerY > laneAreaBot) {
+      return CONSTS.ActorPosition.FLANK;
+    }
+
+    for (let i = 0; i < CONSTS.PRIMARY_LANES.length; i++) {
+      const laneX = laneLeft + i * CONSTS.LANE_OFFSET;
+      if (pointerX >= laneX && pointerX <= laneX + cardW) {
+        return CONSTS.PRIMARY_LANES[i];
+      }
+    }
+
+    const halfW = CONSTS.LANE_OFFSET / 2;
+    for (let i = 0; i < CONSTS.PRIMARY_LANES.length; i++) {
+      const centerX = laneLeft + i * CONSTS.LANE_OFFSET + cardW / 2;
+      if (pointerX >= centerX - halfW && pointerX <= centerX + halfW) {
+        return CONSTS.PRIMARY_LANES[i];
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Prompts the user for a team name and persists the current composition.
+   */
+  private async promptSaveTeam(): Promise<void> {
+    const name = prompt(CONSTS.PROMPT_SAVE_TEAM);
+    if (!name || name.trim().length < CONSTS.MIN_TEAM_NAME_LENGTH) return;
+
+    const members: TeamMember[] = this.workingMembers.map((i) => ({
+      actorClassId: i.name,
+      position: i.position,
+    }));
+
+    const validation = this.teamService.validateTeam({
+      name: name.trim(),
+      members,
+    });
+    if (!validation.valid) {
+      alert(validation.errors.join("\n"));
+      return;
+    }
+
+    await this.teamService.create({ name: name.trim(), members });
+    this.renderSavedTeams();
   }
 }

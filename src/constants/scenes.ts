@@ -43,3 +43,13 @@ export const TITLE_STROKE_COLOR = "#000000";
 
 /** Background color for the PartyCreation scene camera. */
 export const PARTYCREATION_BG = 0x8866cc;
+/** Horizontal spacing between the Save Team and Start Game buttons. */
+export const PARTYCREATION_BTN_SPACING = 180;
+/** Default team name used as the baseline roster. */
+export const TEAM_NAME_DEFAULT = "Default";
+/** Team name used for the current unsaved party composition. */
+export const TEAM_NAME_CURRENT = "Current Party";
+/** Prompt text shown when saving a new team. */
+export const PROMPT_SAVE_TEAM = "Enter a name for your team:";
+/** Minimum length for a valid team name. */
+export const MIN_TEAM_NAME_LENGTH = 2;

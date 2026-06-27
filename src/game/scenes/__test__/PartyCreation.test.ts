@@ -4,6 +4,7 @@ import { PartyCreation } from "../PartyCreation";
 import type { PlayerTeam } from "../../data/PlayerTeam";
 import * as CONSTS from "../../../constants";
 import { players } from "../../data/playerActorClasses";
+import type { PlayerActorData } from "../../data/PlayerActorData";
 
 describe("PartyCreation Scene", () => {
   let scene: PartyCreation;
@@ -285,7 +286,7 @@ describe("PartyCreation Scene", () => {
       );
     });
 
-    it("clicking a saved team updates currentMembers", async () => {
+    it("clicking a saved team updates workingMembers", async () => {
       (localStorage.getItem as ReturnType<typeof vi.fn>).mockReturnValue(
         JSON.stringify([
           {
@@ -317,9 +318,9 @@ describe("PartyCreation Scene", () => {
       );
       pointerdown![1]();
 
-      expect(partyCreation.currentMembers).toHaveLength(2);
-      expect(partyCreation.currentMembers[0].name).toBe("Mage");
-      expect(partyCreation.currentMembers[1].name).toBe("Summoner");
+      expect(partyCreation.workingMembers).toHaveLength(2);
+      expect(partyCreation.workingMembers[0].name).toBe("Mage");
+      expect(partyCreation.workingMembers[1].name).toBe("Summoner");
     });
 
     it("does nothing when clicked team has no resolvable members", async () => {
@@ -351,7 +352,7 @@ describe("PartyCreation Scene", () => {
       );
       pointerdown![1]();
 
-      expect(partyCreation.currentMembers).toEqual(players);
+      expect(partyCreation.workingMembers).toEqual(players);
     });
   });
 
@@ -410,9 +411,9 @@ describe("PartyCreation Scene", () => {
       partyCreation.create();
       await new Promise((resolve) => setTimeout(resolve, 0));
 
-      expect(partyCreation.currentMembers).toHaveLength(2);
-      expect(partyCreation.currentMembers[0].name).toBe("Fighter");
-      expect(partyCreation.currentMembers[1].name).toBe("Mage");
+      expect(partyCreation.workingMembers).toHaveLength(2);
+      expect(partyCreation.workingMembers[0].name).toBe("Fighter");
+      expect(partyCreation.workingMembers[1].name).toBe("Mage");
     });
 
     it("falls back to 'Default' when no 'Current Party' exists", async () => {
@@ -432,8 +433,8 @@ describe("PartyCreation Scene", () => {
       partyCreation.create();
       await new Promise((resolve) => setTimeout(resolve, 0));
 
-      expect(partyCreation.currentMembers).toHaveLength(1);
-      expect(partyCreation.currentMembers[0].name).toBe("Thief");
+      expect(partyCreation.workingMembers).toHaveLength(1);
+      expect(partyCreation.workingMembers[0].name).toBe("Thief");
     });
 
     it("shows all players when no saved teams exist", async () => {
@@ -441,7 +442,7 @@ describe("PartyCreation Scene", () => {
       partyCreation.create();
       await new Promise((resolve) => setTimeout(resolve, 0));
 
-      expect(partyCreation.currentMembers).toEqual(players);
+      expect(partyCreation.workingMembers).toEqual(players);
     });
   });
 
@@ -460,6 +461,195 @@ describe("PartyCreation Scene", () => {
         .calls as unknown[][];
       const cardRects = rectCalls.filter((call) => call[4] === CONSTS.CARD_BG);
       expect(cardRects.length).toBeGreaterThanOrEqual(1);
+    });
+  });
+
+  describe("pool cards", () => {
+    it("creates a pool entry for each player class", () => {
+      expect(scene.poolCards.length).toBe(players.length);
+    });
+
+    it("dims pool cards for placed actors", () => {
+      for (const poolCard of scene.poolCards) {
+        expect(poolCard.card.setAlpha).toHaveBeenCalledWith(0.4);
+        expect(poolCard.card.disableInteractive).toHaveBeenCalled();
+      }
+    });
+
+    it("fully enables pool cards for unplaced actors", () => {
+      (scene as any).workingMembers = [];
+      (scene as any).rebuildLanesAndPool();
+
+      for (const poolCard of scene.poolCards) {
+        const alphaCalls = (poolCard.card.setAlpha as ReturnType<typeof vi.fn>)
+          .mock.calls;
+        const lastAlpha = alphaCalls[alphaCalls.length - 1];
+        expect(lastAlpha).toEqual([1]);
+      }
+    });
+  });
+
+  describe("drag-and-drop", () => {
+    it("stores drag state on dragstart for available actor", () => {
+      (scene as any).workingMembers = [players[0]];
+      (scene as any).rebuildLanesAndPool();
+
+      const mageCard = scene.poolCards.find(
+        (poolCard) => poolCard.actor.name === "Mage",
+      )!.card;
+      scene.input.emit("dragstart", { x: 100, y: 100 }, mageCard);
+
+      expect(scene.drag).not.toBeNull();
+      expect(scene.drag!.actor.name).toBe("Mage");
+    });
+
+    it("refuses drag for already-placed actor", () => {
+      (scene as any).workingMembers = [...players];
+      (scene as any).rebuildLanesAndPool();
+
+      const fighterCard = scene.poolCards.find(
+        (poolCard) => poolCard.actor.name === "Fighter",
+      )!.card;
+      scene.input.emit("dragstart", { x: 100, y: 100 }, fighterCard);
+
+      expect(scene.drag).toBeNull();
+    });
+
+    it("adds actor to workingMembers when dropped on a lane", () => {
+      (scene as any).workingMembers = [];
+      (scene as any).rebuildLanesAndPool();
+
+      const fighterCard = scene.poolCards.find(
+        (poolCard) => poolCard.actor.name === "Fighter",
+      )!.card;
+      scene.input.emit("dragstart", { x: 100, y: 100 }, fighterCard);
+
+      const sceneCx = scene.cameras.main.centerX;
+      const laneSpan =
+        (CONSTS.NUM_LANES - 1) * CONSTS.LANE_OFFSET + CONSTS.CARD_W;
+      const laneLeft = sceneCx - laneSpan / 2;
+      const dropX = laneLeft + 2 * CONSTS.LANE_OFFSET + CONSTS.CARD_W / 2;
+      const dropY = CONSTS.CARD_START_Y + 40 + 10;
+      scene.input.emit("dragend", { x: dropX, y: dropY });
+
+      expect(scene.workingMembers).toHaveLength(1);
+      expect(scene.workingMembers[0].name).toBe("Fighter");
+      expect(scene.workingMembers[0].position).toBe(
+        CONSTS.ActorPosition.FRONTLINE,
+      );
+    });
+
+    it("does not add actor when dropped outside lanes", () => {
+      (scene as any).workingMembers = [];
+      (scene as any).rebuildLanesAndPool();
+
+      const fighterCard = scene.poolCards.find(
+        (poolCard) => poolCard.actor.name === "Fighter",
+      )!.card;
+      scene.input.emit("dragstart", { x: 100, y: 100 }, fighterCard);
+
+      scene.input.emit("dragend", { x: 0, y: 0 });
+
+      expect(scene.workingMembers).toHaveLength(0);
+      expect(scene.drag).toBeNull();
+    });
+  });
+
+  describe("remove from team", () => {
+    it("removes actor from workingMembers when lane card is clicked", () => {
+      const initialLen = scene.workingMembers.length;
+      (scene as any).removeFromTeam("Fighter");
+
+      expect(scene.workingMembers.length).toBe(initialLen - 1);
+      expect(scene.workingMembers.find((i) => i.name === "Fighter")).toBe(
+        undefined,
+      );
+    });
+
+    it("does nothing when removing non-existent member", () => {
+      const initialLen = scene.workingMembers.length;
+      (scene as any).removeFromTeam("NonExistent");
+      expect(scene.workingMembers.length).toBe(initialLen);
+    });
+  });
+
+  describe("save team button", () => {
+    it("renders a 'Save Team' button", () => {
+      expect(scene.add.text).toHaveBeenCalledWith(
+        expect.any(Number),
+        expect.any(Number),
+        "Save Team",
+        expect.any(Object),
+      );
+    });
+
+    it("has a clickable background with pointerdown handler", () => {
+      const rectCalls = (
+        scene.add.rectangle as unknown as ReturnType<typeof vi.fn>
+      ).mock.results as { value: Record<string, ReturnType<typeof vi.fn>> }[];
+      const interactiveRects = rectCalls.filter((i) =>
+        i.value.setInteractive?.mock.calls.some(
+          (call: unknown[]) =>
+            typeof call[0] === "object" &&
+            (call[0] as Record<string, boolean>).useHandCursor === true,
+        ),
+      );
+      expect(interactiveRects.length).toBeGreaterThanOrEqual(2);
+    });
+
+    it("saves team to localStorage when save completes", async () => {
+      vi.stubGlobal("prompt", vi.fn().mockReturnValue("New Team"));
+      vi.stubGlobal("alert", vi.fn());
+
+      const partyCreation = new PartyCreation();
+      partyCreation.create();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      const sceneAny = partyCreation as unknown as {
+        promptSaveTeam: () => Promise<void>;
+        workingMembers: PlayerActorData[];
+      };
+      sceneAny.workingMembers = [
+        {
+          name: "Fighter",
+          position: "FRONTLINE",
+          speed: 30,
+          health: 120,
+          stamina: 80,
+          energy: 50,
+        },
+      ];
+      await sceneAny.promptSaveTeam();
+
+      const calls = (localStorage.setItem as ReturnType<typeof vi.fn>).mock
+        .calls;
+      const last = calls[calls.length - 1];
+      const saved = JSON.parse(last[1]);
+      const team = saved.find((i: PlayerTeam) => i.name === "New Team");
+      expect(team).toBeTruthy();
+      expect(team.members).toEqual([
+        { actorClassId: "Fighter", position: "FRONTLINE" },
+      ]);
+
+      vi.unstubAllGlobals();
+    });
+
+    it("does not save when team name is empty", async () => {
+      vi.stubGlobal("prompt", vi.fn().mockReturnValue("  "));
+      vi.stubGlobal("alert", vi.fn());
+
+      const sceneAny = scene as unknown as {
+        promptSaveTeam: () => Promise<void>;
+      };
+      const setItemBefore = (localStorage.setItem as ReturnType<typeof vi.fn>)
+        .mock.calls.length;
+      await sceneAny.promptSaveTeam();
+      const setItemAfter = (localStorage.setItem as ReturnType<typeof vi.fn>)
+        .mock.calls.length;
+
+      expect(setItemAfter).toBe(setItemBefore);
+
+      vi.unstubAllGlobals();
     });
   });
 });

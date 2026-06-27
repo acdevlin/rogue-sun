@@ -20,7 +20,7 @@ export default tseslint.config(
         "warn",
         {
           min: 3,
-          exceptions: ["_", "x", "y", "z", "i", "j", "k", "dx", "dy"],
+          exceptions: ["_", "x", "y", "z", "w", "i", "j", "k", "dx", "dy"],
           exceptionPatterns: ["^_[a-z]"],
           properties: "never",
         },
@@ -29,6 +29,14 @@ export default tseslint.config(
       semi: ["error", "always"],
       quotes: ["error", "double"],
       "prettier/prettier": "error",
+    },
+  },
+  // Tests access private class members via `as any`, which is an accepted
+  // pattern for testing internals without exposing them in public types.
+  {
+    files: ["src/**/*.test.ts"],
+    rules: {
+      "@typescript-eslint/no-explicit-any": "off",
     },
   },
 );

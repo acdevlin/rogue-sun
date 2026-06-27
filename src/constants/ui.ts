@@ -116,6 +116,37 @@ export const STAT_SP_Y = 26;
 /** Y-offset from the y-param to the energy text. */
 export const STAT_EP_Y = 36;
 
+/** Width of each pool card in the PartyCreation scene. */
+export const POOL_CARD_W = 130;
+/** Horizontal gap between pool cards in the PartyCreation scene. */
+export const POOL_CARD_GAP = 24;
+/** Y-position of the pool card row in the PartyCreation scene. */
+export const POOL_ROW_Y = 550;
+/** Alpha value for placed (inactive) pool cards. */
+export const POOL_DIM_ALPHA = 0.4;
+
+/** Right-side offset from camera edge for the saved teams panel. */
+export const SAVED_TEAMS_RIGHT_OFFSET = 280;
+/** Vertical offset from HEADER_PARTYCREATION_Y for the saved teams panel header. */
+export const SAVED_TEAMS_HEADER_OFFSET = 90;
+/** Horizontal padding for saved teams entry text. */
+export const SAVED_TEAMS_ENTRY_PAD_X = 6;
+/** Vertical padding for the first saved teams entry from the header. */
+export const SAVED_TEAMS_ENTRY_PAD_Y = 28;
+/** Vertical spacing between saved teams entries. */
+export const SAVED_TEAMS_ENTRY_SPACING = 26;
+/** Font size for the saved teams header label. */
+export const SAVED_TEAMS_FONT_SIZE = 18;
+/** Font size for each saved team entry. */
+export const SAVED_TEAMS_ENTRY_FONT_SIZE = 14;
+/** Color for the 'No saved teams' placeholder text. */
+export const SAVED_TEAMS_MUTED_COLOR = "#999999";
+
+/** Y-offset added to lane header and card start positions in PartyCreation. */
+export const LANE_Y_OFFSET = 40;
+/** Extra padding below the last lane card when detecting drop position. */
+export const DROP_HIT_PADDING = 10;
+
 /** Vertical offset from the bottom of the screen for UI buttons. */
 export const BTN_BOTTOM_OFFSET = 100;
 /** Padding between button text and its background rectangle. */

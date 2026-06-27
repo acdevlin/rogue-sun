@@ -12,9 +12,13 @@ const mockObj = () => ({
   setText: vi.fn().mockReturnThis(),
   setSize: vi.fn().mockReturnThis(),
   setStroke: vi.fn().mockReturnThis(),
+  setAlpha: vi.fn().mockReturnThis(),
+  disableInteractive: vi.fn().mockReturnThis(),
   on: vi.fn().mockReturnThis(),
   width: 0,
   height: 0,
+  x: 0,
+  y: 0,
 });
 
 class Scene {
@@ -35,10 +39,33 @@ class Scene {
   };
   load = { image: vi.fn() };
   time = { delayedCall: vi.fn() };
-  input = { once: vi.fn() };
+  input: {
+    once: ReturnType<typeof vi.fn>;
+    setDraggable: ReturnType<typeof vi.fn>;
+    on: ReturnType<typeof vi.fn>;
+    emit: ReturnType<typeof vi.fn>;
+  };
+  listeners: Record<string, (...args: unknown[]) => void>;
 
   constructor(key: string) {
     this.key = key;
+    this.listeners = {};
+    this.input = {
+      once: vi.fn(),
+      setDraggable: vi.fn(),
+      on: vi.fn(
+        (
+          event: string,
+          handler: (...args: unknown[]) => void,
+          ctx?: unknown,
+        ) => {
+          this.listeners[event] = ctx ? handler.bind(ctx) : handler;
+        },
+      ),
+      emit: vi.fn((event: string, ...args: unknown[]) => {
+        this.listeners[event]?.(...args);
+      }),
+    };
   }
 }
 
