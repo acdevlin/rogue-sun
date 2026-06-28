@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 import { PartyCreation } from "../PartyCreation";
 import type { PlayerTeam } from "../../data/PlayerTeam";
@@ -650,6 +650,174 @@ describe("PartyCreation Scene", () => {
       expect(setItemAfter).toBe(setItemBefore);
 
       vi.unstubAllGlobals();
+    });
+  });
+
+  describe("team validation rules", () => {
+    beforeEach(() => {
+      vi.stubGlobal("alert", vi.fn());
+    });
+
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    function makeScene(members: { name: string; position: string }[]) {
+      const scn = new PartyCreation();
+      scn.create();
+      (scn as any).workingMembers = members;
+      return scn;
+    }
+
+    it("passes for the default full team", () => {
+      const errs = (scene as any).validateTeamRules();
+      expect(errs).toEqual([]);
+    });
+
+    it("passes with exactly 3 characters in one lane", () => {
+      const scn = makeScene([
+        { name: "A", position: "FRONTLINE" },
+        { name: "B", position: "FRONTLINE" },
+        { name: "C", position: "FRONTLINE" },
+        { name: "D", position: "BACKLINE" },
+      ]);
+      const errs = (scn as any).validateTeamRules();
+      expect(errs).toEqual([]);
+    });
+
+    it("rejects a lane with 4 characters", () => {
+      const scn = makeScene([
+        { name: "A", position: "FRONTLINE" },
+        { name: "B", position: "FRONTLINE" },
+        { name: "C", position: "FRONTLINE" },
+        { name: "D", position: "FRONTLINE" },
+        { name: "E", position: "BACKLINE" },
+      ]);
+      const errs = (scn as any).validateTeamRules();
+      expect(errs).toContain(
+        "Maximum of 3 characters per lane - FRONTLINE has 4.",
+      );
+    });
+
+    it("rejects fewer than 2 non-empty lanes (0 lanes)", () => {
+      const scn = makeScene([]);
+      const errs = (scn as any).validateTeamRules();
+      expect(errs).toContain("At least 2 lanes must have characters assigned.");
+    });
+
+    it("rejects fewer than 2 non-empty lanes (1 lane)", () => {
+      const scn = makeScene([{ name: "A", position: "FRONTLINE" }]);
+      const errs = (scn as any).validateTeamRules();
+      expect(errs).toContain("At least 2 lanes must have characters assigned.");
+    });
+
+    it("rejects more than 1 flank character", () => {
+      const scn = makeScene([
+        { name: "A", position: "FLANK" },
+        { name: "B", position: "FLANK" },
+        { name: "C", position: "FRONTLINE" },
+        { name: "D", position: "BACKLINE" },
+      ]);
+      const errs = (scn as any).validateTeamRules();
+      expect(errs).toContain(
+        "Maximum of 1 character in the Flank lane (has 2).",
+      );
+    });
+
+    it("rejects flank without a non-empty lane", () => {
+      const scn = makeScene([{ name: "A", position: "FLANK" }]);
+      const errs = (scn as any).validateTeamRules();
+      expect(errs).toContain(
+        "When there is a character in the Flank lane, at least 1 other lane must have at least 1 character.",
+      );
+    });
+
+    it("rejects flank when a lane has 3+ characters", () => {
+      const scn = makeScene([
+        { name: "A", position: "FLANK" },
+        { name: "B", position: "FRONTLINE" },
+        { name: "C", position: "FRONTLINE" },
+        { name: "D", position: "FRONTLINE" },
+        { name: "E", position: "BACKLINE" },
+      ]);
+      const errs = (scn as any).validateTeamRules();
+      expect(errs.some((msg: string) => /flank.*fewer than 3/i.test(msg))).toBe(
+        true,
+      );
+    });
+  });
+
+  describe("Start Game enforces validation", () => {
+    beforeEach(() => {
+      vi.stubGlobal("alert", vi.fn());
+    });
+
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    it("alerts and does not transition when team is invalid", async () => {
+      const partyCreation = new PartyCreation();
+      const rectSpy = vi.spyOn(partyCreation.add, "rectangle");
+      partyCreation.create();
+      (partyCreation as any).workingMembers = [];
+
+      const rect = rectSpy.mock.results[rectSpy.mock.results.length - 1].value;
+      const pointerdown = rect.on.mock.calls.find(
+        (call: string[]) => call[0] === "pointerdown",
+      );
+      await pointerdown![1]();
+
+      expect(globalThis.alert).toHaveBeenCalled();
+      expect(partyCreation.scene.start).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("Save Team enforces validation", () => {
+    beforeEach(() => {
+      vi.stubGlobal("alert", vi.fn());
+      vi.stubGlobal("prompt", vi.fn());
+    });
+
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    it("alerts and does not prompt when team is invalid", async () => {
+      const partyCreation = new PartyCreation();
+      const rectSpy = vi.spyOn(partyCreation.add, "rectangle");
+      partyCreation.create();
+      (partyCreation as any).workingMembers = [];
+
+      // Save button rectangle is second-to-last (after pool cards, before Start Game)
+      const saveRect =
+        rectSpy.mock.results[rectSpy.mock.results.length - 2].value;
+      const pointerdown = saveRect.on.mock.calls.find(
+        (call: string[]) => call[0] === "pointerdown",
+      );
+      pointerdown![1]();
+
+      expect(globalThis.alert).toHaveBeenCalled();
+      expect(globalThis.prompt).not.toHaveBeenCalled();
+    });
+
+    it("proceeds to prompt when team is valid", async () => {
+      const partyCreation = new PartyCreation();
+      const rectSpy = vi.spyOn(partyCreation.add, "rectangle");
+      partyCreation.create();
+      (partyCreation as any).workingMembers = [
+        { name: "A", position: "FRONTLINE" },
+        { name: "B", position: "BACKLINE" },
+      ];
+
+      const saveRect =
+        rectSpy.mock.results[rectSpy.mock.results.length - 2].value;
+      const pointerdown = saveRect.on.mock.calls.find(
+        (call: string[]) => call[0] === "pointerdown",
+      );
+      pointerdown![1]();
+
+      expect(globalThis.prompt).toHaveBeenCalled();
     });
   });
 });

@@ -163,3 +163,16 @@ export const BTN_DEPTH = -1;
 export const BTN_HOVER_FILL = 0x666666;
 /** Text color for button label on hover. */
 export const BTN_HOVER_TEXT = "#ffff00";
+
+/** X-position of the team building rules section from the left edge. */
+export const RULES_X = 30;
+/** Y-position of the team building rules header. */
+export const RULES_Y = 90;
+/** Word wrap width for the rules text. */
+export const RULES_W = 350;
+/** Font size for the rules text. */
+export const RULES_FONT_SIZE = 14;
+/** Extra vertical space between lines in the rules text. */
+export const RULES_LINE_SPACING = 4;
+/** Color for the rules text. */
+export const RULES_COLOR = "#cccccc";

@@ -71,6 +71,9 @@ export class PartyCreation extends Scene {
     );
     this.title.setOrigin(0.5);
 
+    // Render the team-building rules panel on the left side
+    this.renderRules();
+
     // Initialize state, ensure the default roster exists, and render UI
     this.workingMembers = [...players];
     this.poolCards = [];
@@ -91,7 +94,14 @@ export class PartyCreation extends Scene {
       cx: centerX - CONSTS.PARTYCREATION_BTN_SPACING,
       y: btnY,
       label: "Save Team",
-      onClick: () => this.promptSaveTeam(),
+      onClick: () => {
+        const errs = this.validateTeamRules();
+        if (errs.length > 0) {
+          alert(errs.join("\n"));
+          return;
+        }
+        this.promptSaveTeam();
+      },
       scale,
     });
     this.saveBtn = saveButton.label;
@@ -104,6 +114,11 @@ export class PartyCreation extends Scene {
       y: btnY,
       label: "Start Game",
       onClick: async () => {
+        const errs = this.validateTeamRules();
+        if (errs.length > 0) {
+          alert(errs.join("\n"));
+          return;
+        }
         const members: TeamMember[] = this.workingMembers.map((i) => ({
           actorClassId: i.name,
           position: i.position,
@@ -226,6 +241,26 @@ export class PartyCreation extends Scene {
       card.staminaTxt,
       card.energyTxt,
     );
+  }
+
+  /**
+   * Renders the team-building rules panel on the left side of the screen.
+   */
+  private renderRules(): void {
+    const txt =
+      "Team Building Rules:\n" +
+      "• Max 3 characters per lane\n" +
+      "• At least 2 lanes must have characters\n" +
+      "  (empty lanes allowed)\n" +
+      "• Flank: max 1; requires 1+ other lane; other lanes ≤2 chars";
+    this.add.text(CONSTS.RULES_X, CONSTS.RULES_Y, txt, {
+      fontFamily: CONSTS.UI_FONT_FAMILY,
+      fontSize: `${CONSTS.RULES_FONT_SIZE}px`,
+      color: CONSTS.RULES_COLOR,
+      resolution: TEXT_RESOLUTION,
+      wordWrap: { width: CONSTS.RULES_W },
+      lineSpacing: CONSTS.RULES_LINE_SPACING,
+    });
   }
 
   /**
@@ -588,6 +623,55 @@ export class PartyCreation extends Scene {
     }
 
     return null;
+  }
+
+  /**
+   * Validates the current team against party-building rules.
+   * @returns An array of error messages (empty if valid).
+   */
+  private validateTeamRules(): string[] {
+    const errs: string[] = [];
+    const cnt: Record<string, number> = {};
+    let flank = 0;
+
+    // Tally members per position (flank vs primary lanes)
+    for (const mem of this.workingMembers) {
+      if (mem.position === CONSTS.ActorPosition.FLANK) {
+        flank++;
+      } else {
+        cnt[mem.position] = (cnt[mem.position] ?? 0) + 1;
+      }
+    }
+
+    // Derive max lane depth and count of non-empty lanes from tallies
+    const maxNonFlank = Math.max(...Object.values(cnt), 0);
+    const nonEmptyLanes = Object.keys(cnt).length;
+
+    // Rule 1: no more than 3 characters per lane
+    for (const [pos, num] of Object.entries(cnt)) {
+      if (num > 3)
+        errs.push(`Maximum of 3 characters per lane - ${pos} has ${num}.`);
+    }
+
+    // Rule 2: at least 2 lanes must be non-empty
+    if (nonEmptyLanes < 2) {
+      errs.push("At least 2 lanes must have characters assigned.");
+    }
+
+    // Rule 3: flank restrictions — max 1, needs another non-empty lane,
+    // and all other lanes must have < 3 characters
+    if (flank > 1)
+      errs.push(`Maximum of 1 character in the Flank lane (has ${flank}).`);
+    if (flank > 0 && nonEmptyLanes < 1)
+      errs.push(
+        "When there is a character in the Flank lane, at least 1 other lane must have at least 1 character.",
+      );
+    if (flank > 0 && maxNonFlank > 2)
+      errs.push(
+        "When there is a character in the Flank lane, all other lanes must have fewer than 3 characters.",
+      );
+
+    return errs;
   }
 
   /**
