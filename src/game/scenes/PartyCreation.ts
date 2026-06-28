@@ -49,6 +49,8 @@ export class PartyCreation extends Scene {
   drag: DragState | null = null;
   /** Objects composing the active lane picker popup, or null if closed. */
   picker: GameObjects.GameObject[] | null = null;
+  /** Objects composing the active help popup, or null if closed. */
+  helpPopup: GameObjects.GameObject[] | null = null;
   teamService = new PlayerTeamService();
 
   constructor() {
@@ -82,8 +84,28 @@ export class PartyCreation extends Scene {
     );
     this.title.setOrigin(0.5);
 
-    // Render the team-building rules panel on the left side
-    this.renderRules();
+    // Render the Help button on the left side
+    this.renderRules(scale);
+
+    // Save Team — below the Help button, prompts for a name and persists composition
+    const saveBtnY = CONSTS.HELP_Y + CONSTS.HELP_SAVE_GAP;
+    const saveButton = createBtn({
+      scene: this,
+      cx: CONSTS.HELP_X,
+      y: saveBtnY,
+      label: "Save Team",
+      onClick: () => {
+        const errs = this.validateTeamRules();
+        if (errs.length > 0) {
+          alert(errs.join("\n"));
+          return;
+        }
+        this.promptSaveTeam();
+      },
+      scale: scale * CONSTS.COMPACT_BTN_SCALE,
+    });
+    this.saveBtn = saveButton.label;
+    this.saveBtnBg = saveButton.bg;
 
     // Initialize state, ensure the default roster exists, and render UI
     this.workingMembers = [...players];
@@ -97,31 +119,11 @@ export class PartyCreation extends Scene {
     this.input.on("drag", this.onDrag, this);
     this.input.on("dragend", this.onDragEnd, this);
 
+    // Start Game — centered at the bottom, persists the current party then transitions to battle
     const btnY = this.camera.height - CONSTS.BTN_BOTTOM_OFFSET;
-
-    // Save Team — prompts for a name and persists the current composition
-    const saveButton = createBtn({
-      scene: this,
-      cx: centerX - CONSTS.PARTYCREATION_BTN_SPACING,
-      y: btnY,
-      label: "Save Team",
-      onClick: () => {
-        const errs = this.validateTeamRules();
-        if (errs.length > 0) {
-          alert(errs.join("\n"));
-          return;
-        }
-        this.promptSaveTeam();
-      },
-      scale,
-    });
-    this.saveBtn = saveButton.label;
-    this.saveBtnBg = saveButton.bg;
-
-    // Start Game — persists the current party then transitions to battle
     const stBtn = createBtn({
       scene: this,
-      cx: centerX + CONSTS.PARTYCREATION_BTN_SPACING,
+      cx: centerX,
       y: btnY,
       label: "Start Game",
       onClick: async () => {
@@ -256,22 +258,30 @@ export class PartyCreation extends Scene {
   }
 
   /**
-   * Renders the team-building rules panel on the left side of the screen.
+   * Returns the team-building rules text displayed in the help popup.
    */
-  private renderRules(): void {
-    const txt =
-      "Team Building Rules:\n" +
-      "• Max 3 characters per lane\n" +
-      "• At least 2 lanes must have characters\n" +
-      "  (empty lanes allowed)\n" +
-      "• Flank: max 1; requires 1+ other lane; other lanes ≤2 chars";
-    this.add.text(CONSTS.RULES_X, CONSTS.RULES_Y, txt, {
-      fontFamily: CONSTS.UI_FONT_FAMILY,
-      fontSize: `${CONSTS.RULES_FONT_SIZE}px`,
-      color: CONSTS.RULES_COLOR,
-      resolution: TEXT_RESOLUTION,
-      wordWrap: { width: CONSTS.RULES_W },
-      lineSpacing: CONSTS.RULES_LINE_SPACING,
+  private get rulesText(): string {
+    return (
+      "A valid team adheres to the following rules:\n\n" +
+      "• Each lane may contain a maximum of 3 characters. \n" +
+      "• At least 2 of the Primary lanes (Frontline, Midline, and Backline) must have 1 or more characters." +
+      "  Empty lanes are allowed.\n" +
+      "• Placing a unit on the Flank is optional." +
+      " A maximum of 1 character may be on the Flank, as long as at least 1 other lane has a character. Additionally, no other lane may have more than 2 characters."
+    );
+  }
+
+  /**
+   * Renders the "Help!" button on the left side of the screen.
+   */
+  private renderRules(scale: number): void {
+    createBtn({
+      scene: this,
+      cx: CONSTS.HELP_X,
+      y: CONSTS.HELP_Y,
+      label: "Help!",
+      onClick: () => this.showHelpPopup(),
+      scale: scale * CONSTS.COMPACT_BTN_SCALE,
     });
   }
 
@@ -578,7 +588,7 @@ export class PartyCreation extends Scene {
   private onDragEnd(pointer: Phaser.Input.Pointer): void {
     if (!this.drag) return;
 
-    // If pointer hasn't moved significantly, treat as a click 
+    // If pointer hasn't moved significantly, treat as a click
     // and show lane-assignment popup menu
     const dx = pointer.x - this.drag.startX;
     const dy = pointer.y - this.drag.startY;
@@ -657,42 +667,43 @@ export class PartyCreation extends Scene {
    */
   private validateTeamRules(): string[] {
     const errs: string[] = [];
-    const cnt: Record<string, number> = {};
-    let flank = 0;
+    const laneCount: Record<string, number> = {};
+    let flankCount = 0;
 
-    // Tally members per position (flank vs primary lanes)
+    // Tally members per position (flankCount vs primary lanes)
     for (const mem of this.workingMembers) {
       if (mem.position === CONSTS.ActorPosition.FLANK) {
-        flank++;
+        flankCount++;
       } else {
-        cnt[mem.position] = (cnt[mem.position] ?? 0) + 1;
+        laneCount[mem.position] = (laneCount[mem.position] ?? 0) + 1;
       }
     }
 
     // Derive max lane depth and count of non-empty lanes from tallies
-    const maxNonFlank = Math.max(...Object.values(cnt), 0);
-    const nonEmptyLanes = Object.keys(cnt).length;
+    const maxNonFlank = Math.max(...Object.values(laneCount), 0);
+    const nonEmptyPrimaryLanes = Object.keys(laneCount).length;
 
-    // Rule 1: no more than 3 characters per lane
-    for (const [pos, num] of Object.entries(cnt)) {
+    // Rule 1: No more than 3 characters per lane
+    for (const [pos, num] of Object.entries(laneCount)) {
       if (num > 3)
         errs.push(`Maximum of 3 characters per lane - ${pos} has ${num}.`);
     }
 
-    // Rule 2: at least 2 lanes must be non-empty
-    if (nonEmptyLanes < 2) {
-      errs.push("At least 2 lanes must have characters assigned.");
+    // Rule 2: At least 2 primary lanes must be non-empty
+    if (nonEmptyPrimaryLanes < 2) {
+      errs.push("At least 2 primary lanes must have characters assigned.");
     }
 
-    // Rule 3: flank restrictions — max 1, needs another non-empty lane,
-    // and all other lanes must have < 3 characters
-    if (flank > 1)
-      errs.push(`Maximum of 1 character in the Flank lane (has ${flank}).`);
-    if (flank > 0 && nonEmptyLanes < 1)
+    // Rule 3: Flank special rules
+    if (flankCount > 1)
       errs.push(
-        "When there is a character in the Flank lane, at least 1 other lane must have at least 1 character.",
+        `Maximum of 1 character in the Flank lane (has ${flankCount}).`,
       );
-    if (flank > 0 && maxNonFlank > 2)
+    if (flankCount > 0 && nonEmptyPrimaryLanes < 1)
+      errs.push(
+        "When there is a character in the Flank lane, at least 1 other primary lane must have at least 1 character.",
+      );
+    if (flankCount > 0 && maxNonFlank > 2)
       errs.push(
         "When there is a character in the Flank lane, all other lanes must have fewer than 3 characters.",
       );
@@ -757,7 +768,7 @@ export class PartyCreation extends Scene {
           {
             fontFamily: CONSTS.UI_FONT_FAMILY,
             fontSize: `${CONSTS.POPUP_OPTION_FONT}px`,
-            color: CONSTS.RULES_COLOR,
+            color: CONSTS.HELP_COLOR,
             resolution: TEXT_RESOLUTION,
           },
         )
@@ -767,12 +778,93 @@ export class PartyCreation extends Scene {
 
       const lane = lanes[i];
       opt.on("pointerover", () => opt.setColor(CONSTS.LANE_HEADER_COLOR));
-      opt.on("pointerout", () => opt.setColor(CONSTS.RULES_COLOR));
+      opt.on("pointerout", () => opt.setColor(CONSTS.HELP_COLOR));
       opt.on("pointerdown", () => this.pickLane(actor, lane));
       popupObjects.push(opt);
     }
 
     this.picker = popupObjects;
+  }
+
+  /**
+   * Shows the help popup with team-building rules.
+   */
+  private showHelpPopup(): void {
+    this.destroyHelpPopup();
+
+    const midX = this.cameras.main.centerX;
+    const midY = this.cameras.main.centerY;
+    const left = midX - CONSTS.HELP_POPUP_W / 2;
+    const top = midY - CONSTS.HELP_POPUP_H / 2;
+    const popupObjects: GameObjects.GameObject[] = [];
+
+    // Background
+    const bgRect = this.add
+      .rectangle(
+        midX,
+        midY,
+        CONSTS.HELP_POPUP_W,
+        CONSTS.HELP_POPUP_H,
+        CONSTS.POPUP_BG,
+      )
+      .setStrokeStyle(CONSTS.POPUP_STROKE_W, CONSTS.POPUP_STROKE)
+      .setDepth(CONSTS.POPUP_DEPTH);
+    popupObjects.push(bgRect);
+
+    // Title
+    const title = this.add
+      .text(midX, top + CONSTS.HELP_POPUP_TITLE_Y, "Party Creation Rules", {
+        fontFamily: CONSTS.UI_FONT_FAMILY,
+        fontSize: "16px",
+        color: CONSTS.LANE_HEADER_COLOR,
+        resolution: TEXT_RESOLUTION,
+      })
+      .setOrigin(0.5, 0)
+      .setDepth(CONSTS.POPUP_DEPTH + 1);
+    popupObjects.push(title);
+
+    // Close button
+    const closeX = this.add
+      .text(left + CONSTS.HELP_POPUP_W - 5, top + 5, "X", {
+        fontFamily: CONSTS.UI_FONT_FAMILY,
+        fontSize: "18px",
+        color: CONSTS.POPUP_CLOSE_COLOR,
+        resolution: TEXT_RESOLUTION,
+      })
+      .setOrigin(1, 0)
+      .setInteractive({ useHandCursor: true })
+      .setDepth(CONSTS.POPUP_DEPTH + 1);
+    closeX.on("pointerdown", () => this.destroyHelpPopup());
+    popupObjects.push(closeX);
+
+    // Rules body text with word wrap
+    const body = this.add
+      .text(
+        left + CONSTS.HELP_POPUP_TEXT_X,
+        top + CONSTS.HELP_POPUP_TEXT_Y,
+        this.rulesText,
+        {
+          fontFamily: CONSTS.UI_FONT_FAMILY,
+          fontSize: `${CONSTS.HELP_FONT_SIZE}px`,
+          color: CONSTS.HELP_COLOR,
+          resolution: TEXT_RESOLUTION,
+          wordWrap: { width: CONSTS.HELP_W },
+          lineSpacing: CONSTS.HELP_LINE_SPACING,
+        },
+      )
+      .setDepth(CONSTS.POPUP_DEPTH + 1);
+    popupObjects.push(body);
+
+    this.helpPopup = popupObjects;
+  }
+
+  /**
+   * Destroys the active help popup, if any.
+   */
+  private destroyHelpPopup(): void {
+    if (!this.helpPopup) return;
+    for (const obj of this.helpPopup) obj.destroy();
+    this.helpPopup = null;
   }
 
   /**

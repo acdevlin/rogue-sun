@@ -164,18 +164,33 @@ export const BTN_HOVER_FILL = 0x666666;
 /** Text color for button label on hover. */
 export const BTN_HOVER_TEXT = "#ffff00";
 
-/** X-position of the team building rules section from the left edge. */
-export const RULES_X = 30;
-/** Y-position of the team building rules header. */
-export const RULES_Y = 90;
-/** Word wrap width for the rules text. */
-export const RULES_W = 350;
-/** Font size for the rules text. */
-export const RULES_FONT_SIZE = 14;
-/** Extra vertical space between lines in the rules text. */
-export const RULES_LINE_SPACING = 4;
-/** Color for the rules text. */
-export const RULES_COLOR = "#cccccc";
+/** Center X-position of the Help and Save Team buttons on the left side. */
+export const HELP_X = 120;
+/** Vertical gap between the Help button and the Save Team button below it. */
+export const HELP_SAVE_GAP = 72;
+/** Y-position of the Help button. */
+export const HELP_Y = 160;
+/** Scale factor for the compact left-side buttons in PartyCreation. */
+export const COMPACT_BTN_SCALE = 0.75;
+/** Word wrap width for the help popup text. */
+export const HELP_W = 400;
+/** Font size for the help popup text. */
+export const HELP_FONT_SIZE = 14;
+/** Extra vertical space between lines in the help popup text. */
+export const HELP_LINE_SPACING = 4;
+/** Color for the help popup text. */
+export const HELP_COLOR = "#cccccc";
+
+/** Width of the help popup. */
+export const HELP_POPUP_W = 500;
+/** Height of the help popup. */
+export const HELP_POPUP_H = 380;
+/** Y-offset from popup top to the title text. */
+export const HELP_POPUP_TITLE_Y = 12;
+/** X-offset from popup left edge to the body text. */
+export const HELP_POPUP_TEXT_X = 20;
+/** Y-offset from popup top to the body text. */
+export const HELP_POPUP_TEXT_Y = 50;
 
 /** Width of the lane picker popup. */
 export const POPUP_W = 180;

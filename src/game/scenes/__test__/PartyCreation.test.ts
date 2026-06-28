@@ -779,13 +779,17 @@ describe("PartyCreation Scene", () => {
     it("rejects fewer than 2 non-empty lanes (0 lanes)", () => {
       const scn = makeScene([]);
       const errs = (scn as any).validateTeamRules();
-      expect(errs).toContain("At least 2 lanes must have characters assigned.");
+      expect(errs).toContain(
+        "At least 2 primary lanes must have characters assigned.",
+      );
     });
 
     it("rejects fewer than 2 non-empty lanes (1 lane)", () => {
       const scn = makeScene([{ name: "A", position: "FRONTLINE" }]);
       const errs = (scn as any).validateTeamRules();
-      expect(errs).toContain("At least 2 lanes must have characters assigned.");
+      expect(errs).toContain(
+        "At least 2 primary lanes must have characters assigned.",
+      );
     });
 
     it("rejects more than 1 flank character", () => {
@@ -805,7 +809,7 @@ describe("PartyCreation Scene", () => {
       const scn = makeScene([{ name: "A", position: "FLANK" }]);
       const errs = (scn as any).validateTeamRules();
       expect(errs).toContain(
-        "When there is a character in the Flank lane, at least 1 other lane must have at least 1 character.",
+        "When there is a character in the Flank lane, at least 1 other primary lane must have at least 1 character.",
       );
     });
 
@@ -862,14 +866,10 @@ describe("PartyCreation Scene", () => {
 
     it("alerts and does not prompt when team is invalid", async () => {
       const partyCreation = new PartyCreation();
-      const rectSpy = vi.spyOn(partyCreation.add, "rectangle");
       partyCreation.create();
       (partyCreation as any).workingMembers = [];
 
-      // Save button rectangle is second-to-last (after pool cards, before Start Game)
-      const saveRect =
-        rectSpy.mock.results[rectSpy.mock.results.length - 2].value;
-      const pointerdown = saveRect.on.mock.calls.find(
+      const pointerdown = partyCreation.saveBtnBg.on.mock.calls.find(
         (call: string[]) => call[0] === "pointerdown",
       );
       pointerdown![1]();
@@ -880,16 +880,13 @@ describe("PartyCreation Scene", () => {
 
     it("proceeds to prompt when team is valid", async () => {
       const partyCreation = new PartyCreation();
-      const rectSpy = vi.spyOn(partyCreation.add, "rectangle");
       partyCreation.create();
       (partyCreation as any).workingMembers = [
         { name: "A", position: "FRONTLINE" },
         { name: "B", position: "BACKLINE" },
       ];
 
-      const saveRect =
-        rectSpy.mock.results[rectSpy.mock.results.length - 2].value;
-      const pointerdown = saveRect.on.mock.calls.find(
+      const pointerdown = partyCreation.saveBtnBg.on.mock.calls.find(
         (call: string[]) => call[0] === "pointerdown",
       );
       pointerdown![1]();
