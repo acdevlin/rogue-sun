@@ -176,3 +176,26 @@ export const RULES_FONT_SIZE = 14;
 export const RULES_LINE_SPACING = 4;
 /** Color for the rules text. */
 export const RULES_COLOR = "#cccccc";
+
+/** Width of the lane picker popup. */
+export const POPUP_W = 180;
+/** Height of the lane picker popup. */
+export const POPUP_H = 200;
+/** Background color of the popup. */
+export const POPUP_BG = 0x333333;
+/** Stroke color of the popup border. */
+export const POPUP_STROKE = 0x666666;
+/** Stroke width of the popup border. */
+export const POPUP_STROKE_W = 2;
+/** Depth of the popup (above all other elements). */
+export const POPUP_DEPTH = 10;
+/** Font size for popup lane option text. */
+export const POPUP_OPTION_FONT = 14;
+/** Color for the popup close button. */
+export const POPUP_CLOSE_COLOR = "#ff4444";
+/** Y-offset from popup top to the first lane option text. */
+export const POPUP_OPTION_Y = 45;
+/** Vertical spacing between lane option entries. */
+export const POPUP_OPTION_GAP = 35;
+/** Y-offset from popup top to the title text. */
+export const POPUP_TITLE_Y = 10;

@@ -555,6 +555,83 @@ describe("PartyCreation Scene", () => {
     });
   });
 
+  describe("lane picker popup", () => {
+    beforeEach(() => {
+      vi.stubGlobal("alert", vi.fn());
+    });
+
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    it("shows popup when pool card is clicked (no drag movement)", () => {
+      const partyCreation = new PartyCreation();
+      const textSpy = vi.spyOn(partyCreation.add, "text");
+      partyCreation.create();
+      (partyCreation as any).workingMembers = [];
+      (partyCreation as any).rebuildLanesAndPool();
+
+      const fighterCard = partyCreation.poolCards.find(
+        (poolCard) => poolCard.actor.name === "Fighter",
+      )!.card;
+      partyCreation.input.emit("dragstart", { x: 100, y: 100 }, fighterCard);
+      partyCreation.input.emit("dragend", { x: 100, y: 100 });
+
+      expect(partyCreation.picker).not.toBeNull();
+
+      // Verify "Select Lane" title is rendered
+      const titleArgs = textSpy.mock.calls.find(
+        (call: unknown[]) => call[2] === "Select Lane",
+      );
+      expect(titleArgs).toBeTruthy();
+    });
+
+    it("selecting a lane from picker places the actor", () => {
+      const partyCreation = new PartyCreation();
+      partyCreation.create();
+      (partyCreation as any).workingMembers = [];
+      (partyCreation as any).rebuildLanesAndPool();
+
+      const fighterCard = partyCreation.poolCards.find(
+        (poolCard) => poolCard.actor.name === "Fighter",
+      )!.card;
+      partyCreation.input.emit("dragstart", { x: 100, y: 100 }, fighterCard);
+      partyCreation.input.emit("dragend", { x: 100, y: 100 });
+
+      expect(partyCreation.picker).not.toBeNull();
+      (partyCreation as any).pickLane(
+        { name: "Fighter" },
+        CONSTS.ActorPosition.BACKLINE,
+      );
+
+      const placed = partyCreation.workingMembers.find(
+        (mem: { name: string; position?: string }) => mem.name === "Fighter",
+      )!;
+      expect(placed).toBeTruthy();
+      expect(placed.position).toBe(CONSTS.ActorPosition.BACKLINE);
+      expect(partyCreation.picker).toBeNull();
+    });
+
+    it("close X destroys the picker", () => {
+      const partyCreation = new PartyCreation();
+      partyCreation.create();
+      (partyCreation as any).workingMembers = [];
+      (partyCreation as any).rebuildLanesAndPool();
+
+      const fighterCard = partyCreation.poolCards.find(
+        (poolCard) => poolCard.actor.name === "Fighter",
+      )!.card;
+      partyCreation.input.emit("dragstart", { x: 100, y: 100 }, fighterCard);
+      partyCreation.input.emit("dragend", { x: 100, y: 100 });
+
+      expect(partyCreation.picker).not.toBeNull();
+
+      (partyCreation as any).destroyLanePicker();
+
+      expect(partyCreation.picker).toBeNull();
+    });
+  });
+
   describe("remove from team", () => {
     it("removes actor from workingMembers when lane card is clicked", () => {
       const initialLen = scene.workingMembers.length;

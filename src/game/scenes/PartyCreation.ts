@@ -25,6 +25,15 @@ interface PoolCardEntry {
   origY: number;
 }
 
+/** State for a drag or click operation on a pool card. */
+interface DragState {
+  actor: PlayerActorData;
+  origX: number;
+  origY: number;
+  startX: number;
+  startY: number;
+}
+
 export class PartyCreation extends Scene {
   camera: Cameras.Scene2D.Camera;
   title: GameObjects.Text;
@@ -37,7 +46,9 @@ export class PartyCreation extends Scene {
   workingMembers: PlayerActorData[] = [];
   laneObjects: GameObjects.GameObject[] = [];
   poolCards: PoolCardEntry[] = [];
-  drag: { actor: PlayerActorData; origX: number; origY: number } | null = null;
+  drag: DragState | null = null;
+  /** Objects composing the active lane picker popup, or null if closed. */
+  picker: GameObjects.GameObject[] | null = null;
   teamService = new PlayerTeamService();
 
   constructor() {
@@ -157,6 +168,7 @@ export class PartyCreation extends Scene {
     this.createPartyLanes(this.workingMembers);
     this.resetPoolPositions();
     this.syncPool();
+    this.destroyLanePicker();
   }
 
   /**
@@ -520,7 +532,7 @@ export class PartyCreation extends Scene {
    * @param obj - The dragged game object (pool card rectangle).
    */
   private onDragStart(
-    _pointer: Phaser.Input.Pointer,
+    pointer: Phaser.Input.Pointer,
     obj: GameObjects.GameObject,
   ): void {
     const poolCard = this.poolCards.find((i) => i.card === obj);
@@ -533,6 +545,8 @@ export class PartyCreation extends Scene {
       actor: poolCard.actor,
       origX: poolCard.card.x,
       origY: poolCard.card.y,
+      startX: pointer.x,
+      startY: pointer.y,
     };
   }
 
@@ -563,6 +577,18 @@ export class PartyCreation extends Scene {
    */
   private onDragEnd(pointer: Phaser.Input.Pointer): void {
     if (!this.drag) return;
+
+    // If pointer hasn't moved significantly, treat as a click 
+    // and show lane-assignment popup menu
+    const dx = pointer.x - this.drag.startX;
+    const dy = pointer.y - this.drag.startY;
+    if (Math.abs(dx) < 5 && Math.abs(dy) < 5) {
+      this.showLanePicker(this.drag.actor);
+      this.resetPoolPositions();
+      this.drag = null;
+      return;
+    }
+
     const pos = this.pickDropPos(pointer.x, pointer.y);
     if (pos) {
       this.workingMembers.push({ ...this.drag.actor, position: pos });
@@ -672,6 +698,101 @@ export class PartyCreation extends Scene {
       );
 
     return errs;
+  }
+
+  /**
+   * Shows the lane picker popup for the given actor.
+   * @param actor - The actor to place.
+   */
+  private showLanePicker(actor: PlayerActorData): void {
+    this.destroyLanePicker();
+
+    const midX = this.cameras.main.centerX;
+    const midY = this.cameras.main.centerY;
+    const left = midX - CONSTS.POPUP_W / 2;
+    const top = midY - CONSTS.POPUP_H / 2;
+    const popupObjects: GameObjects.GameObject[] = [];
+
+    // Background
+    const bgRect = this.add
+      .rectangle(midX, midY, CONSTS.POPUP_W, CONSTS.POPUP_H, CONSTS.POPUP_BG)
+      .setStrokeStyle(CONSTS.POPUP_STROKE_W, CONSTS.POPUP_STROKE)
+      .setDepth(CONSTS.POPUP_DEPTH);
+    popupObjects.push(bgRect);
+
+    // Title
+    const title = this.add
+      .text(midX, top + CONSTS.POPUP_TITLE_Y, "Select Lane", {
+        fontFamily: CONSTS.UI_FONT_FAMILY,
+        fontSize: "16px",
+        color: CONSTS.LANE_HEADER_COLOR,
+        resolution: TEXT_RESOLUTION,
+      })
+      .setOrigin(0.5, 0)
+      .setDepth(CONSTS.POPUP_DEPTH + 1);
+    popupObjects.push(title);
+
+    // Red X button, to close
+    const closeX = this.add
+      .text(left + CONSTS.POPUP_W - 5, top + 5, "X", {
+        fontFamily: CONSTS.UI_FONT_FAMILY,
+        fontSize: "18px",
+        color: CONSTS.POPUP_CLOSE_COLOR,
+        resolution: TEXT_RESOLUTION,
+      })
+      .setOrigin(1, 0)
+      .setInteractive({ useHandCursor: true })
+      .setDepth(CONSTS.POPUP_DEPTH + 1);
+    closeX.on("pointerdown", () => this.destroyLanePicker());
+    popupObjects.push(closeX);
+
+    // Lane option entries
+    const lanes = [...CONSTS.PRIMARY_LANES, CONSTS.ActorPosition.FLANK];
+    for (let i = 0; i < lanes.length; i++) {
+      const opt = this.add
+        .text(
+          midX,
+          top + CONSTS.POPUP_OPTION_Y + i * CONSTS.POPUP_OPTION_GAP,
+          lanes[i],
+          {
+            fontFamily: CONSTS.UI_FONT_FAMILY,
+            fontSize: `${CONSTS.POPUP_OPTION_FONT}px`,
+            color: CONSTS.RULES_COLOR,
+            resolution: TEXT_RESOLUTION,
+          },
+        )
+        .setOrigin(0.5, 0)
+        .setInteractive({ useHandCursor: true })
+        .setDepth(CONSTS.POPUP_DEPTH + 1);
+
+      const lane = lanes[i];
+      opt.on("pointerover", () => opt.setColor(CONSTS.LANE_HEADER_COLOR));
+      opt.on("pointerout", () => opt.setColor(CONSTS.RULES_COLOR));
+      opt.on("pointerdown", () => this.pickLane(actor, lane));
+      popupObjects.push(opt);
+    }
+
+    this.picker = popupObjects;
+  }
+
+  /**
+   * Destroys the active lane picker popup, if any.
+   */
+  private destroyLanePicker(): void {
+    if (!this.picker) return;
+    for (const obj of this.picker) obj.destroy();
+    this.picker = null;
+  }
+
+  /**
+   * Places the actor at the chosen position and closes the popup.
+   * @param actor - The actor to place.
+   * @param pos - The lane position to assign.
+   */
+  private pickLane(actor: PlayerActorData, pos: string): void {
+    this.workingMembers.push({ ...actor, position: pos });
+    this.destroyLanePicker();
+    this.rebuildLanesAndPool();
   }
 
   /**
