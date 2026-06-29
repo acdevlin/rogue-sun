@@ -35,11 +35,11 @@ describe("PartyCreation Scene", () => {
     );
   });
 
-  it("renders 'Start Game' button text", () => {
+  it("renders 'Start Battle' button text", () => {
     expect(scene.add.text).toHaveBeenCalledWith(
       expect.any(Number),
       expect.any(Number),
-      "Start Game",
+      "Start Battle",
       expect.any(Object),
     );
   });
@@ -1082,6 +1082,62 @@ describe("PartyCreation Scene", () => {
       await (partyCreation as any).promptSaveTeam();
 
       expect(globalThis.prompt).toHaveBeenCalled();
+    });
+  });
+
+  describe("popup overlay", () => {
+    it("has no overlay by default", () => {
+      expect(scene.popupOverlay).toBeNull();
+    });
+
+    it("creates overlay when help popup opens", () => {
+      (scene as any).showHelpPopup();
+      expect(scene.popupOverlay).not.toBeNull();
+      expect(scene.popupOverlay!.setInteractive).toHaveBeenCalled();
+    });
+
+    it("creates overlay when lane picker opens", () => {
+      (scene as any).showLanePicker({ name: "Fighter", position: "" });
+      expect(scene.popupOverlay).not.toBeNull();
+    });
+
+    it("creates overlay when load popup opens", () => {
+      (scene as any).showLoadPopup();
+      expect(scene.popupOverlay).not.toBeNull();
+    });
+
+    it("destroys overlay when help popup is closed", () => {
+      (scene as any).showHelpPopup();
+      expect(scene.popupOverlay).not.toBeNull();
+      (scene as any).destroyHelpPopup();
+      expect(scene.popupOverlay).toBeNull();
+    });
+
+    it("destroys overlay when lane picker is closed", () => {
+      (scene as any).showLanePicker({ name: "Fighter", position: "" });
+      expect(scene.popupOverlay).not.toBeNull();
+      (scene as any).destroyLanePicker();
+      expect(scene.popupOverlay).toBeNull();
+    });
+
+    it("destroys overlay when load popup is closed", () => {
+      (scene as any).showLoadPopup();
+      expect(scene.popupOverlay).not.toBeNull();
+      (scene as any).destroyLoadPopup();
+      expect(scene.popupOverlay).toBeNull();
+    });
+
+    it("keeps overlay when one popup closes but another remains", () => {
+      (scene as any).showHelpPopup();
+      (scene as any).showLanePicker({ name: "Fighter", position: "" });
+      (scene as any).destroyHelpPopup();
+      expect(scene.popupOverlay).not.toBeNull();
+    });
+
+    it("covers the full scene at correct depth", () => {
+      (scene as any).showHelpPopup();
+      const rect = scene.popupOverlay!;
+      expect(rect.setDepth).toHaveBeenCalledWith(CONSTS.POPUP_DEPTH - 1);
     });
   });
 });

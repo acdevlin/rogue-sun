@@ -215,6 +215,11 @@ export const POPUP_OPTION_GAP = 35;
 /** Y-offset from popup top to the title text. */
 export const POPUP_TITLE_Y = 10;
 
+/** Fill color for the popup dimming overlay. */
+export const POPUP_OVERLAY_COLOR = 0x000000;
+/** Alpha for the popup dimming overlay. */
+export const POPUP_OVERLAY_ALPHA = 0.6;
+
 /** Width of the load-team popup. */
 export const LOAD_POPUP_W = 280;
 /** Height of the load-team popup. */

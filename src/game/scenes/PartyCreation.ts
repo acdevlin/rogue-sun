@@ -45,8 +45,10 @@ export class PartyCreation extends Scene {
   drag: DragState | null = null;
   // Objects composing the active lane picker popup, or null if closed.
   picker: GameObjects.GameObject[] | null = null;
-  // Objects composing the active help popup, or null if closed. 
+  // Objects composing the active help popup, or null if closed.
   helpPopup: GameObjects.GameObject[] | null = null;
+  // Full-screen overlay that intercepts clicks when any popup is open, or null.
+  popupOverlay: GameObjects.Rectangle | null = null;
   teamService = new PlayerTeamService();
 
   constructor() {
@@ -127,13 +129,13 @@ export class PartyCreation extends Scene {
     this.input.on("drag", this.onDrag, this);
     this.input.on("dragend", this.onDragEnd, this);
 
-    // Start Game — centered at the bottom, persists the current party then transitions to battle
+    // Start Battle — centered at the bottom, persists the current party then transitions to battle
     const btnY = this.camera.height - CONSTS.BTN_BOTTOM_OFFSET;
     createBtn({
       scene: this,
       cx: centerX,
       y: btnY,
-      label: "Start Game",
+      label: "Start Battle",
       onClick: async () => {
         if (!this.validateAndAlert()) return;
         const members: TeamMember[] = this.workingMembers.map((i) => ({
@@ -457,6 +459,7 @@ export class PartyCreation extends Scene {
     });
 
     this.loadPopup = popupObjects;
+    this.syncStartBtn();
   }
 
   /**
@@ -466,6 +469,42 @@ export class PartyCreation extends Scene {
     if (!this.loadPopup) return;
     for (const obj of this.loadPopup) obj.destroy();
     this.loadPopup = null;
+    this.syncStartBtn();
+  }
+
+  /**
+   * True when any popup (help, lane-picker, or load-team) is currently open.
+   */
+  private get anyPopupOpen(): boolean {
+    return !!(this.helpPopup || this.picker || this.loadPopup);
+  }
+
+  /**
+   * Shows or hides a full-screen click-catcher overlay based on popup state.
+   * Prevents clicks reaching elements behind the popup.
+   */
+  private syncStartBtn(): void {
+    if (this.anyPopupOpen) {
+      if (!this.popupOverlay) {
+        const cam = this.cameras.main;
+        this.popupOverlay = this.add
+          .rectangle(
+            cam.width / 2,
+            cam.height / 2,
+            cam.width,
+            cam.height,
+            CONSTS.POPUP_OVERLAY_COLOR,
+            CONSTS.POPUP_OVERLAY_ALPHA,
+          )
+          .setInteractive()
+          .setDepth(CONSTS.POPUP_DEPTH - 1);
+      }
+    } else {
+      if (this.popupOverlay) {
+        this.popupOverlay.destroy();
+        this.popupOverlay = null;
+      }
+    }
   }
 
   /**
@@ -832,6 +871,7 @@ export class PartyCreation extends Scene {
     }
 
     this.picker = popupObjects;
+    this.syncStartBtn();
   }
 
   /**
@@ -904,6 +944,7 @@ export class PartyCreation extends Scene {
     popupObjects.push(body);
 
     this.helpPopup = popupObjects;
+    this.syncStartBtn();
   }
 
   /**
@@ -913,6 +954,7 @@ export class PartyCreation extends Scene {
     if (!this.helpPopup) return;
     for (const obj of this.helpPopup) obj.destroy();
     this.helpPopup = null;
+    this.syncStartBtn();
   }
 
   /**
@@ -922,6 +964,7 @@ export class PartyCreation extends Scene {
     if (!this.picker) return;
     for (const obj of this.picker) obj.destroy();
     this.picker = null;
+    this.syncStartBtn();
   }
 
   /**
