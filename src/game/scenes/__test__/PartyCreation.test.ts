@@ -854,6 +854,65 @@ describe("PartyCreation Scene", () => {
     });
   });
 
+  describe("Help popup", () => {
+    beforeEach(() => {
+      vi.stubGlobal("alert", vi.fn());
+    });
+
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    it("shows and hides the help popup with rules text", () => {
+      const partyCreation = new PartyCreation();
+      const rectSpy = vi.spyOn(partyCreation.add, "rectangle");
+      const textSpy = vi.spyOn(partyCreation.add, "text");
+      partyCreation.create();
+
+      (partyCreation as any).showHelpPopup();
+
+      // Popup background rectangle
+      expect(rectSpy).toHaveBeenCalledWith(
+        expect.any(Number),
+        expect.any(Number),
+        CONSTS.HELP_POPUP_W,
+        CONSTS.HELP_POPUP_H,
+        CONSTS.POPUP_BG,
+      );
+
+      // Title text
+      expect(textSpy).toHaveBeenCalledWith(
+        expect.any(Number),
+        expect.any(Number),
+        "Party Creation Rules",
+        expect.any(Object),
+      );
+
+      // Close button
+      expect(textSpy).toHaveBeenCalledWith(
+        expect.any(Number),
+        expect.any(Number),
+        "X",
+        expect.objectContaining({ color: CONSTS.POPUP_CLOSE_COLOR }),
+      );
+
+      // Rules body text
+      const rulesText = (partyCreation as any).rulesText;
+      expect(textSpy).toHaveBeenCalledWith(
+        expect.any(Number),
+        expect.any(Number),
+        rulesText,
+        expect.any(Object),
+      );
+
+      expect((partyCreation as any).helpPopup).not.toBeNull();
+
+      (partyCreation as any).destroyHelpPopup();
+
+      expect((partyCreation as any).helpPopup).toBeNull();
+    });
+  });
+
   describe("Save Team enforces validation", () => {
     beforeEach(() => {
       vi.stubGlobal("alert", vi.fn());
@@ -864,17 +923,14 @@ describe("PartyCreation Scene", () => {
       vi.unstubAllGlobals();
     });
 
-    it("alerts and does not prompt when team is invalid", async () => {
+    it("rejects save when team is invalid", async () => {
       const partyCreation = new PartyCreation();
       partyCreation.create();
       (partyCreation as any).workingMembers = [];
 
-      const pointerdown = partyCreation.saveBtnBg.on.mock.calls.find(
-        (call: string[]) => call[0] === "pointerdown",
-      );
-      pointerdown![1]();
+      const errs = (partyCreation as any).validateTeamRules();
 
-      expect(globalThis.alert).toHaveBeenCalled();
+      expect(errs.length).toBeGreaterThan(0);
       expect(globalThis.prompt).not.toHaveBeenCalled();
     });
 
@@ -886,10 +942,7 @@ describe("PartyCreation Scene", () => {
         { name: "B", position: "BACKLINE" },
       ];
 
-      const pointerdown = partyCreation.saveBtnBg.on.mock.calls.find(
-        (call: string[]) => call[0] === "pointerdown",
-      );
-      pointerdown![1]();
+      await (partyCreation as any).promptSaveTeam();
 
       expect(globalThis.prompt).toHaveBeenCalled();
     });

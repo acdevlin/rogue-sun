@@ -37,10 +37,6 @@ interface DragState {
 export class PartyCreation extends Scene {
   camera: Cameras.Scene2D.Camera;
   title: GameObjects.Text;
-  startBtn: GameObjects.Text;
-  startBtnBg: GameObjects.Rectangle;
-  saveBtn: GameObjects.Text;
-  saveBtnBg: GameObjects.Rectangle;
   savedTeamsLabel: GameObjects.Text;
   savedTeamsEntries: GameObjects.Text[] = [];
   workingMembers: PlayerActorData[] = [];
@@ -85,27 +81,29 @@ export class PartyCreation extends Scene {
     this.title.setOrigin(0.5);
 
     // Render the Help button on the left side
-    this.renderRules(scale);
+    createBtn({
+      scene: this,
+      cx: CONSTS.HELP_X,
+      y: CONSTS.HELP_Y,
+      label: "Help!",
+      onClick: () => this.showHelpPopup(),
+      scale: scale * CONSTS.COMPACT_BTN_SCALE,
+    });
 
-    // Save Team — below the Help button, prompts for a name and persists composition
+    // Save Team button, prompts for a name and persists composition
     const saveBtnY = CONSTS.HELP_Y + CONSTS.HELP_SAVE_GAP;
-    const saveButton = createBtn({
+    createBtn({
       scene: this,
       cx: CONSTS.HELP_X,
       y: saveBtnY,
       label: "Save Team",
       onClick: () => {
-        const errs = this.validateTeamRules();
-        if (errs.length > 0) {
-          alert(errs.join("\n"));
-          return;
-        }
+        this.destroyHelpPopup();
+        if (!this.validateAndAlert()) return;
         this.promptSaveTeam();
       },
       scale: scale * CONSTS.COMPACT_BTN_SCALE,
     });
-    this.saveBtn = saveButton.label;
-    this.saveBtnBg = saveButton.bg;
 
     // Initialize state, ensure the default roster exists, and render UI
     this.workingMembers = [...players];
@@ -121,17 +119,13 @@ export class PartyCreation extends Scene {
 
     // Start Game — centered at the bottom, persists the current party then transitions to battle
     const btnY = this.camera.height - CONSTS.BTN_BOTTOM_OFFSET;
-    const stBtn = createBtn({
+    createBtn({
       scene: this,
       cx: centerX,
       y: btnY,
       label: "Start Game",
       onClick: async () => {
-        const errs = this.validateTeamRules();
-        if (errs.length > 0) {
-          alert(errs.join("\n"));
-          return;
-        }
+        if (!this.validateAndAlert()) return;
         const members: TeamMember[] = this.workingMembers.map((i) => ({
           actorClassId: i.name,
           position: i.position,
@@ -150,8 +144,6 @@ export class PartyCreation extends Scene {
       },
       scale,
     });
-    this.startBtn = stBtn.label;
-    this.startBtnBg = stBtn.bg;
   }
 
   /**
@@ -269,20 +261,6 @@ export class PartyCreation extends Scene {
       "• Placing a unit on the Flank is optional." +
       " A maximum of 1 character may be on the Flank, as long as at least 1 other lane has a character. Additionally, no other lane may have more than 2 characters."
     );
-  }
-
-  /**
-   * Renders the "Help!" button on the left side of the screen.
-   */
-  private renderRules(scale: number): void {
-    createBtn({
-      scene: this,
-      cx: CONSTS.HELP_X,
-      y: CONSTS.HELP_Y,
-      label: "Help!",
-      onClick: () => this.showHelpPopup(),
-      scale: scale * CONSTS.COMPACT_BTN_SCALE,
-    });
   }
 
   /**
@@ -709,6 +687,19 @@ export class PartyCreation extends Scene {
       );
 
     return errs;
+  }
+
+  /**
+   * Validates team rules and alerts the user if invalid.
+   * @returns True if the team is valid, false otherwise.
+   */
+  private validateAndAlert(): boolean {
+    const errs = this.validateTeamRules();
+    if (errs.length > 0) {
+      alert(errs.join("\n"));
+      return false;
+    }
+    return true;
   }
 
   /**
