@@ -214,3 +214,12 @@ export const POPUP_OPTION_Y = 45;
 export const POPUP_OPTION_GAP = 35;
 /** Y-offset from popup top to the title text. */
 export const POPUP_TITLE_Y = 10;
+
+/** Width of the load-team popup. */
+export const LOAD_POPUP_W = 280;
+/** Height of the load-team popup. */
+export const LOAD_POPUP_H = 250;
+/** X-offset from popup left edge to team entry text. */
+export const LOAD_POPUP_TEXT_X = 16;
+/** Y-offset from popup top to the first team entry text. */
+export const LOAD_POPUP_TEXT_Y = 48;

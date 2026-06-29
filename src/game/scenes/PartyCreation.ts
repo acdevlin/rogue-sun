@@ -37,15 +37,15 @@ interface DragState {
 export class PartyCreation extends Scene {
   camera: Cameras.Scene2D.Camera;
   title: GameObjects.Text;
-  savedTeamsLabel: GameObjects.Text;
-  savedTeamsEntries: GameObjects.Text[] = [];
+  // Objects composing the active load-team popup, or null if closed.
+  loadPopup: GameObjects.GameObject[] | null = null;
   workingMembers: PlayerActorData[] = [];
   laneObjects: GameObjects.GameObject[] = [];
   poolCards: PoolCardEntry[] = [];
   drag: DragState | null = null;
-  /** Objects composing the active lane picker popup, or null if closed. */
+  // Objects composing the active lane picker popup, or null if closed.
   picker: GameObjects.GameObject[] | null = null;
-  /** Objects composing the active help popup, or null if closed. */
+  // Objects composing the active help popup, or null if closed. 
   helpPopup: GameObjects.GameObject[] | null = null;
   teamService = new PlayerTeamService();
 
@@ -105,17 +105,14 @@ export class PartyCreation extends Scene {
       scale: scale * CONSTS.COMPACT_BTN_SCALE,
     });
 
-    // Load Team button, shows a list of saved teams and loads the selected one
+    // Load Team button, opens a popup listing saved teams
     const loadBtnY = saveBtnY + CONSTS.HELP_SAVE_GAP;
     createBtn({
       scene: this,
       cx: CONSTS.HELP_X,
       y: loadBtnY,
       label: "Load Team",
-      onClick: () => {
-        // TODO
-        this.destroyHelpPopup();
-      },
+      onClick: () => this.showLoadPopup(),
       scale: scale * CONSTS.COMPACT_BTN_SCALE,
     });
 
@@ -124,7 +121,6 @@ export class PartyCreation extends Scene {
     this.poolCards = [];
     this.ensureDefaultTeam().then(() => this.loadInitialTeam());
     this.renderPool();
-    this.renderSavedTeams();
 
     // Register drag-and-drop for pool-to-lane interactions
     this.input.on("dragstart", this.onDragStart, this);
@@ -347,30 +343,58 @@ export class PartyCreation extends Scene {
   }
 
   /**
-   * Rebuilds the saved teams panel on the right side of the screen.
+   * Shows the load-team popup with a list of saved teams.
    */
-  private renderSavedTeams(): void {
-    // Clear any previous entries
-    if (this.savedTeamsLabel) this.savedTeamsLabel.destroy();
-    this.savedTeamsEntries.forEach((entry) => entry.destroy());
-    this.savedTeamsEntries = [];
+  private showLoadPopup(): void {
+    this.destroyLoadPopup();
 
-    const rightX = this.cameras.main.width - CONSTS.SAVED_TEAMS_RIGHT_OFFSET;
-    const headerY =
-      CONSTS.HEADER_PARTYCREATION_Y + CONSTS.SAVED_TEAMS_HEADER_OFFSET;
-    const style = {
-      fontFamily: CONSTS.UI_FONT_FAMILY,
-      fontSize: `${CONSTS.SAVED_TEAMS_FONT_SIZE}px`,
-      color: CONSTS.LANE_HEADER_COLOR,
-      resolution: TEXT_RESOLUTION,
-    };
+    const midX = this.cameras.main.centerX;
+    const midY = this.cameras.main.centerY;
+    const left = midX - CONSTS.LOAD_POPUP_W / 2;
+    const top = midY - CONSTS.LOAD_POPUP_H / 2;
+    const popupObjects: GameObjects.GameObject[] = [];
 
-    this.savedTeamsLabel = this.add
-      .text(rightX, headerY, "Saved Teams", style)
-      .setOrigin(0, 0);
+    // Background
+    const bgRect = this.add
+      .rectangle(
+        midX,
+        midY,
+        CONSTS.LOAD_POPUP_W,
+        CONSTS.LOAD_POPUP_H,
+        CONSTS.POPUP_BG,
+      )
+      .setStrokeStyle(CONSTS.POPUP_STROKE_W, CONSTS.POPUP_STROKE)
+      .setDepth(CONSTS.POPUP_DEPTH);
+    popupObjects.push(bgRect);
 
+    // Title
+    const title = this.add
+      .text(midX, top + CONSTS.POPUP_TITLE_Y, "Load Team", {
+        fontFamily: CONSTS.UI_FONT_FAMILY,
+        fontSize: "16px",
+        color: CONSTS.LANE_HEADER_COLOR,
+        resolution: TEXT_RESOLUTION,
+      })
+      .setOrigin(0.5, 0)
+      .setDepth(CONSTS.POPUP_DEPTH + 1);
+    popupObjects.push(title);
+
+    // Close button
+    const closeX = this.add
+      .text(left + CONSTS.LOAD_POPUP_W - 5, top + 5, "X", {
+        fontFamily: CONSTS.UI_FONT_FAMILY,
+        fontSize: "18px",
+        color: CONSTS.POPUP_CLOSE_COLOR,
+        resolution: TEXT_RESOLUTION,
+      })
+      .setOrigin(1, 0)
+      .setInteractive({ useHandCursor: true })
+      .setDepth(CONSTS.POPUP_DEPTH + 1);
+    closeX.on("pointerdown", () => this.destroyLoadPopup());
+    popupObjects.push(closeX);
+
+    // Team entries
     this.teamService.readAll().then((teams) => {
-      // Sort: Current Party first, Default second, then creation order
       const rank = (name: string) => {
         switch (name) {
           case CONSTS.TEAM_NAME_CURRENT:
@@ -381,48 +405,67 @@ export class PartyCreation extends Scene {
             return 2;
         }
       };
-
       teams.sort((teamA, teamB) => rank(teamA.name) - rank(teamB.name));
 
-      // Show placeholder when no teams have been saved yet
       if (teams.length === 0) {
-        const entry = this.add.text(
-          rightX + CONSTS.SAVED_TEAMS_ENTRY_PAD_X,
-          headerY + CONSTS.SAVED_TEAMS_ENTRY_PAD_Y,
-          "No saved teams",
-          {
-            ...style,
-            fontSize: `${CONSTS.SAVED_TEAMS_ENTRY_FONT_SIZE}px`,
-            color: CONSTS.SAVED_TEAMS_MUTED_COLOR,
-          },
-        );
-        this.savedTeamsEntries.push(entry);
+        const entry = this.add
+          .text(
+            left + CONSTS.LOAD_POPUP_TEXT_X,
+            top + CONSTS.LOAD_POPUP_TEXT_Y,
+            "No saved teams",
+            {
+              fontFamily: CONSTS.UI_FONT_FAMILY,
+              fontSize: `${CONSTS.SAVED_TEAMS_ENTRY_FONT_SIZE}px`,
+              color: CONSTS.SAVED_TEAMS_MUTED_COLOR,
+              resolution: TEXT_RESOLUTION,
+            },
+          )
+          .setDepth(CONSTS.POPUP_DEPTH + 1);
+        popupObjects.push(entry);
         return;
       }
 
       const listStyle = {
-        ...style,
+        fontFamily: CONSTS.UI_FONT_FAMILY,
         fontSize: `${CONSTS.SAVED_TEAMS_ENTRY_FONT_SIZE}px`,
+        color: CONSTS.LANE_HEADER_COLOR,
+        resolution: TEXT_RESOLUTION,
       };
+
       for (let i = 0; i < teams.length; i++) {
         const entry = this.add
           .text(
-            rightX + CONSTS.SAVED_TEAMS_ENTRY_PAD_X,
-            headerY +
-              CONSTS.SAVED_TEAMS_ENTRY_PAD_Y +
+            left + CONSTS.LOAD_POPUP_TEXT_X,
+            top +
+              CONSTS.LOAD_POPUP_TEXT_Y +
               i * CONSTS.SAVED_TEAMS_ENTRY_SPACING,
-            `  ${teams[i].name}`,
+            teams[i].name,
             listStyle,
           )
-          .setInteractive({ useHandCursor: true });
+          .setInteractive({ useHandCursor: true })
+          .setDepth(CONSTS.POPUP_DEPTH + 1);
 
         entry.on("pointerover", () => entry.setColor(CONSTS.BTN_HOVER_TEXT));
         entry.on("pointerout", () => entry.setColor(CONSTS.LANE_HEADER_COLOR));
-        entry.on("pointerdown", () => this.selectTeam(teams[i]));
+        entry.on("pointerdown", () => {
+          this.selectTeam(teams[i]);
+          this.destroyLoadPopup();
+        });
 
-        this.savedTeamsEntries.push(entry);
+        popupObjects.push(entry);
       }
     });
+
+    this.loadPopup = popupObjects;
+  }
+
+  /**
+   * Destroys the active load-team popup, if any.
+   */
+  private destroyLoadPopup(): void {
+    if (!this.loadPopup) return;
+    for (const obj of this.loadPopup) obj.destroy();
+    this.loadPopup = null;
   }
 
   /**
@@ -914,6 +957,5 @@ export class PartyCreation extends Scene {
     }
 
     await this.teamService.create({ name: name.trim(), members });
-    this.renderSavedTeams();
   }
 }

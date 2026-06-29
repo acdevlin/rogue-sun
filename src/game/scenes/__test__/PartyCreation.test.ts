@@ -144,17 +144,20 @@ describe("PartyCreation Scene", () => {
     });
   });
 
-  describe("saved teams list", () => {
-    it("shows 'Saved Teams' header label", () => {
+  describe("load team popup", () => {
+    it("shows 'Load Team' title in popup", async () => {
+      (scene as any).showLoadPopup();
+      await new Promise((resolve) => setTimeout(resolve, 0));
       expect(scene.add.text).toHaveBeenCalledWith(
         expect.any(Number),
         expect.any(Number),
-        "Saved Teams",
+        "Load Team",
         expect.any(Object),
       );
     });
 
     it("shows 'No saved teams' when localStorage is empty", async () => {
+      (scene as any).showLoadPopup();
       await new Promise((resolve) => setTimeout(resolve, 0));
       expect(scene.add.text).toHaveBeenCalledWith(
         expect.any(Number),
@@ -187,6 +190,7 @@ describe("PartyCreation Scene", () => {
       const partyCreation = new PartyCreation();
       const textSpy = vi.spyOn(partyCreation.add, "text");
       partyCreation.create();
+      (partyCreation as any).showLoadPopup();
 
       await new Promise((resolve) => setTimeout(resolve, 0));
 
@@ -227,13 +231,25 @@ describe("PartyCreation Scene", () => {
       const partyCreation = new PartyCreation();
       const textSpy = vi.spyOn(partyCreation.add, "text");
       partyCreation.create();
+      (partyCreation as any).showLoadPopup();
 
       await new Promise((resolve) => setTimeout(resolve, 0));
 
+      const calls = textSpy.mock.calls;
+      let loadTitleIdx = -1;
+      for (let i = calls.length - 1; i >= 0; i--) {
+        if (calls[i][2] === "Load Team") {
+          loadTitleIdx = i;
+          break;
+        }
+      }
       const teamEntries = textSpy.mock.calls
+        .slice(loadTitleIdx + 1)
         .filter(
           (call: unknown[]) =>
-            typeof call[2] === "string" && call[2].startsWith("  "),
+            typeof call[2] === "string" &&
+            call[2] !== "X" &&
+            call[2] !== "No saved teams",
         )
         .map((call: unknown[]) => (call[2] as string).trim());
       const idxCurrent = teamEntries.indexOf("Current Party");
@@ -242,6 +258,60 @@ describe("PartyCreation Scene", () => {
       expect(idxCurrent).toBe(0);
       expect(idxDefault).toBe(1);
       expect(idxZ).toBe(2);
+    });
+
+    it("sorts and shows all team entries in correct order", async () => {
+      (localStorage.getItem as ReturnType<typeof vi.fn>).mockReturnValue(
+        JSON.stringify([
+          {
+            id: "c",
+            name: "Z Team",
+            members: [],
+            createdAt: 1,
+            lastModified: 1,
+          },
+          {
+            id: "d",
+            name: "Default",
+            members: [],
+            createdAt: 2,
+            lastModified: 2,
+          },
+          {
+            id: "e",
+            name: "Current Party",
+            members: [],
+            createdAt: 3,
+            lastModified: 3,
+          },
+        ]),
+      );
+
+      const partyCreation = new PartyCreation();
+      const textSpy = vi.spyOn(partyCreation.add, "text");
+      partyCreation.create();
+      (partyCreation as any).showLoadPopup();
+
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      // Find team name texts after the "Load Team" title
+      const allTextCalls = textSpy.mock.calls.filter(
+        (call: unknown[]) =>
+          typeof call[2] === "string" &&
+          (call[2] as string).trim() !== "" &&
+          (call[2] as string).trim() !== "X",
+      );
+      const teamNames = allTextCalls
+        .filter(
+          (call: unknown[]) =>
+            call[2] !== "Load Team" && call[2] !== "No saved teams",
+        )
+        .map((call: unknown[]) => (call[2] as string).trim());
+      const idxCurrent = teamNames.indexOf("Current Party");
+      const idxDefault = teamNames.indexOf("Default");
+      const idxZ = teamNames.indexOf("Z Team");
+      expect(idxCurrent).toBeLessThan(idxDefault);
+      expect(idxDefault).toBeLessThan(idxZ);
     });
 
     it("team entries are interactive with hover and click handlers", async () => {
@@ -260,6 +330,7 @@ describe("PartyCreation Scene", () => {
       const partyCreation = new PartyCreation();
       const textSpy = vi.spyOn(partyCreation.add, "text");
       partyCreation.create();
+      (partyCreation as any).showLoadPopup();
 
       await new Promise((resolve) => setTimeout(resolve, 0));
 
@@ -286,7 +357,7 @@ describe("PartyCreation Scene", () => {
       );
     });
 
-    it("clicking a saved team updates workingMembers", async () => {
+    it("clicking a saved team updates workingMembers and closes popup", async () => {
       (localStorage.getItem as ReturnType<typeof vi.fn>).mockReturnValue(
         JSON.stringify([
           {
@@ -305,8 +376,11 @@ describe("PartyCreation Scene", () => {
       const partyCreation = new PartyCreation();
       const textSpy = vi.spyOn(partyCreation.add, "text");
       partyCreation.create();
+      (partyCreation as any).showLoadPopup();
 
       await new Promise((resolve) => setTimeout(resolve, 0));
+
+      expect(partyCreation.loadPopup).not.toBeNull();
 
       const teamCallIdx = textSpy.mock.calls.findIndex(
         (call: unknown[]) => (call[2] as string).trim() === "Mages Only",
@@ -321,6 +395,7 @@ describe("PartyCreation Scene", () => {
       expect(partyCreation.workingMembers).toHaveLength(2);
       expect(partyCreation.workingMembers[0].name).toBe("Mage");
       expect(partyCreation.workingMembers[1].name).toBe("Summoner");
+      expect(partyCreation.loadPopup).toBeNull();
     });
 
     it("does nothing when clicked team has no resolvable members", async () => {
@@ -339,6 +414,7 @@ describe("PartyCreation Scene", () => {
       const partyCreation = new PartyCreation();
       const textSpy = vi.spyOn(partyCreation.add, "text");
       partyCreation.create();
+      (partyCreation as any).showLoadPopup();
 
       await new Promise((resolve) => setTimeout(resolve, 0));
 
@@ -353,6 +429,67 @@ describe("PartyCreation Scene", () => {
       pointerdown![1]();
 
       expect(partyCreation.workingMembers).toEqual(players);
+    });
+
+    it("creates background rectangle with popup dimensions and depth", () => {
+      const partyCreation = new PartyCreation();
+      const rectSpy = vi.spyOn(partyCreation.add, "rectangle");
+      partyCreation.create();
+      (partyCreation as any).showLoadPopup();
+
+      const popupBgCalls = rectSpy.mock.calls.filter(
+        (call: unknown[]) => call[4] === CONSTS.POPUP_BG,
+      );
+      const loadPopupBg = popupBgCalls[popupBgCalls.length - 1];
+      expect(loadPopupBg).toBeTruthy();
+      expect(loadPopupBg[2]).toBe(CONSTS.LOAD_POPUP_W);
+      expect(loadPopupBg[3]).toBe(CONSTS.LOAD_POPUP_H);
+    });
+
+    it("shows close button that destroys the popup on click", async () => {
+      const partyCreation = new PartyCreation();
+      const textSpy = vi.spyOn(partyCreation.add, "text");
+      partyCreation.create();
+      (partyCreation as any).showLoadPopup();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      const closeCallIdx = textSpy.mock.calls.findIndex(
+        (call: unknown[]) => call[2] === "X" && typeof call[1] === "number",
+      );
+      expect(closeCallIdx).toBeGreaterThanOrEqual(0);
+      const closeText = textSpy.mock.results[closeCallIdx].value;
+
+      expect(closeText.setInteractive).toHaveBeenCalledWith({
+        useHandCursor: true,
+      });
+
+      const pointerdown = closeText.on.mock.calls.find(
+        (call: string[]) => call[0] === "pointerdown",
+      );
+      expect(pointerdown).toBeTruthy();
+
+      expect(partyCreation.loadPopup).not.toBeNull();
+      pointerdown![1]();
+      expect(partyCreation.loadPopup).toBeNull();
+    });
+
+    it("destroyLoadPopup sets loadPopup to null", () => {
+      (scene as any).showLoadPopup();
+      expect(scene.loadPopup).not.toBeNull();
+      (scene as any).destroyLoadPopup();
+      expect(scene.loadPopup).toBeNull();
+    });
+
+    it("replaces popup when showLoadPopup is called while already open", () => {
+      const partyCreation = new PartyCreation();
+      partyCreation.create();
+      (partyCreation as any).showLoadPopup();
+      const firstPopup = partyCreation.loadPopup;
+      expect(firstPopup).not.toBeNull();
+
+      (partyCreation as any).showLoadPopup();
+      expect(partyCreation.loadPopup).not.toBe(firstPopup);
+      expect(partyCreation.loadPopup?.length).toBeGreaterThan(0);
     });
   });
 
