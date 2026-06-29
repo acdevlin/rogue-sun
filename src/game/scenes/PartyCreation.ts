@@ -105,6 +105,20 @@ export class PartyCreation extends Scene {
       scale: scale * CONSTS.COMPACT_BTN_SCALE,
     });
 
+    // Load Team button, shows a list of saved teams and loads the selected one
+    const loadBtnY = saveBtnY + CONSTS.HELP_SAVE_GAP;
+    createBtn({
+      scene: this,
+      cx: CONSTS.HELP_X,
+      y: loadBtnY,
+      label: "Load Team",
+      onClick: () => {
+        // TODO
+        this.destroyHelpPopup();
+      },
+      scale: scale * CONSTS.COMPACT_BTN_SCALE,
+    });
+
     // Initialize state, ensure the default roster exists, and render UI
     this.workingMembers = [...players];
     this.poolCards = [];
