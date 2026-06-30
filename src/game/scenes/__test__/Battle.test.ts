@@ -1,32 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { ActionActor } from "../../systems/ActionActor";
 import { Battle } from "../Battle";
 import * as CONSTS from "../../../constants";
 
+import { makeActor } from "../../utils/TestUtils";
 import { players as defaultPlayers } from "../../data/playerActorClasses";
 import { enemies as defaultEnemies } from "../../data/enemyActorClasses";
-
-type ActorParams = {
-  controller: CONSTS.ActorController;
-  name: string;
-  speed: number;
-  health: number;
-  stamina: number;
-  energy: number;
-  position: CONSTS.ActorPosition;
-};
-
-const makeActor = (overrides: Partial<ActorParams> = {}): ActionActor =>
-  new ActionActor({
-    controller: CONSTS.ActorController.PLAYER,
-    name: "Test",
-    speed: 30,
-    health: 100,
-    stamina: 100,
-    energy: 100,
-    position: CONSTS.ActorPosition.FRONTLINE,
-    ...overrides,
-  });
 
 function actorRectCalls(
   rectSpy: ReturnType<typeof vi.spyOn>,

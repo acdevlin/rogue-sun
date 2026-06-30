@@ -1,28 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { ActionActor } from "../ActionActor";
-import { ActorPosition, ActorController } from "../../../constants";
-
-const makeActor = (
-  overrides?: Partial<{
-    controller: ActorController;
-    name: string;
-    speed: number;
-    health: number;
-    stamina: number;
-    energy: number;
-    position: ActorPosition;
-  }>,
-) =>
-  new ActionActor({
-    controller: ActorController.PLAYER,
-    name: "Hero",
-    speed: 30,
-    health: 100,
-    stamina: 100,
-    energy: 100,
-    position: ActorPosition.FRONTLINE,
-    ...overrides,
-  });
+import { ActorController } from "../../../constants";
+import { makeActor } from "../../utils/TestUtils";
 
 describe("ActionActor", () => {
   it("initializes with given values", () => {
