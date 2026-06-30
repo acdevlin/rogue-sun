@@ -40,18 +40,12 @@ interface DragState {
 export class PartyCreation extends Scene {
   camera: Cameras.Scene2D.Camera;
   title: GameObjects.Text;
-  // Objects composing the active load-team popup, or null if closed.
-  loadPopup: GameObjects.GameObject[] | null = null;
-  // Objects composing the active save-team popup, or null if closed.
-  savePopup: GameObjects.GameObject[] | null = null;
+  // Objects composing the active popup, or null if closed.
+  popup: GameObjects.GameObject[] | null = null;
   workingMembers: PlayerActorData[] = [];
   laneObjects: GameObjects.GameObject[] = [];
   poolCards: PoolCardEntry[] = [];
   drag: DragState | null = null;
-  // Objects composing the active lane picker popup, or null if closed.
-  lanePicker: GameObjects.GameObject[] | null = null;
-  // Objects composing the active help popup, or null if closed.
-  helpPopup: GameObjects.GameObject[] | null = null;
   // Full-screen overlay that intercepts clicks when any popup is open, or null.
   popupOverlay: GameObjects.Rectangle | null = null;
   // Error text object in the save-team popup, or null if popup is closed.
@@ -107,7 +101,7 @@ export class PartyCreation extends Scene {
       y: saveBtnY,
       label: "Save Team",
       onClick: () => {
-        this.destroyHelpPopup();
+        this.destroyPopup();
         if (!this.validateAndAlert()) return;
         this.showSavePopup();
       },
@@ -181,7 +175,6 @@ export class PartyCreation extends Scene {
     this.createPartyLanes(this.workingMembers);
     this.resetPoolPositions();
     this.syncPool();
-    this.destroyLanePicker();
   }
 
   /**
@@ -355,7 +348,7 @@ export class PartyCreation extends Scene {
    * Shows the load-team popup with a list of saved teams.
    */
   private showLoadPopup(): void {
-    this.destroyLoadPopup();
+    this.destroyPopup();
 
     const midX = this.cameras.main.centerX;
     const midY = this.cameras.main.centerY;
@@ -367,7 +360,7 @@ export class PartyCreation extends Scene {
       createPopupBg(this, midX, midY, CONSTS.LOAD_POPUP_W, CONSTS.LOAD_POPUP_H),
       createPopupTitle(this, midX, top, "Load Team"),
       createPopupClose(this, left, top, CONSTS.LOAD_POPUP_W, () =>
-        this.destroyLoadPopup(),
+        this.destroyPopup(),
       ),
     );
 
@@ -427,44 +420,40 @@ export class PartyCreation extends Scene {
         entry.on("pointerout", () => entry.setColor(CONSTS.LANE_HEADER_COLOR));
         entry.on("pointerdown", () => {
           this.selectTeam(teams[i]);
-          this.destroyLoadPopup();
+          this.destroyPopup();
         });
 
         popupObjects.push(entry);
       }
     });
 
-    this.loadPopup = popupObjects;
-    this.syncStartBtn();
+    this.popup = popupObjects;
+    this.syncPopupOverlay();
   }
 
   /**
-   * Destroys the active load-team popup, if any.
+   * Destroys the active popup, if any.
    */
-  private destroyLoadPopup(): void {
-    if (!this.loadPopup) return;
-    for (const obj of this.loadPopup) obj.destroy();
-    this.loadPopup = null;
-    this.syncStartBtn();
+  private destroyPopup(): void {
+    if (!this.popup) return;
+    for (const obj of this.popup) obj.destroy();
+    this.popup = null;
+    this.saveErrText = null;
+    this.syncPopupOverlay();
   }
 
   /**
-   * True when any popup (help, lane-picker, load-team, or save-team) is currently open.
+   * True when any popup is currently open.
    */
   private get anyPopupOpen(): boolean {
-    return !!(
-      this.helpPopup ||
-      this.lanePicker ||
-      this.loadPopup ||
-      this.savePopup
-    );
+    return !!this.popup;
   }
 
   /**
    * Shows or hides a full-screen click-catcher overlay based on popup state.
    * Prevents clicks reaching elements behind the popup.
    */
-  private syncStartBtn(): void {
+  private syncPopupOverlay(): void {
     if (this.anyPopupOpen) {
       if (!this.popupOverlay) {
         const cam = this.cameras.main;
@@ -767,16 +756,59 @@ export class PartyCreation extends Scene {
   }
 
   /**
-   * Validates team rules and alerts the user if invalid.
+   * Validates team rules and shows an inline alert popup if invalid.
    * @returns True if the team is valid, false otherwise.
    */
   private validateAndAlert(): boolean {
     const errs = this.validateTeamRules();
     if (errs.length > 0) {
-      alert(errs.join("\n"));
+      this.showAlertPopup(errs.join("\n"));
       return false;
     }
     return true;
+  }
+
+  /**
+   * Shows a simple alert popup with a message and close button.
+   * @param msg - The message text to display.
+   */
+  private showAlertPopup(msg: string): void {
+    this.destroyPopup();
+
+    const midX = this.cameras.main.centerX;
+    const midY = this.cameras.main.centerY;
+    const left = midX - CONSTS.LOAD_POPUP_W / 2;
+    const top = midY - CONSTS.LOAD_POPUP_H / 2;
+    const popupObjects: GameObjects.GameObject[] = [];
+
+    popupObjects.push(
+      createPopupBg(this, midX, midY, CONSTS.LOAD_POPUP_W, CONSTS.LOAD_POPUP_H),
+      createPopupTitle(this, midX, top, "Invalid Team"),
+      createPopupClose(this, left, top, CONSTS.LOAD_POPUP_W, () =>
+        this.destroyPopup(),
+      ),
+    );
+
+    const body = this.add
+      .text(
+        left + CONSTS.LOAD_POPUP_TEXT_X,
+        top + CONSTS.LOAD_POPUP_TEXT_Y,
+        msg,
+        {
+          fontFamily: CONSTS.UI_FONT_FAMILY,
+          fontSize: `${CONSTS.HELP_FONT_SIZE}px`,
+          color: CONSTS.HELP_COLOR,
+          resolution: TEXT_RESOLUTION,
+          wordWrap: {
+            width: CONSTS.LOAD_POPUP_W - CONSTS.LOAD_POPUP_TEXT_X * 2,
+          },
+        },
+      )
+      .setDepth(CONSTS.POPUP_DEPTH + 1);
+    popupObjects.push(body);
+
+    this.popup = popupObjects;
+    this.syncPopupOverlay();
   }
 
   /**
@@ -784,7 +816,7 @@ export class PartyCreation extends Scene {
    * @param actor - The actor to place.
    */
   private showLanePicker(actor: PlayerActorData): void {
-    this.destroyLanePicker();
+    this.destroyPopup();
 
     const midX = this.cameras.main.centerX;
     const midY = this.cameras.main.centerY;
@@ -796,7 +828,7 @@ export class PartyCreation extends Scene {
       createPopupBg(this, midX, midY, CONSTS.POPUP_W, CONSTS.POPUP_H),
       createPopupTitle(this, midX, top, "Select Lane"),
       createPopupClose(this, left, top, CONSTS.POPUP_W, () =>
-        this.destroyLanePicker(),
+        this.destroyPopup(),
       ),
     );
 
@@ -826,15 +858,15 @@ export class PartyCreation extends Scene {
       popupObjects.push(opt);
     }
 
-    this.lanePicker = popupObjects;
-    this.syncStartBtn();
+    this.popup = popupObjects;
+    this.syncPopupOverlay();
   }
 
   /**
    * Shows the help popup with team-building rules.
    */
   private showHelpPopup(): void {
-    this.destroyHelpPopup();
+    this.destroyPopup();
 
     const midX = this.cameras.main.centerX;
     const midY = this.cameras.main.centerY;
@@ -852,7 +884,7 @@ export class PartyCreation extends Scene {
         CONSTS.HELP_POPUP_TITLE_Y,
       ),
       createPopupClose(this, left, top, CONSTS.HELP_POPUP_W, () =>
-        this.destroyHelpPopup(),
+        this.destroyPopup(),
       ),
     );
 
@@ -874,28 +906,8 @@ export class PartyCreation extends Scene {
       .setDepth(CONSTS.POPUP_DEPTH + 1);
     popupObjects.push(body);
 
-    this.helpPopup = popupObjects;
-    this.syncStartBtn();
-  }
-
-  /**
-   * Destroys the active help popup, if any.
-   */
-  private destroyHelpPopup(): void {
-    if (!this.helpPopup) return;
-    for (const obj of this.helpPopup) obj.destroy();
-    this.helpPopup = null;
-    this.syncStartBtn();
-  }
-
-  /**
-   * Destroys the active lane picker popup, if any.
-   */
-  private destroyLanePicker(): void {
-    if (!this.lanePicker) return;
-    for (const obj of this.lanePicker) obj.destroy();
-    this.lanePicker = null;
-    this.syncStartBtn();
+    this.popup = popupObjects;
+    this.syncPopupOverlay();
   }
 
   /**
@@ -905,7 +917,7 @@ export class PartyCreation extends Scene {
    */
   private pickLane(actor: PlayerActorData, pos: string): void {
     this.workingMembers.push({ ...actor, position: pos });
-    this.destroyLanePicker();
+    this.destroyPopup();
     this.rebuildLanesAndPool();
   }
 
@@ -913,7 +925,7 @@ export class PartyCreation extends Scene {
    * Shows the save-team popup with a text input and Save button.
    */
   private showSavePopup(): void {
-    this.destroySavePopup();
+    this.destroyPopup();
 
     const midX = this.cameras.main.centerX;
     const midY = this.cameras.main.centerY;
@@ -925,7 +937,7 @@ export class PartyCreation extends Scene {
       createPopupBg(this, midX, midY, CONSTS.SAVE_POPUP_W, CONSTS.SAVE_POPUP_H),
       createPopupTitle(this, midX, top, CONSTS.SAVE_TEAM_POPUP_TITLE),
       createPopupClose(this, left, top, CONSTS.SAVE_POPUP_W, () =>
-        this.destroySavePopup(),
+        this.destroyPopup(),
       ),
     );
 
@@ -992,19 +1004,8 @@ export class PartyCreation extends Scene {
     popupObjects.push(errText);
 
     this.saveErrText = errText;
-    this.savePopup = popupObjects;
-    this.syncStartBtn();
-  }
-
-  /**
-   * Destroys the active save-team popup, if any.
-   */
-  private destroySavePopup(): void {
-    if (!this.savePopup) return;
-    for (const obj of this.savePopup) obj.destroy();
-    this.savePopup = null;
-    this.saveErrText = null;
-    this.syncStartBtn();
+    this.popup = popupObjects;
+    this.syncPopupOverlay();
   }
 
   /**
@@ -1036,6 +1037,6 @@ export class PartyCreation extends Scene {
     }
 
     await this.teamService.create({ name, members });
-    this.destroySavePopup();
+    this.destroyPopup();
   }
 }

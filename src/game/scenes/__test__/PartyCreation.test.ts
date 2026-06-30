@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 
 import { PartyCreation } from "../PartyCreation";
 import type { PlayerTeam } from "../../data/PlayerTeam";
@@ -381,7 +381,7 @@ describe("PartyCreation Scene", () => {
 
       await new Promise((resolve) => setTimeout(resolve, 0));
 
-      expect(partyCreation.loadPopup).not.toBeNull();
+      expect(partyCreation.popup).not.toBeNull();
 
       const teamCallIdx = textSpy.mock.calls.findIndex(
         (call: unknown[]) => (call[2] as string).trim() === "Mages Only",
@@ -396,7 +396,7 @@ describe("PartyCreation Scene", () => {
       expect(partyCreation.workingMembers).toHaveLength(2);
       expect(partyCreation.workingMembers[0].name).toBe("Mage");
       expect(partyCreation.workingMembers[1].name).toBe("Summoner");
-      expect(partyCreation.loadPopup).toBeNull();
+      expect(partyCreation.popup).toBeNull();
     });
 
     it("does nothing when clicked team has no resolvable members", async () => {
@@ -469,28 +469,28 @@ describe("PartyCreation Scene", () => {
       );
       expect(pointerdown).toBeTruthy();
 
-      expect(partyCreation.loadPopup).not.toBeNull();
+      expect(partyCreation.popup).not.toBeNull();
       pointerdown![1]();
-      expect(partyCreation.loadPopup).toBeNull();
+      expect(partyCreation.popup).toBeNull();
     });
 
     it("destroyLoadPopup sets loadPopup to null", () => {
       (scene as any).showLoadPopup();
-      expect(scene.loadPopup).not.toBeNull();
-      (scene as any).destroyLoadPopup();
-      expect(scene.loadPopup).toBeNull();
+      expect((scene as any).popup).not.toBeNull();
+      (scene as any).destroyPopup();
+      expect((scene as any).popup).toBeNull();
     });
 
     it("replaces popup when showLoadPopup is called while already open", () => {
       const partyCreation = new PartyCreation();
       partyCreation.create();
       (partyCreation as any).showLoadPopup();
-      const firstPopup = partyCreation.loadPopup;
+      const firstPopup = partyCreation.popup;
       expect(firstPopup).not.toBeNull();
 
       (partyCreation as any).showLoadPopup();
-      expect(partyCreation.loadPopup).not.toBe(firstPopup);
-      expect(partyCreation.loadPopup?.length).toBeGreaterThan(0);
+      expect(partyCreation.popup).not.toBe(firstPopup);
+      expect(partyCreation.popup?.length).toBeGreaterThan(0);
     });
   });
 
@@ -694,14 +694,6 @@ describe("PartyCreation Scene", () => {
   });
 
   describe("lane picker popup", () => {
-    beforeEach(() => {
-      vi.stubGlobal("alert", vi.fn());
-    });
-
-    afterEach(() => {
-      vi.unstubAllGlobals();
-    });
-
     it("shows popup when pool card is clicked (no drag movement)", () => {
       const partyCreation = new PartyCreation();
       const textSpy = vi.spyOn(partyCreation.add, "text");
@@ -715,7 +707,7 @@ describe("PartyCreation Scene", () => {
       partyCreation.input.emit("dragstart", { x: 100, y: 100 }, fighterCard);
       partyCreation.input.emit("dragend", { x: 100, y: 100 });
 
-      expect(partyCreation.lanePicker).not.toBeNull();
+      expect(partyCreation.popup).not.toBeNull();
 
       // Verify "Select Lane" title is rendered
       const titleArgs = textSpy.mock.calls.find(
@@ -736,7 +728,7 @@ describe("PartyCreation Scene", () => {
       partyCreation.input.emit("dragstart", { x: 100, y: 100 }, fighterCard);
       partyCreation.input.emit("dragend", { x: 100, y: 100 });
 
-      expect(partyCreation.lanePicker).not.toBeNull();
+      expect(partyCreation.popup).not.toBeNull();
       (partyCreation as any).pickLane(
         { name: "Fighter" },
         CONSTS.ActorPosition.BACKLINE,
@@ -747,7 +739,7 @@ describe("PartyCreation Scene", () => {
       )!;
       expect(placed).toBeTruthy();
       expect(placed.position).toBe(CONSTS.ActorPosition.BACKLINE);
-      expect(partyCreation.lanePicker).toBeNull();
+      expect(partyCreation.popup).toBeNull();
     });
 
     it("close X destroys the picker", () => {
@@ -762,11 +754,11 @@ describe("PartyCreation Scene", () => {
       partyCreation.input.emit("dragstart", { x: 100, y: 100 }, fighterCard);
       partyCreation.input.emit("dragend", { x: 100, y: 100 });
 
-      expect(partyCreation.lanePicker).not.toBeNull();
+      expect(partyCreation.popup).not.toBeNull();
 
-      (partyCreation as any).destroyLanePicker();
+      (partyCreation as any).destroyPopup();
 
-      expect(partyCreation.lanePicker).toBeNull();
+      expect(partyCreation.popup).toBeNull();
     });
   });
 
@@ -883,14 +875,6 @@ describe("PartyCreation Scene", () => {
   });
 
   describe("team validation rules", () => {
-    beforeEach(() => {
-      vi.stubGlobal("alert", vi.fn());
-    });
-
-    afterEach(() => {
-      vi.unstubAllGlobals();
-    });
-
     function makeScene(members: { name: string; position: string }[]) {
       const scn = new PartyCreation();
       scn.create();
@@ -981,15 +965,7 @@ describe("PartyCreation Scene", () => {
   });
 
   describe("Start Game enforces validation", () => {
-    beforeEach(() => {
-      vi.stubGlobal("alert", vi.fn());
-    });
-
-    afterEach(() => {
-      vi.unstubAllGlobals();
-    });
-
-    it("alerts and does not transition when team is invalid", async () => {
+    it("shows alert popup and does not transition when team is invalid", async () => {
       const partyCreation = new PartyCreation();
       const rectSpy = vi.spyOn(partyCreation.add, "rectangle");
       partyCreation.create();
@@ -1001,20 +977,12 @@ describe("PartyCreation Scene", () => {
       );
       await pointerdown![1]();
 
-      expect(globalThis.alert).toHaveBeenCalled();
+      expect(partyCreation.popup).not.toBeNull();
       expect(partyCreation.scene.start).not.toHaveBeenCalled();
     });
   });
 
   describe("Help popup", () => {
-    beforeEach(() => {
-      vi.stubGlobal("alert", vi.fn());
-    });
-
-    afterEach(() => {
-      vi.unstubAllGlobals();
-    });
-
     it("shows and hides the help popup with rules text", () => {
       const partyCreation = new PartyCreation();
       const rectSpy = vi.spyOn(partyCreation.add, "rectangle");
@@ -1057,11 +1025,11 @@ describe("PartyCreation Scene", () => {
         expect.any(Object),
       );
 
-      expect((partyCreation as any).helpPopup).not.toBeNull();
+      expect((partyCreation as any).popup).not.toBeNull();
 
-      (partyCreation as any).destroyHelpPopup();
+      (partyCreation as any).destroyPopup();
 
-      expect((partyCreation as any).helpPopup).toBeNull();
+      expect((partyCreation as any).popup).toBeNull();
     });
   });
 
@@ -1120,29 +1088,29 @@ describe("PartyCreation Scene", () => {
     it("destroys overlay when help popup is closed", () => {
       (scene as any).showHelpPopup();
       expect(scene.popupOverlay).not.toBeNull();
-      (scene as any).destroyHelpPopup();
+      (scene as any).destroyPopup();
       expect(scene.popupOverlay).toBeNull();
     });
 
     it("destroys overlay when lane picker is closed", () => {
       (scene as any).showLanePicker({ name: "Fighter", position: "" });
       expect(scene.popupOverlay).not.toBeNull();
-      (scene as any).destroyLanePicker();
+      (scene as any).destroyPopup();
       expect(scene.popupOverlay).toBeNull();
     });
 
     it("destroys overlay when load popup is closed", () => {
       (scene as any).showLoadPopup();
       expect(scene.popupOverlay).not.toBeNull();
-      (scene as any).destroyLoadPopup();
+      (scene as any).destroyPopup();
       expect(scene.popupOverlay).toBeNull();
     });
 
-    it("keeps overlay when one popup closes but another remains", () => {
+    it("destroys overlay when the only popup closes", () => {
       (scene as any).showHelpPopup();
-      (scene as any).showLanePicker({ name: "Fighter", position: "" });
-      (scene as any).destroyHelpPopup();
       expect(scene.popupOverlay).not.toBeNull();
+      (scene as any).destroyPopup();
+      expect(scene.popupOverlay).toBeNull();
     });
 
     it("creates overlay when save popup opens", () => {
@@ -1153,7 +1121,7 @@ describe("PartyCreation Scene", () => {
     it("destroys overlay when save popup is closed", () => {
       (scene as any).showSavePopup();
       expect(scene.popupOverlay).not.toBeNull();
-      (scene as any).destroySavePopup();
+      (scene as any).destroyPopup();
       expect(scene.popupOverlay).toBeNull();
     });
 
