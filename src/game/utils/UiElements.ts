@@ -356,3 +356,90 @@ export function createActorCard(opts: {
 
   return { card, progressBg, fill, label, healthTxt, staminaTxt, energyTxt };
 }
+
+/**
+ * Creates a popup background rectangle with standard popup styling.
+ *
+ * @param scene - The Phaser scene to add the rectangle to.
+ * @param midX - Horizontal center of the popup background.
+ * @param midY - Vertical center of the popup background.
+ * @param width - Width of the popup background.
+ * @param height - Height of the popup background.
+ * @returns The styled background rectangle.
+ */
+export function createPopupBg(
+  scene: Scene,
+  midX: number,
+  midY: number,
+  width: number,
+  height: number,
+): GameObjects.Rectangle {
+  return scene.add
+    .rectangle(midX, midY, width, height, CONSTS.POPUP_BG)
+    .setStrokeStyle(CONSTS.POPUP_STROKE_W, CONSTS.POPUP_STROKE)
+    .setDepth(CONSTS.POPUP_DEPTH);
+}
+
+/**
+ * Creates a popup title text element with standard popup styling.
+ *
+ * @param scene - The Phaser scene to add the text to.
+ * @param midX - Horizontal center for the title text.
+ * @param top - Top edge of the popup (used with titleY to compute y-position).
+ * @param title - The title string to display.
+ * @param titleY - Y-offset from top for the title (defaults to POPUP_TITLE_Y).
+ * @returns The styled title text.
+ */
+export function createPopupTitle(
+  scene: Scene,
+  midX: number,
+  top: number,
+  title: string,
+  titleY: number = CONSTS.POPUP_TITLE_Y,
+): GameObjects.Text {
+  return scene.add
+    .text(midX, top + titleY, title, {
+      fontFamily: CONSTS.UI_FONT_FAMILY,
+      fontSize: `${CONSTS.POPUP_TITLE_FS}px`,
+      color: CONSTS.LANE_HEADER_COLOR,
+      resolution: TEXT_RESOLUTION,
+    })
+    .setOrigin(0.5, 0)
+    .setDepth(CONSTS.POPUP_DEPTH + 1);
+}
+
+/**
+ * Creates a close "X" button for a popup with click handler.
+ *
+ * @param scene - The Phaser scene to add the text to.
+ * @param left - Left edge of the popup (used with popupW to compute x-position).
+ * @param top - Top edge of the popup.
+ * @param popupW - Width of the popup (used to position close in top-right).
+ * @param onClose - Callback invoked when the close button is clicked.
+ * @returns The styled close button text.
+ */
+export function createPopupClose(
+  scene: Scene,
+  left: number,
+  top: number,
+  popupW: number,
+  onClose: () => void,
+): GameObjects.Text {
+  const btn = scene.add
+    .text(
+      left + popupW - CONSTS.POPUP_CLOSE_INSET,
+      top + CONSTS.POPUP_CLOSE_INSET,
+      "X",
+      {
+        fontFamily: CONSTS.UI_FONT_FAMILY,
+        fontSize: `${CONSTS.POPUP_CLOSE_FS}px`,
+        color: CONSTS.POPUP_CLOSE_COLOR,
+        resolution: TEXT_RESOLUTION,
+      },
+    )
+    .setOrigin(1, 0)
+    .setInteractive({ useHandCursor: true })
+    .setDepth(CONSTS.POPUP_DEPTH + 1);
+  btn.on("pointerdown", onClose);
+  return btn;
+}

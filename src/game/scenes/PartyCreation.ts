@@ -6,6 +6,9 @@ import {
   createBtn,
   createActorCard,
   createLaneBlock,
+  createPopupBg,
+  createPopupTitle,
+  createPopupClose,
 } from "../utils/UiElements";
 import type { ActorCardUI } from "../utils/UiElements";
 import { players } from "../data/playerActorClasses";
@@ -360,49 +363,13 @@ export class PartyCreation extends Scene {
     const top = midY - CONSTS.LOAD_POPUP_H / 2;
     const popupObjects: GameObjects.GameObject[] = [];
 
-    // Background
-    const bgRect = this.add
-      .rectangle(
-        midX,
-        midY,
-        CONSTS.LOAD_POPUP_W,
-        CONSTS.LOAD_POPUP_H,
-        CONSTS.POPUP_BG,
-      )
-      .setStrokeStyle(CONSTS.POPUP_STROKE_W, CONSTS.POPUP_STROKE)
-      .setDepth(CONSTS.POPUP_DEPTH);
-    popupObjects.push(bgRect);
-
-    // Title
-    const title = this.add
-      .text(midX, top + CONSTS.POPUP_TITLE_Y, "Load Team", {
-        fontFamily: CONSTS.UI_FONT_FAMILY,
-        fontSize: `${CONSTS.POPUP_TITLE_FS}px`,
-        color: CONSTS.LANE_HEADER_COLOR,
-        resolution: TEXT_RESOLUTION,
-      })
-      .setOrigin(0.5, 0)
-      .setDepth(CONSTS.POPUP_DEPTH + 1);
-    popupObjects.push(title);
-
-    // Close button
-    const closeX = this.add
-      .text(
-        left + CONSTS.LOAD_POPUP_W - CONSTS.POPUP_CLOSE_INSET,
-        top + CONSTS.POPUP_CLOSE_INSET,
-        "X",
-        {
-          fontFamily: CONSTS.UI_FONT_FAMILY,
-          fontSize: `${CONSTS.POPUP_CLOSE_FS}px`,
-          color: CONSTS.POPUP_CLOSE_COLOR,
-          resolution: TEXT_RESOLUTION,
-        },
-      )
-      .setOrigin(1, 0)
-      .setInteractive({ useHandCursor: true })
-      .setDepth(CONSTS.POPUP_DEPTH + 1);
-    closeX.on("pointerdown", () => this.destroyLoadPopup());
-    popupObjects.push(closeX);
+    popupObjects.push(
+      createPopupBg(this, midX, midY, CONSTS.LOAD_POPUP_W, CONSTS.LOAD_POPUP_H),
+      createPopupTitle(this, midX, top, "Load Team"),
+      createPopupClose(this, left, top, CONSTS.LOAD_POPUP_W, () =>
+        this.destroyLoadPopup(),
+      ),
+    );
 
     // Team entries
     this.teamService.readAll().then((teams) => {
@@ -825,43 +792,13 @@ export class PartyCreation extends Scene {
     const top = midY - CONSTS.POPUP_H / 2;
     const popupObjects: GameObjects.GameObject[] = [];
 
-    // Background
-    const bgRect = this.add
-      .rectangle(midX, midY, CONSTS.POPUP_W, CONSTS.POPUP_H, CONSTS.POPUP_BG)
-      .setStrokeStyle(CONSTS.POPUP_STROKE_W, CONSTS.POPUP_STROKE)
-      .setDepth(CONSTS.POPUP_DEPTH);
-    popupObjects.push(bgRect);
-
-    // Title
-    const title = this.add
-      .text(midX, top + CONSTS.POPUP_TITLE_Y, "Select Lane", {
-        fontFamily: CONSTS.UI_FONT_FAMILY,
-        fontSize: `${CONSTS.POPUP_TITLE_FS}px`,
-        color: CONSTS.LANE_HEADER_COLOR,
-        resolution: TEXT_RESOLUTION,
-      })
-      .setOrigin(0.5, 0)
-      .setDepth(CONSTS.POPUP_DEPTH + 1);
-    popupObjects.push(title);
-
-    // Red X button, to close
-    const closeX = this.add
-      .text(
-        left + CONSTS.POPUP_W - CONSTS.POPUP_CLOSE_INSET,
-        top + CONSTS.POPUP_CLOSE_INSET,
-        "X",
-        {
-          fontFamily: CONSTS.UI_FONT_FAMILY,
-          fontSize: `${CONSTS.POPUP_CLOSE_FS}px`,
-          color: CONSTS.POPUP_CLOSE_COLOR,
-          resolution: TEXT_RESOLUTION,
-        },
-      )
-      .setOrigin(1, 0)
-      .setInteractive({ useHandCursor: true })
-      .setDepth(CONSTS.POPUP_DEPTH + 1);
-    closeX.on("pointerdown", () => this.destroyLanePicker());
-    popupObjects.push(closeX);
+    popupObjects.push(
+      createPopupBg(this, midX, midY, CONSTS.POPUP_W, CONSTS.POPUP_H),
+      createPopupTitle(this, midX, top, "Select Lane"),
+      createPopupClose(this, left, top, CONSTS.POPUP_W, () =>
+        this.destroyLanePicker(),
+      ),
+    );
 
     // Lane option entries
     const lanes = [...CONSTS.PRIMARY_LANES, CONSTS.ActorPosition.FLANK];
@@ -905,51 +842,21 @@ export class PartyCreation extends Scene {
     const top = midY - CONSTS.HELP_POPUP_H / 2;
     const popupObjects: GameObjects.GameObject[] = [];
 
-    // Background
-    const bgRect = this.add
-      .rectangle(
+    popupObjects.push(
+      createPopupBg(this, midX, midY, CONSTS.HELP_POPUP_W, CONSTS.HELP_POPUP_H),
+      createPopupTitle(
+        this,
         midX,
-        midY,
-        CONSTS.HELP_POPUP_W,
-        CONSTS.HELP_POPUP_H,
-        CONSTS.POPUP_BG,
-      )
-      .setStrokeStyle(CONSTS.POPUP_STROKE_W, CONSTS.POPUP_STROKE)
-      .setDepth(CONSTS.POPUP_DEPTH);
-    popupObjects.push(bgRect);
+        top,
+        "Party Creation Rules",
+        CONSTS.HELP_POPUP_TITLE_Y,
+      ),
+      createPopupClose(this, left, top, CONSTS.HELP_POPUP_W, () =>
+        this.destroyHelpPopup(),
+      ),
+    );
 
-    // Title
-    const title = this.add
-      .text(midX, top + CONSTS.HELP_POPUP_TITLE_Y, "Party Creation Rules", {
-        fontFamily: CONSTS.UI_FONT_FAMILY,
-        fontSize: `${CONSTS.POPUP_TITLE_FS}px`,
-        color: CONSTS.LANE_HEADER_COLOR,
-        resolution: TEXT_RESOLUTION,
-      })
-      .setOrigin(0.5, 0)
-      .setDepth(CONSTS.POPUP_DEPTH + 1);
-    popupObjects.push(title);
-
-    // Close button
-    const closeX = this.add
-      .text(
-        left + CONSTS.HELP_POPUP_W - CONSTS.POPUP_CLOSE_INSET,
-        top + CONSTS.POPUP_CLOSE_INSET,
-        "X",
-        {
-          fontFamily: CONSTS.UI_FONT_FAMILY,
-          fontSize: `${CONSTS.POPUP_CLOSE_FS}px`,
-          color: CONSTS.POPUP_CLOSE_COLOR,
-          resolution: TEXT_RESOLUTION,
-        },
-      )
-      .setOrigin(1, 0)
-      .setInteractive({ useHandCursor: true })
-      .setDepth(CONSTS.POPUP_DEPTH + 1);
-    closeX.on("pointerdown", () => this.destroyHelpPopup());
-    popupObjects.push(closeX);
-
-    // Rules body text with word wrap
+    // Rules body text
     const body = this.add
       .text(
         left + CONSTS.HELP_POPUP_TEXT_X,
@@ -1014,49 +921,13 @@ export class PartyCreation extends Scene {
     const top = midY - CONSTS.SAVE_POPUP_H / 2;
     const popupObjects: GameObjects.GameObject[] = [];
 
-    // Background
-    const bgRect = this.add
-      .rectangle(
-        midX,
-        midY,
-        CONSTS.SAVE_POPUP_W,
-        CONSTS.SAVE_POPUP_H,
-        CONSTS.POPUP_BG,
-      )
-      .setStrokeStyle(CONSTS.POPUP_STROKE_W, CONSTS.POPUP_STROKE)
-      .setDepth(CONSTS.POPUP_DEPTH);
-    popupObjects.push(bgRect);
-
-    // Title
-    const title = this.add
-      .text(midX, top + CONSTS.POPUP_TITLE_Y, CONSTS.SAVE_TEAM_POPUP_TITLE, {
-        fontFamily: CONSTS.UI_FONT_FAMILY,
-        fontSize: `${CONSTS.POPUP_TITLE_FS}px`,
-        color: CONSTS.LANE_HEADER_COLOR,
-        resolution: TEXT_RESOLUTION,
-      })
-      .setOrigin(0.5, 0)
-      .setDepth(CONSTS.POPUP_DEPTH + 1);
-    popupObjects.push(title);
-
-    // Close button
-    const closeX = this.add
-      .text(
-        left + CONSTS.SAVE_POPUP_W - CONSTS.POPUP_CLOSE_INSET,
-        top + CONSTS.POPUP_CLOSE_INSET,
-        "X",
-        {
-          fontFamily: CONSTS.UI_FONT_FAMILY,
-          fontSize: `${CONSTS.POPUP_CLOSE_FS}px`,
-          color: CONSTS.POPUP_CLOSE_COLOR,
-          resolution: TEXT_RESOLUTION,
-        },
-      )
-      .setOrigin(1, 0)
-      .setInteractive({ useHandCursor: true })
-      .setDepth(CONSTS.POPUP_DEPTH + 1);
-    closeX.on("pointerdown", () => this.destroySavePopup());
-    popupObjects.push(closeX);
+    popupObjects.push(
+      createPopupBg(this, midX, midY, CONSTS.SAVE_POPUP_W, CONSTS.SAVE_POPUP_H),
+      createPopupTitle(this, midX, top, CONSTS.SAVE_TEAM_POPUP_TITLE),
+      createPopupClose(this, left, top, CONSTS.SAVE_POPUP_W, () =>
+        this.destroySavePopup(),
+      ),
+    );
 
     // Text input
     const inputEl = this.add
