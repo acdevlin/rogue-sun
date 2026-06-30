@@ -1,4 +1,10 @@
 import { Scene, GameObjects, Cameras } from "phaser";
+
+interface TransformAlpha {
+  x: number;
+  y: number;
+  setAlpha(v: number): void;
+}
 import * as CONSTS from "../../constants";
 import { TEXT_RESOLUTION } from "../StartGame";
 import { getSceneScale } from "../utils/SceneScaling";
@@ -38,8 +44,8 @@ interface DragState {
 }
 
 export class PartyCreation extends Scene {
-  camera: Cameras.Scene2D.Camera;
-  title: GameObjects.Text;
+  camera!: Cameras.Scene2D.Camera;
+  title!: GameObjects.Text;
   // Objects composing the active popup, or null if closed.
   popup: GameObjects.GameObject[] | null = null;
   workingMembers: PlayerActorData[] = [];
@@ -258,8 +264,8 @@ export class PartyCreation extends Scene {
       const dx = poolCard.origX - poolCard.card.x;
       const dy = poolCard.origY - poolCard.card.y;
       for (const obj of poolCard.objects) {
-        obj.x += dx;
-        obj.y += dy;
+        (obj as unknown as TransformAlpha).x += dx;
+        (obj as unknown as TransformAlpha).y += dy;
       }
     }
   }
@@ -402,7 +408,9 @@ export class PartyCreation extends Scene {
         (i) => i.name === poolCard.actor.name,
       );
       for (const obj of poolCard.objects) {
-        obj.setAlpha(placed ? CONSTS.POOL_DIM_ALPHA : 1);
+        (obj as unknown as TransformAlpha).setAlpha(
+          placed ? CONSTS.POOL_DIM_ALPHA : 1,
+        );
       }
       if (placed) {
         poolCard.card.disableInteractive();
@@ -667,8 +675,8 @@ export class PartyCreation extends Scene {
     const dx = dragX - poolCard.card.x;
     const dy = dragY - poolCard.card.y;
     for (const obj of poolCard.objects) {
-      obj.x += dx;
-      obj.y += dy;
+      (obj as unknown as TransformAlpha).x += dx;
+      (obj as unknown as TransformAlpha).y += dy;
     }
   }
 

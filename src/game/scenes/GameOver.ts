@@ -16,9 +16,9 @@ import { TEXT_RESOLUTION } from "../StartGame";
  * Clicking or tapping returns to the MainMenu.
  */
 export class GameOver extends Scene {
-  camera: Phaser.Cameras.Scene2D.Camera;
-  background: Phaser.GameObjects.Image;
-  gameover_text: Phaser.GameObjects.Text;
+  camera!: Phaser.Cameras.Scene2D.Camera;
+  background!: Phaser.GameObjects.Image;
+  gameover_text!: Phaser.GameObjects.Text;
 
   /**
    * Default constructor.

@@ -651,9 +651,9 @@ describe("createPopupClose", () => {
       300,
       onClose,
     );
-    const pointerdown = btn.on.mock.calls.find(
-      (call: string[]) => call[0] === "pointerdown",
-    );
+    const pointerdown = (
+      btn.on as unknown as ReturnType<typeof vi.fn>
+    ).mock.calls.find((call: string[]) => call[0] === "pointerdown");
     expect(pointerdown).toBeTruthy();
     pointerdown![1]();
     expect(onClose).toHaveBeenCalledOnce();

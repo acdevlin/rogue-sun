@@ -16,9 +16,9 @@ import { TEXT_RESOLUTION } from "../StartGame";
  * Clicking or tapping starts the Game scene.
  */
 export class MainMenu extends Scene {
-  background: GameObjects.Image;
-  logo: GameObjects.Image;
-  title: GameObjects.Text;
+  background!: GameObjects.Image;
+  logo!: GameObjects.Image;
+  title!: GameObjects.Text;
 
   /**
    * Default constructor.

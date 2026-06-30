@@ -40,6 +40,7 @@
     "test": "vitest run",
     "lint": "eslint .",
     "format": "prettier --write \"src/**/*.{ts,js,mjs}\"",
-    "format:check": "prettier --check \"src/**/*.{ts,js,mjs}\""
+    "format:check": "prettier --check \"src/**/*.{ts,js,mjs}\"",
+    "typecheck": "tsc --noEmit"
   }
 }

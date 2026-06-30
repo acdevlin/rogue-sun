@@ -29,13 +29,13 @@ interface ActorUI {
  * turns based on their speed and readiness threshold.
  */
 export class Battle extends Scene {
-  timeline: TimelineSystem;
+  timeline!: TimelineSystem;
   actorsUi: ActorUI[] = [];
-  currentlyActingHeader: GameObjects.Text;
-  currentlyActingBg: GameObjects.Rectangle;
+  currentlyActingHeader!: GameObjects.Text;
+  currentlyActingBg!: GameObjects.Rectangle;
   actingActor: ActionActor | null = null;
-  retreatBtn: GameObjects.Text;
-  retreatBtnBg: GameObjects.Rectangle;
+  retreatBtn!: GameObjects.Text;
+  retreatBtnBg!: GameObjects.Rectangle;
 
   players = defaultPlayers;
   enemies = defaultEnemies;
