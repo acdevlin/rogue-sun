@@ -4,8 +4,8 @@ import { TimelineSystem } from "../systems/TimelineSystem";
 import * as CONSTS from "../../constants";
 import { TEXT_RESOLUTION } from "../StartGame";
 import { PlayerActorData } from "../data/PlayerActorData";
-import { players as playerData } from "../data/playerActorClasses";
-import { enemies as enemyData } from "../data/enemyActorClasses";
+import { players as defaultPlayers } from "../data/playerActorClasses";
+import { enemies as defaultEnemies } from "../data/enemyActorClasses";
 import {
   createBtn,
   createLaneBlock,
@@ -14,14 +14,14 @@ import {
 
 interface ActorUI {
   actor: ActionActor;
-  card: Phaser.GameObjects.Rectangle;
-  fill: Phaser.GameObjects.Rectangle;
-  bg: Phaser.GameObjects.Rectangle;
-  highlight: Phaser.GameObjects.Rectangle;
-  label: Phaser.GameObjects.Text;
-  healthTxt: Phaser.GameObjects.Text;
-  staminaTxt: Phaser.GameObjects.Text;
-  energyTxt: Phaser.GameObjects.Text;
+  card: GameObjects.Rectangle;
+  fill: GameObjects.Rectangle;
+  bg: GameObjects.Rectangle;
+  highlight: GameObjects.Rectangle;
+  label: GameObjects.Text;
+  healthTxt: GameObjects.Text;
+  staminaTxt: GameObjects.Text;
+  energyTxt: GameObjects.Text;
 }
 
 /**
@@ -31,15 +31,14 @@ interface ActorUI {
 export class Battle extends Scene {
   timeline: TimelineSystem;
   actorsUi: ActorUI[] = [];
-  currentlyActingHeader: Phaser.GameObjects.Text;
-  currentlyActingBg: Phaser.GameObjects.Rectangle;
+  currentlyActingHeader: GameObjects.Text;
+  currentlyActingBg: GameObjects.Rectangle;
   actingActor: ActionActor | null = null;
   retreatBtn: GameObjects.Text;
   retreatBtnBg: GameObjects.Rectangle;
 
-  // XXX temporary hardcoded actor data for testing purposes.
-  players = playerData;
-  enemies = enemyData;
+  players = defaultPlayers;
+  enemies = defaultEnemies;
 
   /**
    * Default constructor.
@@ -51,77 +50,37 @@ export class Battle extends Scene {
   /**
    * Initializes all game objects, including timeline system and UI elements.
    *
-   * @param playerData - Optional player data passed from the PartyCreation scene
-   *   (e.g. a custom party composition). Falls back to the default player roster.
+   * @param overrides - Optional player/enemy data passed from the PartyCreation scene
+   *   (e.g. a custom party composition). Falls back to the default roster.
    */
-  create(playerData?: { players?: PlayerActorData[] }) {
+  create(overrides?: {
+    players?: PlayerActorData[];
+    enemies?: PlayerActorData[];
+  }) {
     this.actorsUi = [];
     this.actingActor = null;
     this.timeline = new TimelineSystem();
-    if (playerData?.players) this.players = playerData.players;
+    this.players = overrides?.players ?? defaultPlayers;
+    this.enemies = overrides?.enemies ?? defaultEnemies;
     const { width } = this.cameras.main;
     this.createActingHeader(width / 2);
-
-    const cardW = CONSTS.CARD_W;
-    const gap = CONSTS.CARD_GAP;
 
     const pCounts: Record<string, number> = {};
     const eCounts: Record<string, number> = {};
     const flankActors: { actor: ActionActor; isPlayer: boolean }[] = [];
 
-    // Creates an ActionActor from raw data and registers it on the timeline.
-    const createActor = (data: PlayerActorData, controller: string) => {
-      const actor = new ActionActor({
-        controller,
-        name: data.name,
-        alias: data.alias,
-        speed: data.speed,
-        health: data.health,
-        stamina: data.stamina,
-        energy: data.energy,
-        position: data.position,
-      });
-      this.timeline.addActor(actor);
-      return actor;
-    };
-
-    // Places a non-flank actor card in the correct lane column (BACKLINE/MIDLINE/FRONTLINE)
-    // and stacks it vertically based on how many cards are already in that lane.
-    const positionNonFlank = (
-      data: PlayerActorData,
-      actor: ActionActor,
-      laneCounts: Record<string, number>,
-      isEnemy: boolean,
-    ) => {
-      const laneIdx = CONSTS.PRIMARY_LANES.indexOf(data.position);
-      const x = isEnemy
-        ? width - CONSTS.LANE_INSET - cardW - laneIdx * CONSTS.LANE_OFFSET
-        : CONSTS.LANE_INSET + laneIdx * CONSTS.LANE_OFFSET;
-      const y = CONSTS.CARD_START_Y + (laneCounts[data.position] ?? 0) * gap;
-      laneCounts[data.position] = (laneCounts[data.position] ?? 0) + 1;
-      this.createActorUIElement(actor, x, y, cardW, CONSTS.PROGRESS_FILL);
-    };
-
-    // Processes all actors for one side (player or enemy): creates each actor,
-    // positions non-flank ones immediately, and queues flank actors for later.
-    const deploySide = (
-      data: PlayerActorData[],
-      controller: string,
-      laneCounts: Record<string, number>,
-    ) => {
-      const isPlayer = controller === CONSTS.ActorController.PLAYER;
-      for (const entry of data) {
-        const actor = createActor(entry, controller);
-        if (entry.position === CONSTS.ActorPosition.FLANK) {
-          flankActors.push({ actor, isPlayer });
-        } else {
-          positionNonFlank(entry, actor, laneCounts, !isPlayer);
-        }
-      }
-    };
-
-    deploySide(this.players, CONSTS.ActorController.PLAYER, pCounts);
-    deploySide(this.enemies, CONSTS.ActorController.ENEMY, eCounts);
+    this.deploySide(
+      this.players,
+      CONSTS.ActorController.PLAYER,
+      pCounts,
+      flankActors,
+    );
+    this.deploySide(
+      this.enemies,
+      CONSTS.ActorController.ENEMY,
+      eCounts,
+      flankActors,
+    );
 
     const playerMaxLane = Math.max(...Object.values(pCounts), 0);
     const enemyMaxLane = Math.max(...Object.values(eCounts), 0);
@@ -137,17 +96,25 @@ export class Battle extends Scene {
       const lidx = Math.max(0, CONSTS.NUM_LANES - 1 - idx);
       const x = isPlayer
         ? CONSTS.LANE_INSET + lidx * CONSTS.LANE_OFFSET
-        : width - CONSTS.LANE_INSET - cardW - lidx * CONSTS.LANE_OFFSET;
-      const y = CONSTS.CARD_START_Y + maxLane * gap + CONSTS.FLANK_OFFSET;
-      this.createActorUIElement(actor, x, y, cardW, CONSTS.PROGRESS_FILL);
+        : width - CONSTS.LANE_INSET - CONSTS.CARD_W - lidx * CONSTS.LANE_OFFSET;
+      const y =
+        CONSTS.CARD_START_Y + maxLane * CONSTS.CARD_GAP + CONSTS.FLANK_OFFSET;
+      this.createActorUIElement(
+        actor,
+        x,
+        y,
+        CONSTS.CARD_W,
+        CONSTS.PROGRESS_FILL,
+      );
     }
 
-    const pLaneSpan = (CONSTS.NUM_LANES - 1) * CONSTS.LANE_OFFSET + cardW;
+    const pLaneSpan =
+      (CONSTS.NUM_LANES - 1) * CONSTS.LANE_OFFSET + CONSTS.CARD_W;
     createLaneBlock({
       scene: this,
       laneLeft: CONSTS.LANE_INSET,
-      cardW,
-      gap,
+      cardW: CONSTS.CARD_W,
+      gap: CONSTS.CARD_GAP,
       maxLane: playerMaxLane,
       flankIdx: playerFlankIdx,
       headerY: CONSTS.LANE_HEADER_Y,
@@ -157,8 +124,8 @@ export class Battle extends Scene {
     createLaneBlock({
       scene: this,
       laneLeft: width - CONSTS.LANE_INSET - pLaneSpan,
-      cardW,
-      gap,
+      cardW: CONSTS.CARD_W,
+      gap: CONSTS.CARD_GAP,
       maxLane: enemyMaxLane,
       flankIdx: enemyFlankIdx,
       headerY: CONSTS.LANE_HEADER_Y,
@@ -176,6 +143,80 @@ export class Battle extends Scene {
     });
     this.retreatBtn = btn.label;
     this.retreatBtnBg = btn.bg;
+  }
+
+  /**
+   * Creates an ActionActor from raw data and registers it on the timeline.
+   *
+   * @param data Raw player/enemy data.
+   * @param controller PLAYER or ENEMY controller value.
+   * @returns The newly created ActionActor.
+   */
+  private createActor(data: PlayerActorData, controller: string): ActionActor {
+    const actor = new ActionActor({
+      controller,
+      name: data.name,
+      alias: data.alias,
+      speed: data.speed,
+      health: data.health,
+      stamina: data.stamina,
+      energy: data.energy,
+      position: data.position,
+    });
+    this.timeline.addActor(actor);
+    return actor;
+  }
+
+  /**
+   * Places a non-flank actor card in the correct lane column (BACKLINE/MIDLINE/FRONTLINE)
+   * and stacks it vertically based on how many cards are already in that lane.
+   *
+   * @param data Raw actor data (position determines lane).
+   * @param actor The ActionActor to create UI for.
+   * @param laneCounts Running count of cards per lane on this side.
+   * @param isEnemy True if this is an enemy (right-to-left mirroring).
+   */
+  private positionNonFlank(
+    data: PlayerActorData,
+    actor: ActionActor,
+    laneCounts: Record<string, number>,
+    isEnemy: boolean,
+  ) {
+    const width = this.cameras.main.width;
+    const laneIdx = CONSTS.PRIMARY_LANES.indexOf(data.position);
+    const x = isEnemy
+      ? width - CONSTS.LANE_INSET - CONSTS.CARD_W - laneIdx * CONSTS.LANE_OFFSET
+      : CONSTS.LANE_INSET + laneIdx * CONSTS.LANE_OFFSET;
+    const y =
+      CONSTS.CARD_START_Y + (laneCounts[data.position] ?? 0) * CONSTS.CARD_GAP;
+    laneCounts[data.position] = (laneCounts[data.position] ?? 0) + 1;
+    this.createActorUIElement(actor, x, y, CONSTS.CARD_W, CONSTS.PROGRESS_FILL);
+  }
+
+  /**
+   * Processes all actors for one side (player or enemy): creates each actor,
+   * positions non-flank ones immediately, and queues flank actors for later.
+   *
+   * @param data Array of raw actor data for this side.
+   * @param controller PLAYER or ENEMY controller value.
+   * @param laneCounts Running count of cards per lane on this side.
+   * @param flankActors Accumulator array for flank actors (positioned later).
+   */
+  private deploySide(
+    data: PlayerActorData[],
+    controller: string,
+    laneCounts: Record<string, number>,
+    flankActors: { actor: ActionActor; isPlayer: boolean }[],
+  ) {
+    const isPlayer = controller === CONSTS.ActorController.PLAYER;
+    for (const entry of data) {
+      const actor = this.createActor(entry, controller);
+      if (entry.position === CONSTS.ActorPosition.FLANK) {
+        flankActors.push({ actor, isPlayer });
+      } else {
+        this.positionNonFlank(entry, actor, laneCounts, !isPlayer);
+      }
+    }
   }
 
   /**
@@ -280,7 +321,9 @@ export class Battle extends Scene {
   }
 
   /**
-   * Starts an actor's turn by setting up the UI and scheduling when their action completes
+   * Starts an actor's turn by setting up the UI and scheduling when their action completes.
+   *
+   * @param actor The actor whose turn is starting.
    */
   private startActorTurn(actor: ActionActor) {
     this.actingActor = actor;
@@ -366,7 +409,7 @@ export class Battle extends Scene {
   /**
    * Cleanup after an actor's turn is completed.
    */
-  completeAction() {
+  private completeAction() {
     if (this.actingActor) {
       this.actingActor.reset();
       this.actingActor = null;
