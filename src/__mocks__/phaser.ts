@@ -36,6 +36,7 @@ class Scene {
   add = {
     text: vi.fn(() => mockObj()),
     rectangle: vi.fn(() => mockObj()),
+    dom: vi.fn(() => ({ ...mockObj(), node: { value: "" } })),
   };
   load = { image: vi.fn() };
   time = { delayedCall: vi.fn() };

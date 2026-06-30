@@ -51,3 +51,12 @@ export const TEAM_NAME_CURRENT = "Current Party";
 export const PROMPT_SAVE_TEAM = "Enter a name for your team:";
 /** Minimum length for a valid team name. */
 export const MIN_TEAM_NAME_LENGTH = 2;
+
+/** Title text for the save-team popup. */
+export const SAVE_TEAM_POPUP_TITLE = "Save Team";
+/** Label for the save button in the save-team popup. */
+export const SAVE_TEAM_BTN_LABEL = "Save";
+/** Placeholder text for the team name input field. */
+export const SAVE_TEAM_INPUT_PLACEHOLDER = "Team name...";
+/** Error message shown when the team name is too short. */
+export const SAVE_TEAM_NAME_TOO_SHORT = `Name must be at least ${MIN_TEAM_NAME_LENGTH} characters.`;

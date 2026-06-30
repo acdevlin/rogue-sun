@@ -204,6 +204,12 @@ export const POPUP_STROKE = 0x666666;
 export const POPUP_STROKE_W = 2;
 /** Depth of the popup (above all other elements). */
 export const POPUP_DEPTH = 10;
+/** Font size for popup title text. */
+export const POPUP_TITLE_FS = 16;
+/** Font size for popup close button text. */
+export const POPUP_CLOSE_FS = 18;
+/** Inset from popup top-right corner for the close button. */
+export const POPUP_CLOSE_INSET = 5;
 /** Font size for popup lane option text. */
 export const POPUP_OPTION_FONT = 14;
 /** Color for the popup close button. */
@@ -228,3 +234,22 @@ export const LOAD_POPUP_H = 250;
 export const LOAD_POPUP_TEXT_X = 16;
 /** Y-offset from popup top to the first team entry text. */
 export const LOAD_POPUP_TEXT_Y = 48;
+
+/** Width of the save-team popup. */
+export const SAVE_POPUP_W = 280;
+/** Height of the save-team popup. */
+export const SAVE_POPUP_H = 200;
+/** Y-offset from popup top to the text input element. */
+export const SAVE_POPUP_INPUT_Y = 60;
+/** Y-offset from popup top to the Save button. */
+export const SAVE_POPUP_BTN_Y = 120;
+/** Y-offset from popup top to the validation error text. */
+export const SAVE_POPUP_ERR_Y = 160;
+/** Font size for the save popup validation error text. */
+export const SAVE_POPUP_ERR_FS = 12;
+/** Horizontal padding for the save button background beyond its label width. */
+export const SAVE_POPUP_BTN_PAD_X = 20;
+/** Vertical padding for the save button background beyond its label height. */
+export const SAVE_POPUP_BTN_PAD_Y = 10;
+/** Stroke thickness for the save button label. */
+export const SAVE_POPUP_BTN_STROKE_W = 2;

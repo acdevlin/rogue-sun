@@ -4,7 +4,6 @@ import { PartyCreation } from "../PartyCreation";
 import type { PlayerTeam } from "../../data/PlayerTeam";
 import * as CONSTS from "../../../constants";
 import { players } from "../../data/playerActorClasses";
-import type { PlayerActorData } from "../../data/PlayerActorData";
 
 describe("PartyCreation Scene", () => {
   let scene: PartyCreation;
@@ -91,7 +90,7 @@ describe("PartyCreation Scene", () => {
       expect(last[0]).toBe("rogue_sun_player_teams");
       const saved = JSON.parse(last[1]);
       const current = saved.find(
-        (team: PlayerTeam) => team.name === "Current Party",
+        (team: PlayerTeam) => team.name === CONSTS.TEAM_NAME_CURRENT,
       );
       expect(current).toBeTruthy();
       expect(current.members).toEqual(
@@ -105,7 +104,7 @@ describe("PartyCreation Scene", () => {
     it("updates existing 'Current Party' instead of creating a duplicate", async () => {
       const existing = {
         id: "existing-id",
-        name: "Current Party",
+        name: CONSTS.TEAM_NAME_CURRENT,
         members: [{ actorClassId: "Fighter", position: "FRONTLINE" }],
         createdAt: 100,
         lastModified: 100,
@@ -133,7 +132,9 @@ describe("PartyCreation Scene", () => {
       );
       expect(current).toBeTruthy();
       expect(
-        saved.filter((team: PlayerTeam) => team.name === "Current Party"),
+        saved.filter(
+          (team: PlayerTeam) => team.name === CONSTS.TEAM_NAME_CURRENT,
+        ),
       ).toHaveLength(1);
       expect(current.members).toEqual(
         players.map((player) => ({
@@ -220,7 +221,7 @@ describe("PartyCreation Scene", () => {
           },
           {
             id: "e",
-            name: "Current Party",
+            name: CONSTS.TEAM_NAME_CURRENT,
             members: [],
             createdAt: 3,
             lastModified: 3,
@@ -252,7 +253,7 @@ describe("PartyCreation Scene", () => {
             call[2] !== "No saved teams",
         )
         .map((call: unknown[]) => (call[2] as string).trim());
-      const idxCurrent = teamEntries.indexOf("Current Party");
+      const idxCurrent = teamEntries.indexOf(CONSTS.TEAM_NAME_CURRENT);
       const idxDefault = teamEntries.indexOf("Default");
       const idxZ = teamEntries.indexOf("Z Team");
       expect(idxCurrent).toBe(0);
@@ -279,7 +280,7 @@ describe("PartyCreation Scene", () => {
           },
           {
             id: "e",
-            name: "Current Party",
+            name: CONSTS.TEAM_NAME_CURRENT,
             members: [],
             createdAt: 3,
             lastModified: 3,
@@ -307,7 +308,7 @@ describe("PartyCreation Scene", () => {
             call[2] !== "Load Team" && call[2] !== "No saved teams",
         )
         .map((call: unknown[]) => (call[2] as string).trim());
-      const idxCurrent = teamNames.indexOf("Current Party");
+      const idxCurrent = teamNames.indexOf(CONSTS.TEAM_NAME_CURRENT);
       const idxDefault = teamNames.indexOf("Default");
       const idxZ = teamNames.indexOf("Z Team");
       expect(idxCurrent).toBeLessThan(idxDefault);
@@ -526,7 +527,7 @@ describe("PartyCreation Scene", () => {
         JSON.stringify([
           {
             id: "h",
-            name: "Current Party",
+            name: CONSTS.TEAM_NAME_CURRENT,
             members: [
               { actorClassId: "Fighter", position: "FRONTLINE" },
               { actorClassId: "Mage", position: "BACKLINE" },
@@ -714,7 +715,7 @@ describe("PartyCreation Scene", () => {
       partyCreation.input.emit("dragstart", { x: 100, y: 100 }, fighterCard);
       partyCreation.input.emit("dragend", { x: 100, y: 100 });
 
-      expect(partyCreation.picker).not.toBeNull();
+      expect(partyCreation.lanePicker).not.toBeNull();
 
       // Verify "Select Lane" title is rendered
       const titleArgs = textSpy.mock.calls.find(
@@ -735,7 +736,7 @@ describe("PartyCreation Scene", () => {
       partyCreation.input.emit("dragstart", { x: 100, y: 100 }, fighterCard);
       partyCreation.input.emit("dragend", { x: 100, y: 100 });
 
-      expect(partyCreation.picker).not.toBeNull();
+      expect(partyCreation.lanePicker).not.toBeNull();
       (partyCreation as any).pickLane(
         { name: "Fighter" },
         CONSTS.ActorPosition.BACKLINE,
@@ -746,7 +747,7 @@ describe("PartyCreation Scene", () => {
       )!;
       expect(placed).toBeTruthy();
       expect(placed.position).toBe(CONSTS.ActorPosition.BACKLINE);
-      expect(partyCreation.picker).toBeNull();
+      expect(partyCreation.lanePicker).toBeNull();
     });
 
     it("close X destroys the picker", () => {
@@ -761,11 +762,11 @@ describe("PartyCreation Scene", () => {
       partyCreation.input.emit("dragstart", { x: 100, y: 100 }, fighterCard);
       partyCreation.input.emit("dragend", { x: 100, y: 100 });
 
-      expect(partyCreation.picker).not.toBeNull();
+      expect(partyCreation.lanePicker).not.toBeNull();
 
       (partyCreation as any).destroyLanePicker();
 
-      expect(partyCreation.picker).toBeNull();
+      expect(partyCreation.lanePicker).toBeNull();
     });
   });
 
@@ -811,19 +812,9 @@ describe("PartyCreation Scene", () => {
       expect(interactiveRects.length).toBeGreaterThanOrEqual(2);
     });
 
-    it("saves team to localStorage when save completes", async () => {
-      vi.stubGlobal("prompt", vi.fn().mockReturnValue("New Team"));
-      vi.stubGlobal("alert", vi.fn());
-
-      const partyCreation = new PartyCreation();
-      partyCreation.create();
-      await new Promise((resolve) => setTimeout(resolve, 0));
-
-      const sceneAny = partyCreation as unknown as {
-        promptSaveTeam: () => Promise<void>;
-        workingMembers: PlayerActorData[];
-      };
-      sceneAny.workingMembers = [
+    it("saves team to localStorage via handleSaveTeam", async () => {
+      const inputEl = { node: { value: "My Team" } };
+      (scene as any).workingMembers = [
         {
           name: "Fighter",
           position: "FRONTLINE",
@@ -833,37 +824,61 @@ describe("PartyCreation Scene", () => {
           energy: 50,
         },
       ];
-      await sceneAny.promptSaveTeam();
+      await (scene as any).handleSaveTeam(inputEl);
 
       const calls = (localStorage.setItem as ReturnType<typeof vi.fn>).mock
         .calls;
       const last = calls[calls.length - 1];
       const saved = JSON.parse(last[1]);
-      const team = saved.find((i: PlayerTeam) => i.name === "New Team");
+      const team = saved.find((i: PlayerTeam) => i.name === "My Team");
       expect(team).toBeTruthy();
       expect(team.members).toEqual([
         { actorClassId: "Fighter", position: "FRONTLINE" },
       ]);
-
-      vi.unstubAllGlobals();
     });
 
     it("does not save when team name is empty", async () => {
-      vi.stubGlobal("prompt", vi.fn().mockReturnValue("  "));
-      vi.stubGlobal("alert", vi.fn());
-
-      const sceneAny = scene as unknown as {
-        promptSaveTeam: () => Promise<void>;
-      };
+      const inputEl = { node: { value: "  " } };
+      (scene as any).workingMembers = [
+        { name: "Fighter", position: "FRONTLINE" },
+      ];
       const setItemBefore = (localStorage.setItem as ReturnType<typeof vi.fn>)
         .mock.calls.length;
-      await sceneAny.promptSaveTeam();
+      await (scene as any).handleSaveTeam(inputEl);
       const setItemAfter = (localStorage.setItem as ReturnType<typeof vi.fn>)
         .mock.calls.length;
 
       expect(setItemAfter).toBe(setItemBefore);
+    });
 
-      vi.unstubAllGlobals();
+    it("shows error text when name is too short", async () => {
+      const partyCreation = new PartyCreation();
+      partyCreation.create();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      (partyCreation as any).showSavePopup();
+
+      await (partyCreation as any).handleSaveTeam({ node: { value: "A" } });
+
+      expect((partyCreation as any).saveErrText.setText).toHaveBeenCalledWith(
+        `Name must be at least ${CONSTS.MIN_TEAM_NAME_LENGTH} characters.`,
+      );
+    });
+
+    it("shows teamService validation errors in popup", async () => {
+      const partyCreation = new PartyCreation();
+      partyCreation.create();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      (partyCreation as any).workingMembers = [];
+
+      (partyCreation as any).showSavePopup();
+      expect((partyCreation as any).saveErrText).not.toBeNull();
+
+      await (partyCreation as any).handleSaveTeam({
+        node: { value: "Default" },
+      });
+
+      expect((partyCreation as any).saveErrText.setText).toHaveBeenCalled();
     });
   });
 
@@ -1051,16 +1066,7 @@ describe("PartyCreation Scene", () => {
   });
 
   describe("Save Team enforces validation", () => {
-    beforeEach(() => {
-      vi.stubGlobal("alert", vi.fn());
-      vi.stubGlobal("prompt", vi.fn());
-    });
-
-    afterEach(() => {
-      vi.unstubAllGlobals();
-    });
-
-    it("rejects save when team is invalid", async () => {
+    it("rejects save when team is invalid", () => {
       const partyCreation = new PartyCreation();
       partyCreation.create();
       (partyCreation as any).workingMembers = [];
@@ -1068,20 +1074,25 @@ describe("PartyCreation Scene", () => {
       const errs = (partyCreation as any).validateTeamRules();
 
       expect(errs.length).toBeGreaterThan(0);
-      expect(globalThis.prompt).not.toHaveBeenCalled();
     });
 
-    it("proceeds to prompt when team is valid", async () => {
+    it("shows save popup when team is valid", () => {
       const partyCreation = new PartyCreation();
+      const domSpy = vi.spyOn(partyCreation.add, "dom");
       partyCreation.create();
       (partyCreation as any).workingMembers = [
         { name: "A", position: "FRONTLINE" },
         { name: "B", position: "BACKLINE" },
       ];
 
-      await (partyCreation as any).promptSaveTeam();
+      (partyCreation as any).showSavePopup();
 
-      expect(globalThis.prompt).toHaveBeenCalled();
+      expect(domSpy).toHaveBeenCalledWith(
+        expect.any(Number),
+        expect.any(Number),
+        "input",
+        expect.objectContaining({ type: "text" }),
+      );
     });
   });
 
@@ -1132,6 +1143,18 @@ describe("PartyCreation Scene", () => {
       (scene as any).showLanePicker({ name: "Fighter", position: "" });
       (scene as any).destroyHelpPopup();
       expect(scene.popupOverlay).not.toBeNull();
+    });
+
+    it("creates overlay when save popup opens", () => {
+      (scene as any).showSavePopup();
+      expect(scene.popupOverlay).not.toBeNull();
+    });
+
+    it("destroys overlay when save popup is closed", () => {
+      (scene as any).showSavePopup();
+      expect(scene.popupOverlay).not.toBeNull();
+      (scene as any).destroySavePopup();
+      expect(scene.popupOverlay).toBeNull();
     });
 
     it("covers the full scene at correct depth", () => {

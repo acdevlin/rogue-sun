@@ -39,16 +39,20 @@ export class PartyCreation extends Scene {
   title: GameObjects.Text;
   // Objects composing the active load-team popup, or null if closed.
   loadPopup: GameObjects.GameObject[] | null = null;
+  // Objects composing the active save-team popup, or null if closed.
+  savePopup: GameObjects.GameObject[] | null = null;
   workingMembers: PlayerActorData[] = [];
   laneObjects: GameObjects.GameObject[] = [];
   poolCards: PoolCardEntry[] = [];
   drag: DragState | null = null;
   // Objects composing the active lane picker popup, or null if closed.
-  picker: GameObjects.GameObject[] | null = null;
+  lanePicker: GameObjects.GameObject[] | null = null;
   // Objects composing the active help popup, or null if closed.
   helpPopup: GameObjects.GameObject[] | null = null;
   // Full-screen overlay that intercepts clicks when any popup is open, or null.
   popupOverlay: GameObjects.Rectangle | null = null;
+  // Error text object in the save-team popup, or null if popup is closed.
+  saveErrText: GameObjects.Text | null = null;
   teamService = new PlayerTeamService();
 
   constructor() {
@@ -102,7 +106,7 @@ export class PartyCreation extends Scene {
       onClick: () => {
         this.destroyHelpPopup();
         if (!this.validateAndAlert()) return;
-        this.promptSaveTeam();
+        this.showSavePopup();
       },
       scale: scale * CONSTS.COMPACT_BTN_SCALE,
     });
@@ -373,7 +377,7 @@ export class PartyCreation extends Scene {
     const title = this.add
       .text(midX, top + CONSTS.POPUP_TITLE_Y, "Load Team", {
         fontFamily: CONSTS.UI_FONT_FAMILY,
-        fontSize: "16px",
+        fontSize: `${CONSTS.POPUP_TITLE_FS}px`,
         color: CONSTS.LANE_HEADER_COLOR,
         resolution: TEXT_RESOLUTION,
       })
@@ -383,12 +387,17 @@ export class PartyCreation extends Scene {
 
     // Close button
     const closeX = this.add
-      .text(left + CONSTS.LOAD_POPUP_W - 5, top + 5, "X", {
-        fontFamily: CONSTS.UI_FONT_FAMILY,
-        fontSize: "18px",
-        color: CONSTS.POPUP_CLOSE_COLOR,
-        resolution: TEXT_RESOLUTION,
-      })
+      .text(
+        left + CONSTS.LOAD_POPUP_W - CONSTS.POPUP_CLOSE_INSET,
+        top + CONSTS.POPUP_CLOSE_INSET,
+        "X",
+        {
+          fontFamily: CONSTS.UI_FONT_FAMILY,
+          fontSize: `${CONSTS.POPUP_CLOSE_FS}px`,
+          color: CONSTS.POPUP_CLOSE_COLOR,
+          resolution: TEXT_RESOLUTION,
+        },
+      )
       .setOrigin(1, 0)
       .setInteractive({ useHandCursor: true })
       .setDepth(CONSTS.POPUP_DEPTH + 1);
@@ -473,10 +482,15 @@ export class PartyCreation extends Scene {
   }
 
   /**
-   * True when any popup (help, lane-picker, or load-team) is currently open.
+   * True when any popup (help, lane-picker, load-team, or save-team) is currently open.
    */
   private get anyPopupOpen(): boolean {
-    return !!(this.helpPopup || this.picker || this.loadPopup);
+    return !!(
+      this.helpPopup ||
+      this.lanePicker ||
+      this.loadPopup ||
+      this.savePopup
+    );
   }
 
   /**
@@ -822,7 +836,7 @@ export class PartyCreation extends Scene {
     const title = this.add
       .text(midX, top + CONSTS.POPUP_TITLE_Y, "Select Lane", {
         fontFamily: CONSTS.UI_FONT_FAMILY,
-        fontSize: "16px",
+        fontSize: `${CONSTS.POPUP_TITLE_FS}px`,
         color: CONSTS.LANE_HEADER_COLOR,
         resolution: TEXT_RESOLUTION,
       })
@@ -832,12 +846,17 @@ export class PartyCreation extends Scene {
 
     // Red X button, to close
     const closeX = this.add
-      .text(left + CONSTS.POPUP_W - 5, top + 5, "X", {
-        fontFamily: CONSTS.UI_FONT_FAMILY,
-        fontSize: "18px",
-        color: CONSTS.POPUP_CLOSE_COLOR,
-        resolution: TEXT_RESOLUTION,
-      })
+      .text(
+        left + CONSTS.POPUP_W - CONSTS.POPUP_CLOSE_INSET,
+        top + CONSTS.POPUP_CLOSE_INSET,
+        "X",
+        {
+          fontFamily: CONSTS.UI_FONT_FAMILY,
+          fontSize: `${CONSTS.POPUP_CLOSE_FS}px`,
+          color: CONSTS.POPUP_CLOSE_COLOR,
+          resolution: TEXT_RESOLUTION,
+        },
+      )
       .setOrigin(1, 0)
       .setInteractive({ useHandCursor: true })
       .setDepth(CONSTS.POPUP_DEPTH + 1);
@@ -870,7 +889,7 @@ export class PartyCreation extends Scene {
       popupObjects.push(opt);
     }
 
-    this.picker = popupObjects;
+    this.lanePicker = popupObjects;
     this.syncStartBtn();
   }
 
@@ -903,7 +922,7 @@ export class PartyCreation extends Scene {
     const title = this.add
       .text(midX, top + CONSTS.HELP_POPUP_TITLE_Y, "Party Creation Rules", {
         fontFamily: CONSTS.UI_FONT_FAMILY,
-        fontSize: "16px",
+        fontSize: `${CONSTS.POPUP_TITLE_FS}px`,
         color: CONSTS.LANE_HEADER_COLOR,
         resolution: TEXT_RESOLUTION,
       })
@@ -913,12 +932,17 @@ export class PartyCreation extends Scene {
 
     // Close button
     const closeX = this.add
-      .text(left + CONSTS.HELP_POPUP_W - 5, top + 5, "X", {
-        fontFamily: CONSTS.UI_FONT_FAMILY,
-        fontSize: "18px",
-        color: CONSTS.POPUP_CLOSE_COLOR,
-        resolution: TEXT_RESOLUTION,
-      })
+      .text(
+        left + CONSTS.HELP_POPUP_W - CONSTS.POPUP_CLOSE_INSET,
+        top + CONSTS.POPUP_CLOSE_INSET,
+        "X",
+        {
+          fontFamily: CONSTS.UI_FONT_FAMILY,
+          fontSize: `${CONSTS.POPUP_CLOSE_FS}px`,
+          color: CONSTS.POPUP_CLOSE_COLOR,
+          resolution: TEXT_RESOLUTION,
+        },
+      )
       .setOrigin(1, 0)
       .setInteractive({ useHandCursor: true })
       .setDepth(CONSTS.POPUP_DEPTH + 1);
@@ -961,9 +985,9 @@ export class PartyCreation extends Scene {
    * Destroys the active lane picker popup, if any.
    */
   private destroyLanePicker(): void {
-    if (!this.picker) return;
-    for (const obj of this.picker) obj.destroy();
-    this.picker = null;
+    if (!this.lanePicker) return;
+    for (const obj of this.lanePicker) obj.destroy();
+    this.lanePicker = null;
     this.syncStartBtn();
   }
 
@@ -979,11 +1003,151 @@ export class PartyCreation extends Scene {
   }
 
   /**
-   * Prompts the user for a team name and persists the current composition.
+   * Shows the save-team popup with a text input and Save button.
    */
-  private async promptSaveTeam(): Promise<void> {
-    const name = prompt(CONSTS.PROMPT_SAVE_TEAM);
-    if (!name || name.trim().length < CONSTS.MIN_TEAM_NAME_LENGTH) return;
+  private showSavePopup(): void {
+    this.destroySavePopup();
+
+    const midX = this.cameras.main.centerX;
+    const midY = this.cameras.main.centerY;
+    const left = midX - CONSTS.SAVE_POPUP_W / 2;
+    const top = midY - CONSTS.SAVE_POPUP_H / 2;
+    const popupObjects: GameObjects.GameObject[] = [];
+
+    // Background
+    const bgRect = this.add
+      .rectangle(
+        midX,
+        midY,
+        CONSTS.SAVE_POPUP_W,
+        CONSTS.SAVE_POPUP_H,
+        CONSTS.POPUP_BG,
+      )
+      .setStrokeStyle(CONSTS.POPUP_STROKE_W, CONSTS.POPUP_STROKE)
+      .setDepth(CONSTS.POPUP_DEPTH);
+    popupObjects.push(bgRect);
+
+    // Title
+    const title = this.add
+      .text(midX, top + CONSTS.POPUP_TITLE_Y, CONSTS.SAVE_TEAM_POPUP_TITLE, {
+        fontFamily: CONSTS.UI_FONT_FAMILY,
+        fontSize: `${CONSTS.POPUP_TITLE_FS}px`,
+        color: CONSTS.LANE_HEADER_COLOR,
+        resolution: TEXT_RESOLUTION,
+      })
+      .setOrigin(0.5, 0)
+      .setDepth(CONSTS.POPUP_DEPTH + 1);
+    popupObjects.push(title);
+
+    // Close button
+    const closeX = this.add
+      .text(
+        left + CONSTS.SAVE_POPUP_W - CONSTS.POPUP_CLOSE_INSET,
+        top + CONSTS.POPUP_CLOSE_INSET,
+        "X",
+        {
+          fontFamily: CONSTS.UI_FONT_FAMILY,
+          fontSize: `${CONSTS.POPUP_CLOSE_FS}px`,
+          color: CONSTS.POPUP_CLOSE_COLOR,
+          resolution: TEXT_RESOLUTION,
+        },
+      )
+      .setOrigin(1, 0)
+      .setInteractive({ useHandCursor: true })
+      .setDepth(CONSTS.POPUP_DEPTH + 1);
+    closeX.on("pointerdown", () => this.destroySavePopup());
+    popupObjects.push(closeX);
+
+    // Text input
+    const inputEl = this.add
+      .dom(midX, top + CONSTS.SAVE_POPUP_INPUT_Y, "input", {
+        type: "text",
+        placeholder: CONSTS.SAVE_TEAM_INPUT_PLACEHOLDER,
+      })
+      .setDepth(CONSTS.POPUP_DEPTH + 1);
+    popupObjects.push(inputEl);
+
+    // Save button
+    const saveLabel = this.add
+      .text(midX, top + CONSTS.SAVE_POPUP_BTN_Y, CONSTS.SAVE_TEAM_BTN_LABEL, {
+        fontFamily: CONSTS.UI_FONT_FAMILY,
+        fontSize: `${CONSTS.POPUP_TITLE_FS}px`,
+        color: CONSTS.MENU_TEXT_COLOR,
+        stroke: CONSTS.MENU_STROKE_COLOR,
+        strokeThickness: CONSTS.SAVE_POPUP_BTN_STROKE_W,
+        align: "center",
+        resolution: TEXT_RESOLUTION,
+      })
+      .setOrigin(0.5)
+      .setDepth(CONSTS.POPUP_DEPTH + 1);
+
+    const saveBg = this.add
+      .rectangle(
+        midX,
+        top + CONSTS.SAVE_POPUP_BTN_Y,
+        saveLabel.width + CONSTS.SAVE_POPUP_BTN_PAD_X,
+        saveLabel.height + CONSTS.SAVE_POPUP_BTN_PAD_Y,
+        CONSTS.BTN_FILL,
+      )
+      .setDepth(CONSTS.POPUP_DEPTH)
+      .setStrokeStyle(CONSTS.BTN_STROKE_W, CONSTS.BTN_STROKE)
+      .setInteractive({ useHandCursor: true });
+
+    saveBg.on("pointerover", () => {
+      saveBg.setFillStyle(CONSTS.BTN_HOVER_FILL);
+      saveLabel.setColor(CONSTS.BTN_HOVER_TEXT);
+    });
+    saveBg.on("pointerout", () => {
+      saveBg.setFillStyle(CONSTS.BTN_FILL);
+      saveLabel.setColor(CONSTS.MENU_TEXT_COLOR);
+    });
+    saveBg.on("pointerdown", () => {
+      this.handleSaveTeam(inputEl);
+    });
+
+    popupObjects.push(saveBg, saveLabel);
+
+    // Error text (hidden initially)
+    const errText = this.add
+      .text(midX, top + CONSTS.SAVE_POPUP_ERR_Y, "", {
+        fontFamily: CONSTS.UI_FONT_FAMILY,
+        fontSize: `${CONSTS.SAVE_POPUP_ERR_FS}px`,
+        color: CONSTS.POPUP_CLOSE_COLOR,
+        align: "center",
+        resolution: TEXT_RESOLUTION,
+      })
+      .setOrigin(0.5, 0)
+      .setDepth(CONSTS.POPUP_DEPTH + 1);
+    popupObjects.push(errText);
+
+    this.saveErrText = errText;
+    this.savePopup = popupObjects;
+    this.syncStartBtn();
+  }
+
+  /**
+   * Destroys the active save-team popup, if any.
+   */
+  private destroySavePopup(): void {
+    if (!this.savePopup) return;
+    for (const obj of this.savePopup) obj.destroy();
+    this.savePopup = null;
+    this.saveErrText = null;
+    this.syncStartBtn();
+  }
+
+  /**
+   * Handles the Save action from the save-team popup.
+   * @param inputEl - The DOM input element.
+   */
+  private async handleSaveTeam(inputEl: GameObjects.DOMElement): Promise<void> {
+    const name = ((inputEl.node as HTMLInputElement).value ?? "").trim();
+    if (name.length < CONSTS.MIN_TEAM_NAME_LENGTH) {
+      if (this.saveErrText) {
+        this.saveErrText.setText(CONSTS.SAVE_TEAM_NAME_TOO_SHORT);
+      }
+      return;
+    }
 
     const members: TeamMember[] = this.workingMembers.map((i) => ({
       actorClassId: i.name,
@@ -991,14 +1155,16 @@ export class PartyCreation extends Scene {
     }));
 
     const validation = this.teamService.validateTeam({
-      name: name.trim(),
+      name,
       members,
     });
     if (!validation.valid) {
-      alert(validation.errors.join("\n"));
+      if (this.saveErrText)
+        this.saveErrText.setText(validation.errors.join("\n"));
       return;
     }
 
-    await this.teamService.create({ name: name.trim(), members });
+    await this.teamService.create({ name, members });
+    this.destroySavePopup();
   }
 }
