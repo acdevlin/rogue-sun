@@ -23,7 +23,7 @@ import type { PlayerActorData } from "../data/PlayerActorData";
 interface PoolCardEntry {
   actor: PlayerActorData;
   card: GameObjects.Rectangle;
-  objects: (GameObjects.Rectangle | GameObjects.Text)[];
+  objects: GameObjects.GameObject[];
   origX: number;
   origY: number;
 }
@@ -52,6 +52,81 @@ export class PartyCreation extends Scene {
   saveErrText: GameObjects.Text | null = null;
   teamService = new PlayerTeamService();
 
+  /**
+   * Converts the current working team into a persistable TeamMember array.
+   *
+   * @returns The team's members as serializable team-member objects.
+   */
+  private get teamMembers(): TeamMember[] {
+    return this.workingMembers.map((i) => ({
+      actorClassId: i.name,
+      position: i.position,
+    }));
+  }
+
+  /**
+   * Computes the layout geometry for the lane grid.
+   *
+   * @returns An object with pixel coordinates and dimensions for lane rendering.
+   */
+  private get laneGeometry() {
+    const cardW = CONSTS.CARD_W;
+    const gap = CONSTS.CARD_GAP;
+    const yOff = CONSTS.LANE_Y_OFFSET;
+    const headerY = CONSTS.LANE_HEADER_Y + yOff;
+    const startY = CONSTS.CARD_START_Y + yOff;
+    const sceneCx = this.cameras.main.centerX;
+    const span = (CONSTS.NUM_LANES - 1) * CONSTS.LANE_OFFSET + cardW;
+    const laneLeft = sceneCx - span / 2;
+    return {
+      cardW,
+      gap,
+      headerY,
+      startY,
+      laneLeft,
+      laneRight: laneLeft + span,
+    };
+  }
+
+  /**
+   * Opens a modal popup with a background, title, and close button.
+   * Destroys any currently-open popup first.
+   *
+   * @param width  - The popup width in pixels.
+   * @param height - The popup height in pixels.
+   * @param title  - The title text displayed at the top.
+   * @param titleY - Optional override for the title's Y offset.
+   * @returns Centering coordinates and the mutable objects array for callers to add content.
+   */
+  private withPopup(
+    width: number,
+    height: number,
+    title: string,
+    titleY?: number,
+  ): {
+    midX: number;
+    left: number;
+    top: number;
+    objects: GameObjects.GameObject[];
+  } {
+    this.destroyPopup();
+    const midX = this.cameras.main.centerX;
+    const midY = this.cameras.main.centerY;
+    const left = midX - width / 2;
+    const top = midY - height / 2;
+    const objects: GameObjects.GameObject[] = [];
+
+    objects.push(
+      createPopupBg(this, midX, midY, width, height),
+      createPopupTitle(this, midX, top, title, titleY),
+      createPopupClose(this, left, top, width, () => this.destroyPopup()),
+    );
+
+    this.popup = objects;
+    this.syncPopupOverlay();
+    return { midX, left, top, objects };
+  }
+
   constructor() {
     super("PartyCreation");
   }
@@ -60,7 +135,7 @@ export class PartyCreation extends Scene {
    * Lifecycle hook called when the scene starts. Renders all UI elements,
    * loads saved teams, and registers drag-and-drop handlers.
    */
-  create() {
+  async create() {
     this.camera = this.cameras.main;
     const { centerX, scale } = getSceneScale(this);
 
@@ -119,13 +194,11 @@ export class PartyCreation extends Scene {
       scale: scale * CONSTS.COMPACT_BTN_SCALE,
     });
 
-    // Initialize state, ensure the default roster exists, and render UI
+    // Initialize state, render pool, then register drag-and-drop
     this.workingMembers = [...players];
     this.poolCards = [];
-    this.ensureDefaultTeam().then(() => this.loadInitialTeam());
     this.renderPool();
 
-    // Register drag-and-drop for pool-to-lane interactions
     this.input.on("dragstart", this.onDragStart, this);
     this.input.on("drag", this.onDrag, this);
     this.input.on("dragend", this.onDragEnd, this);
@@ -139,24 +212,24 @@ export class PartyCreation extends Scene {
       label: "Start Battle",
       onClick: async () => {
         if (!this.validateAndAlert()) return;
-        const members: TeamMember[] = this.workingMembers.map((i) => ({
-          actorClassId: i.name,
-          position: i.position,
-        }));
         const teams = await this.teamService.readAll();
         const cur = teams.find((i) => i.name === CONSTS.TEAM_NAME_CURRENT);
         if (cur) {
-          await this.teamService.update(cur.id, { members });
+          await this.teamService.update(cur.id, { members: this.teamMembers });
         } else {
           await this.teamService.create({
             name: CONSTS.TEAM_NAME_CURRENT,
-            members,
+            members: this.teamMembers,
           });
         }
         this.scene.start("Battle", { players: this.workingMembers });
       },
       scale,
     });
+
+    // Load persisted teams asynchronously after all UI is in place
+    await this.ensureDefaultTeam();
+    this.loadInitialTeam();
   }
 
   /**
@@ -214,18 +287,17 @@ export class PartyCreation extends Scene {
   /**
    * Selects "Current Party" on scene start, falling back to "Default" or the full roster.
    */
-  private loadInitialTeam(): void {
-    this.teamService.readAll().then((teams) => {
-      const preferred =
-        teams.find((team) => team.name === CONSTS.TEAM_NAME_CURRENT) ||
-        teams.find((team) => team.name === CONSTS.TEAM_NAME_DEFAULT);
-      if (preferred) {
-        this.selectTeam(preferred);
-      } else {
-        this.workingMembers = [...players];
-        this.rebuildLanesAndPool();
-      }
-    });
+  private async loadInitialTeam(): Promise<void> {
+    const teams = await this.teamService.readAll();
+    const preferred =
+      teams.find((team) => team.name === CONSTS.TEAM_NAME_CURRENT) ||
+      teams.find((team) => team.name === CONSTS.TEAM_NAME_DEFAULT);
+    if (preferred) {
+      this.selectTeam(preferred);
+    } else {
+      this.workingMembers = [...players];
+      this.rebuildLanesAndPool();
+    }
   }
 
   /**
@@ -245,12 +317,10 @@ export class PartyCreation extends Scene {
     this.rebuildLanesAndPool();
   }
 
-  /**
-   * Splits a composite ActorCardUI into individual objects for tracked cleanup.
-   * @param card - The card UI to flatten.
-   */
-  private flattenActorCard(card: ActorCardUI): void {
-    this.laneObjects.push(
+  private cardObjects(
+    card: ActorCardUI,
+  ): (GameObjects.Rectangle | GameObjects.Text)[] {
+    return [
       card.card,
       card.progressBg,
       card.fill,
@@ -258,7 +328,15 @@ export class PartyCreation extends Scene {
       card.healthTxt,
       card.staminaTxt,
       card.energyTxt,
-    );
+    ];
+  }
+
+  /**
+   * Splits a composite ActorCardUI into individual objects for tracked cleanup.
+   * @param card - The card UI to flatten.
+   */
+  private flattenActorCard(card: ActorCardUI): void {
+    this.laneObjects.push(...this.cardObjects(card));
   }
 
   /**
@@ -302,16 +380,7 @@ export class PartyCreation extends Scene {
         energy: actor.energy,
       });
       card.card.setInteractive({ useHandCursor: true });
-      // Collect all sub-objects so they move and reset as a group during drag
-      const objects = [
-        card.card,
-        card.progressBg,
-        card.fill,
-        card.label,
-        card.healthTxt,
-        card.staminaTxt,
-        card.energyTxt,
-      ];
+      const objects = this.cardObjects(card);
       this.poolCards.push({
         actor,
         card: card.card,
@@ -347,39 +416,30 @@ export class PartyCreation extends Scene {
   /**
    * Shows the load-team popup with a list of saved teams.
    */
-  private showLoadPopup(): void {
-    this.destroyPopup();
-
-    const midX = this.cameras.main.centerX;
-    const midY = this.cameras.main.centerY;
-    const left = midX - CONSTS.LOAD_POPUP_W / 2;
-    const top = midY - CONSTS.LOAD_POPUP_H / 2;
-    const popupObjects: GameObjects.GameObject[] = [];
-
-    popupObjects.push(
-      createPopupBg(this, midX, midY, CONSTS.LOAD_POPUP_W, CONSTS.LOAD_POPUP_H),
-      createPopupTitle(this, midX, top, "Load Team"),
-      createPopupClose(this, left, top, CONSTS.LOAD_POPUP_W, () =>
-        this.destroyPopup(),
-      ),
+  private async showLoadPopup(): Promise<void> {
+    const { left, top, objects } = this.withPopup(
+      CONSTS.LOAD_POPUP_W,
+      CONSTS.LOAD_POPUP_H,
+      "Load Team",
     );
 
-    // Team entries
-    this.teamService.readAll().then((teams) => {
-      const rank = (name: string) => {
-        switch (name) {
-          case CONSTS.TEAM_NAME_CURRENT:
-            return 0;
-          case CONSTS.TEAM_NAME_DEFAULT:
-            return 1;
-          default:
-            return 2;
-        }
-      };
-      teams.sort((teamA, teamB) => rank(teamA.name) - rank(teamB.name));
+    const teams = await this.teamService.readAll();
+    if (this.popup !== objects) return;
+    const rank = (name: string) => {
+      switch (name) {
+        case CONSTS.TEAM_NAME_CURRENT:
+          return 0;
+        case CONSTS.TEAM_NAME_DEFAULT:
+          return 1;
+        default:
+          return 2;
+      }
+    };
+    teams.sort((teamA, teamB) => rank(teamA.name) - rank(teamB.name));
 
-      if (teams.length === 0) {
-        const entry = this.add
+    if (teams.length === 0) {
+      objects.push(
+        this.add
           .text(
             left + CONSTS.LOAD_POPUP_TEXT_X,
             top + CONSTS.LOAD_POPUP_TEXT_Y,
@@ -391,48 +451,42 @@ export class PartyCreation extends Scene {
               resolution: TEXT_RESOLUTION,
             },
           )
-          .setDepth(CONSTS.POPUP_DEPTH + 1);
-        popupObjects.push(entry);
-        return;
-      }
+          .setDepth(CONSTS.POPUP_DEPTH + 1),
+      );
+      return;
+    }
 
-      const listStyle = {
-        fontFamily: CONSTS.UI_FONT_FAMILY,
-        fontSize: `${CONSTS.SAVED_TEAMS_ENTRY_FONT_SIZE}px`,
-        color: CONSTS.LANE_HEADER_COLOR,
-        resolution: TEXT_RESOLUTION,
-      };
+    const listStyle = {
+      fontFamily: CONSTS.UI_FONT_FAMILY,
+      fontSize: `${CONSTS.SAVED_TEAMS_ENTRY_FONT_SIZE}px`,
+      color: CONSTS.LANE_HEADER_COLOR,
+      resolution: TEXT_RESOLUTION,
+    };
 
-      for (let i = 0; i < teams.length; i++) {
-        const entry = this.add
-          .text(
-            left + CONSTS.LOAD_POPUP_TEXT_X,
-            top +
-              CONSTS.LOAD_POPUP_TEXT_Y +
-              i * CONSTS.SAVED_TEAMS_ENTRY_SPACING,
-            teams[i].name,
-            listStyle,
-          )
-          .setInteractive({ useHandCursor: true })
-          .setDepth(CONSTS.POPUP_DEPTH + 1);
+    for (let i = 0; i < teams.length; i++) {
+      const entry = this.add
+        .text(
+          left + CONSTS.LOAD_POPUP_TEXT_X,
+          top + CONSTS.LOAD_POPUP_TEXT_Y + i * CONSTS.SAVED_TEAMS_ENTRY_SPACING,
+          teams[i].name,
+          listStyle,
+        )
+        .setInteractive({ useHandCursor: true })
+        .setDepth(CONSTS.POPUP_DEPTH + 1);
 
-        entry.on("pointerover", () => entry.setColor(CONSTS.BTN_HOVER_TEXT));
-        entry.on("pointerout", () => entry.setColor(CONSTS.LANE_HEADER_COLOR));
-        entry.on("pointerdown", () => {
-          this.selectTeam(teams[i]);
-          this.destroyPopup();
-        });
+      entry.on("pointerover", () => entry.setColor(CONSTS.BTN_HOVER_TEXT));
+      entry.on("pointerout", () => entry.setColor(CONSTS.LANE_HEADER_COLOR));
+      entry.on("pointerdown", () => {
+        this.selectTeam(teams[i]);
+        this.destroyPopup();
+      });
 
-        popupObjects.push(entry);
-      }
-    });
-
-    this.popup = popupObjects;
-    this.syncPopupOverlay();
+      objects.push(entry);
+    }
   }
 
   /**
-   * Destroys the active popup, if any.
+   * Destroys the currently active popup and its associated objects, if any.
    */
   private destroyPopup(): void {
     if (!this.popup) return;
@@ -482,14 +536,7 @@ export class PartyCreation extends Scene {
    * @param members - The actors to display in the lane grid.
    */
   private createPartyLanes(members: PlayerActorData[]): void {
-    const cardW = CONSTS.CARD_W;
-    const gap = CONSTS.CARD_GAP;
-    const yOff = CONSTS.LANE_Y_OFFSET;
-    const headerY = CONSTS.LANE_HEADER_Y + yOff;
-    const startY = CONSTS.CARD_START_Y + yOff;
-    const sceneCx = this.cameras.main.centerX;
-    const laneSpan = (CONSTS.NUM_LANES - 1) * CONSTS.LANE_OFFSET + cardW;
-    const laneLeft = sceneCx - laneSpan / 2;
+    const { cardW, gap, headerY, startY, laneLeft } = this.laneGeometry;
 
     const lanePlayers: Record<string, PlayerActorData[]> = {};
     const flankPlayers: PlayerActorData[] = [];
@@ -582,7 +629,7 @@ export class PartyCreation extends Scene {
 
   /**
    * Initiates a drag operation, recording the dragged actor and its original position.
-   * @param _pointer - The pointer input (unused).
+   * @param pointer - The pointer input used to record the drag start position.
    * @param obj - The dragged game object (pool card rectangle).
    */
   private onDragStart(
@@ -660,15 +707,8 @@ export class PartyCreation extends Scene {
    * @returns The lane position string (e.g. "BACKLINE") or null.
    */
   private pickDropPos(pointerX: number, pointerY: number): string | null {
-    const cardW = CONSTS.CARD_W;
-    const gap = CONSTS.CARD_GAP;
-    const yOff = CONSTS.LANE_Y_OFFSET;
-    const headerY = CONSTS.LANE_HEADER_Y + yOff;
-    const startY = CONSTS.CARD_START_Y + yOff;
-    const sceneCx = this.cameras.main.centerX;
-    const laneSpan = (CONSTS.NUM_LANES - 1) * CONSTS.LANE_OFFSET + cardW;
-    const laneLeft = sceneCx - laneSpan / 2;
-    const laneRight = laneLeft + laneSpan;
+    const { cardW, gap, headerY, startY, laneLeft, laneRight } =
+      this.laneGeometry;
 
     if (pointerY < headerY || pointerX < laneLeft || pointerX > laneRight)
       return null;
@@ -773,20 +813,10 @@ export class PartyCreation extends Scene {
    * @param msg - The message text to display.
    */
   private showAlertPopup(msg: string): void {
-    this.destroyPopup();
-
-    const midX = this.cameras.main.centerX;
-    const midY = this.cameras.main.centerY;
-    const left = midX - CONSTS.LOAD_POPUP_W / 2;
-    const top = midY - CONSTS.LOAD_POPUP_H / 2;
-    const popupObjects: GameObjects.GameObject[] = [];
-
-    popupObjects.push(
-      createPopupBg(this, midX, midY, CONSTS.LOAD_POPUP_W, CONSTS.LOAD_POPUP_H),
-      createPopupTitle(this, midX, top, "Invalid Team"),
-      createPopupClose(this, left, top, CONSTS.LOAD_POPUP_W, () =>
-        this.destroyPopup(),
-      ),
+    const { left, top, objects } = this.withPopup(
+      CONSTS.LOAD_POPUP_W,
+      CONSTS.LOAD_POPUP_H,
+      "Invalid Team",
     );
 
     const body = this.add
@@ -805,10 +835,7 @@ export class PartyCreation extends Scene {
         },
       )
       .setDepth(CONSTS.POPUP_DEPTH + 1);
-    popupObjects.push(body);
-
-    this.popup = popupObjects;
-    this.syncPopupOverlay();
+    objects.push(body);
   }
 
   /**
@@ -816,23 +843,12 @@ export class PartyCreation extends Scene {
    * @param actor - The actor to place.
    */
   private showLanePicker(actor: PlayerActorData): void {
-    this.destroyPopup();
-
-    const midX = this.cameras.main.centerX;
-    const midY = this.cameras.main.centerY;
-    const left = midX - CONSTS.POPUP_W / 2;
-    const top = midY - CONSTS.POPUP_H / 2;
-    const popupObjects: GameObjects.GameObject[] = [];
-
-    popupObjects.push(
-      createPopupBg(this, midX, midY, CONSTS.POPUP_W, CONSTS.POPUP_H),
-      createPopupTitle(this, midX, top, "Select Lane"),
-      createPopupClose(this, left, top, CONSTS.POPUP_W, () =>
-        this.destroyPopup(),
-      ),
+    const { midX, top, objects } = this.withPopup(
+      CONSTS.POPUP_W,
+      CONSTS.POPUP_H,
+      "Select Lane",
     );
 
-    // Lane option entries
     const lanes = [...CONSTS.PRIMARY_LANES, CONSTS.ActorPosition.FLANK];
     for (let i = 0; i < lanes.length; i++) {
       const opt = this.add
@@ -855,40 +871,21 @@ export class PartyCreation extends Scene {
       opt.on("pointerover", () => opt.setColor(CONSTS.LANE_HEADER_COLOR));
       opt.on("pointerout", () => opt.setColor(CONSTS.HELP_COLOR));
       opt.on("pointerdown", () => this.pickLane(actor, lane));
-      popupObjects.push(opt);
+      objects.push(opt);
     }
-
-    this.popup = popupObjects;
-    this.syncPopupOverlay();
   }
 
   /**
    * Shows the help popup with team-building rules.
    */
   private showHelpPopup(): void {
-    this.destroyPopup();
-
-    const midX = this.cameras.main.centerX;
-    const midY = this.cameras.main.centerY;
-    const left = midX - CONSTS.HELP_POPUP_W / 2;
-    const top = midY - CONSTS.HELP_POPUP_H / 2;
-    const popupObjects: GameObjects.GameObject[] = [];
-
-    popupObjects.push(
-      createPopupBg(this, midX, midY, CONSTS.HELP_POPUP_W, CONSTS.HELP_POPUP_H),
-      createPopupTitle(
-        this,
-        midX,
-        top,
-        "Party Creation Rules",
-        CONSTS.HELP_POPUP_TITLE_Y,
-      ),
-      createPopupClose(this, left, top, CONSTS.HELP_POPUP_W, () =>
-        this.destroyPopup(),
-      ),
+    const { left, top, objects } = this.withPopup(
+      CONSTS.HELP_POPUP_W,
+      CONSTS.HELP_POPUP_H,
+      "Party Creation Rules",
+      CONSTS.HELP_POPUP_TITLE_Y,
     );
 
-    // Rules body text
     const body = this.add
       .text(
         left + CONSTS.HELP_POPUP_TEXT_X,
@@ -904,10 +901,7 @@ export class PartyCreation extends Scene {
         },
       )
       .setDepth(CONSTS.POPUP_DEPTH + 1);
-    popupObjects.push(body);
-
-    this.popup = popupObjects;
-    this.syncPopupOverlay();
+    objects.push(body);
   }
 
   /**
@@ -925,32 +919,20 @@ export class PartyCreation extends Scene {
    * Shows the save-team popup with a text input and Save button.
    */
   private showSavePopup(): void {
-    this.destroyPopup();
-
-    const midX = this.cameras.main.centerX;
-    const midY = this.cameras.main.centerY;
-    const left = midX - CONSTS.SAVE_POPUP_W / 2;
-    const top = midY - CONSTS.SAVE_POPUP_H / 2;
-    const popupObjects: GameObjects.GameObject[] = [];
-
-    popupObjects.push(
-      createPopupBg(this, midX, midY, CONSTS.SAVE_POPUP_W, CONSTS.SAVE_POPUP_H),
-      createPopupTitle(this, midX, top, CONSTS.SAVE_TEAM_POPUP_TITLE),
-      createPopupClose(this, left, top, CONSTS.SAVE_POPUP_W, () =>
-        this.destroyPopup(),
-      ),
+    const { midX, top, objects } = this.withPopup(
+      CONSTS.SAVE_POPUP_W,
+      CONSTS.SAVE_POPUP_H,
+      CONSTS.SAVE_TEAM_POPUP_TITLE,
     );
 
-    // Text input
     const inputEl = this.add
       .dom(midX, top + CONSTS.SAVE_POPUP_INPUT_Y, "input", {
         type: "text",
         placeholder: CONSTS.SAVE_TEAM_INPUT_PLACEHOLDER,
       })
       .setDepth(CONSTS.POPUP_DEPTH + 1);
-    popupObjects.push(inputEl);
+    objects.push(inputEl);
 
-    // Save button
     const saveLabel = this.add
       .text(midX, top + CONSTS.SAVE_POPUP_BTN_Y, CONSTS.SAVE_TEAM_BTN_LABEL, {
         fontFamily: CONSTS.UI_FONT_FAMILY,
@@ -984,13 +966,10 @@ export class PartyCreation extends Scene {
       saveBg.setFillStyle(CONSTS.BTN_FILL);
       saveLabel.setColor(CONSTS.MENU_TEXT_COLOR);
     });
-    saveBg.on("pointerdown", () => {
-      this.handleSaveTeam(inputEl);
-    });
+    saveBg.on("pointerdown", () => this.handleSaveTeam(inputEl));
 
-    popupObjects.push(saveBg, saveLabel);
+    objects.push(saveBg, saveLabel);
 
-    // Error text (hidden initially)
     const errText = this.add
       .text(midX, top + CONSTS.SAVE_POPUP_ERR_Y, "", {
         fontFamily: CONSTS.UI_FONT_FAMILY,
@@ -1001,11 +980,9 @@ export class PartyCreation extends Scene {
       })
       .setOrigin(0.5, 0)
       .setDepth(CONSTS.POPUP_DEPTH + 1);
-    popupObjects.push(errText);
+    objects.push(errText);
 
     this.saveErrText = errText;
-    this.popup = popupObjects;
-    this.syncPopupOverlay();
   }
 
   /**
@@ -1021,14 +998,9 @@ export class PartyCreation extends Scene {
       return;
     }
 
-    const members: TeamMember[] = this.workingMembers.map((i) => ({
-      actorClassId: i.name,
-      position: i.position,
-    }));
-
     const validation = this.teamService.validateTeam({
       name,
-      members,
+      members: this.teamMembers,
     });
     if (!validation.valid) {
       if (this.saveErrText)
@@ -1036,7 +1008,7 @@ export class PartyCreation extends Scene {
       return;
     }
 
-    await this.teamService.create({ name, members });
+    await this.teamService.create({ name, members: this.teamMembers });
     this.destroyPopup();
   }
 }
