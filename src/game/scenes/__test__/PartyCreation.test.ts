@@ -890,6 +890,34 @@ describe("PartyCreation Scene", () => {
       );
     });
 
+    it("rejects duplicate team name with error text", async () => {
+      (localStorage.getItem as ReturnType<typeof vi.fn>).mockReturnValue(
+        JSON.stringify([
+          {
+            id: "dup",
+            name: "My Team",
+            members: [],
+            createdAt: 1,
+            lastModified: 1,
+          },
+        ]),
+      );
+
+      const partyCreation = new PartyCreation();
+      partyCreation.create();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      (partyCreation as any).showSavePopup();
+
+      await (partyCreation as any).handleSaveTeam({
+        node: { value: "My Team" },
+      });
+
+      expect((partyCreation as any).saveErrText.setText).toHaveBeenCalledWith(
+        "A team with name 'My Team' already exists.",
+      );
+    });
+
     it("shows teamService validation errors in popup", async () => {
       const partyCreation = new PartyCreation();
       partyCreation.create();

@@ -998,17 +998,21 @@ export class PartyCreation extends Scene {
       return;
     }
 
-    const validation = this.teamService.validateTeam({
-      name,
-      members: this.teamMembers,
-    });
+    const teams = await this.teamService.readAll();
+    const validation = this.teamService.validateTeam(
+      {
+        name,
+        members: this.teamMembers,
+      },
+      teams,
+    );
     if (!validation.valid) {
       if (this.saveErrText)
         this.saveErrText.setText(validation.errors.join("\n"));
       return;
     }
 
-    await this.teamService.create({ name, members: this.teamMembers });
+    await this.teamService.create({ name, members: this.teamMembers }, teams);
     this.destroyPopup();
   }
 }

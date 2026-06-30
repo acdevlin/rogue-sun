@@ -181,5 +181,35 @@ describe("PlayerTeamService", () => {
       expect(result.valid).toBe(false);
       expect(result.errors[0]).toBe("Invalid class ID: InvalidClass");
     });
+
+    it("rejects duplicate name when existingTeams is provided", () => {
+      const existing = [{ ...sampleTeam, id: "other", name: "Existing Squad" }];
+      const result = service.validateTeam(
+        { name: "Existing Squad", members: sampleTeam.members },
+        existing,
+      );
+      expect(result.valid).toBe(false);
+      expect(result.errors).toContain(
+        "A team with name 'Existing Squad' already exists.",
+      );
+    });
+
+    it("allows same name when id matches (same team being updated)", () => {
+      const existing = [{ ...sampleTeam, name: "My Team" }];
+      const result = service.validateTeam(
+        { id: sampleTeam.id, name: "My Team", members: sampleTeam.members },
+        existing,
+      );
+      expect(result.valid).toBe(true);
+    });
+
+    it("passes when name is unique among existing teams", () => {
+      const existing = [{ ...sampleTeam, id: "other", name: "Other Team" }];
+      const result = service.validateTeam(
+        { name: "New Name", members: sampleTeam.members },
+        existing,
+      );
+      expect(result.valid).toBe(true);
+    });
   });
 });
