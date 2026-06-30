@@ -492,6 +492,34 @@ describe("PartyCreation Scene", () => {
       expect(partyCreation.popup).not.toBe(firstPopup);
       expect(partyCreation.popup?.length).toBeGreaterThan(0);
     });
+
+    it("ignores stale async callback when popup is replaced during readAll", async () => {
+      const partyCreation = new PartyCreation();
+      const textSpy = vi.spyOn(partyCreation.add, "text");
+      partyCreation.create();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      const callsBefore = textSpy.mock.calls.length;
+
+      (partyCreation as any).showLoadPopup();
+      (partyCreation as any).showHelpPopup();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      // After the flush, showLoadPopup's continuation should have been
+      // guarded away — no "No saved teams" or team-entries added
+      const newCalls = textSpy.mock.calls.slice(callsBefore);
+      const noSaved = newCalls.find(
+        (call: unknown[]) => call[2] === "No saved teams",
+      );
+      expect(noSaved).toBeUndefined();
+
+      // Help popup should still be the active popup
+      const helpCall = textSpy.mock.calls.find(
+        (call: unknown[]) => call[2] === "Party Creation Rules",
+      );
+      expect(helpCall).toBeTruthy();
+      expect(partyCreation.popup).not.toBeNull();
+    });
   });
 
   describe("initial team selection", () => {
@@ -658,6 +686,18 @@ describe("PartyCreation Scene", () => {
         expect(lastAlpha).toEqual([1]);
       }
     });
+
+    it("calls setDraggable for each unplaced pool card", () => {
+      const partyCreation = new PartyCreation();
+      const setDrag = (partyCreation.input.setDraggable = vi.fn());
+      partyCreation.create();
+      (partyCreation as any).workingMembers = [];
+      (partyCreation as any).rebuildLanesAndPool();
+
+      for (const poolCard of partyCreation.poolCards) {
+        expect(setDrag).toHaveBeenCalledWith(poolCard.card);
+      }
+    });
   });
 
   describe("drag-and-drop", () => {
@@ -723,6 +763,70 @@ describe("PartyCreation Scene", () => {
 
       expect(scene.workingMembers).toHaveLength(0);
       expect(scene.drag).toBeNull();
+    });
+
+    it("updates positions of all pool card sub-objects during drag", () => {
+      const partyCreation = new PartyCreation();
+      partyCreation.create();
+      (partyCreation as any).workingMembers = [];
+      (partyCreation as any).rebuildLanesAndPool();
+
+      const fighterCard = partyCreation.poolCards.find(
+        (poolCard) => poolCard.actor.name === "Fighter",
+      )!;
+      const objects = fighterCard.objects as any[];
+
+      (partyCreation as any).onDrag(null, fighterCard.card, 200, 150);
+
+      for (const obj of objects) {
+        expect(obj.x).toBe(200);
+        expect(obj.y).toBe(150);
+      }
+    });
+
+    it("does nothing when drag event fires for non-pool object", () => {
+      const partyCreation = new PartyCreation();
+      partyCreation.create();
+      expect(() =>
+        (partyCreation as any).onDrag(null, {} as any, 100, 100),
+      ).not.toThrow();
+    });
+  });
+
+  describe("drop position detection", () => {
+    it("detects flank zone below the lane grid", () => {
+      const partyCreation = new PartyCreation();
+      partyCreation.create();
+      (partyCreation as any).workingMembers = [
+        { name: "Fighter", position: CONSTS.ActorPosition.FRONTLINE },
+      ];
+
+      const geo = (partyCreation as any).laneGeometry;
+      const maxLane = 1;
+      const laneAreaBot =
+        geo.startY +
+        maxLane * CONSTS.CARD_GAP +
+        CONSTS.CARD_HEIGHT +
+        CONSTS.DROP_HIT_PADDING;
+      const flankY = laneAreaBot + 10;
+      const result = (partyCreation as any).pickDropPos(
+        geo.laneLeft + 50,
+        flankY,
+      );
+
+      expect(result).toBe(CONSTS.ActorPosition.FLANK);
+    });
+
+    it("snaps to nearest lane when dropped between lanes", () => {
+      const partyCreation = new PartyCreation();
+      partyCreation.create();
+
+      const geo = (partyCreation as any).laneGeometry;
+      const pointerX = geo.laneLeft + CONSTS.CARD_W + 5;
+      const pointerY = geo.headerY + 10;
+      const result = (partyCreation as any).pickDropPos(pointerX, pointerY);
+
+      expect(result).toBe(CONSTS.PRIMARY_LANES[0]);
     });
   });
 
@@ -792,6 +896,34 @@ describe("PartyCreation Scene", () => {
       (partyCreation as any).destroyPopup();
 
       expect(partyCreation.popup).toBeNull();
+    });
+
+    it("lane options have hover effect handlers", () => {
+      const partyCreation = new PartyCreation();
+      const textSpy = vi.spyOn(partyCreation.add, "text");
+      partyCreation.create();
+      (partyCreation as any).showLanePicker({ name: "Fighter", position: "" });
+
+      const frontlineCall = textSpy.mock.calls.find(
+        (call: unknown[]) => call[2] === CONSTS.ActorPosition.FRONTLINE,
+      );
+      expect(frontlineCall).toBeTruthy();
+      const opt =
+        textSpy.mock.results[textSpy.mock.calls.indexOf(frontlineCall!)].value;
+
+      const over = opt.on.mock.calls.find(
+        (call: string[]) => call[0] === "pointerover",
+      );
+      expect(over).toBeTruthy();
+      over![1]();
+      expect(opt.setColor).toHaveBeenCalledWith(CONSTS.LANE_HEADER_COLOR);
+
+      const out = opt.on.mock.calls.find(
+        (call: string[]) => call[0] === "pointerout",
+      );
+      expect(out).toBeTruthy();
+      out![1]();
+      expect(opt.setColor).toHaveBeenCalledWith(CONSTS.HELP_COLOR);
     });
   });
 
@@ -932,6 +1064,30 @@ describe("PartyCreation Scene", () => {
       });
 
       expect((partyCreation as any).saveErrText.setText).toHaveBeenCalled();
+    });
+
+    it("applies hover effects on the save button", () => {
+      const partyCreation = new PartyCreation();
+      partyCreation.create();
+      (partyCreation as any).showSavePopup();
+
+      const popup = partyCreation.popup as any[];
+      const saveBg = popup[4];
+      const saveLabel = popup[5];
+
+      const over = saveBg.on.mock.calls.find(
+        (call: string[]) => call[0] === "pointerover",
+      );
+      over![1]();
+      expect(saveBg.setFillStyle).toHaveBeenCalledWith(CONSTS.BTN_HOVER_FILL);
+      expect(saveLabel.setColor).toHaveBeenCalledWith(CONSTS.BTN_HOVER_TEXT);
+
+      const out = saveBg.on.mock.calls.find(
+        (call: string[]) => call[0] === "pointerout",
+      );
+      out![1]();
+      expect(saveBg.setFillStyle).toHaveBeenCalledWith(CONSTS.BTN_FILL);
+      expect(saveLabel.setColor).toHaveBeenCalledWith(CONSTS.MENU_TEXT_COLOR);
     });
   });
 
