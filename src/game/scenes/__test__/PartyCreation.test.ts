@@ -522,6 +522,39 @@ describe("PartyCreation Scene", () => {
       );
     });
 
+    it("updates existing 'Default' team instead of creating a duplicate", async () => {
+      const existing = {
+        id: "existing-default",
+        name: CONSTS.TEAM_NAME_DEFAULT,
+        members: [{ actorClassId: "Fighter", position: "FRONTLINE" }],
+        createdAt: 100,
+        lastModified: 100,
+      };
+      (localStorage.getItem as ReturnType<typeof vi.fn>).mockReturnValue(
+        JSON.stringify([existing]),
+      );
+
+      const partyCreation = new PartyCreation();
+      partyCreation.create();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      const calls = (localStorage.setItem as ReturnType<typeof vi.fn>).mock
+        .calls;
+      const last = calls[calls.length - 1];
+      const saved = JSON.parse(last[1]);
+      const defaultTeams = saved.filter(
+        (team: PlayerTeam) => team.name === CONSTS.TEAM_NAME_DEFAULT,
+      );
+      expect(defaultTeams).toHaveLength(1);
+      expect(defaultTeams[0].id).toBe("existing-default");
+      expect(defaultTeams[0].members).toEqual(
+        players.map((player) => ({
+          actorClassId: player.name,
+          position: player.position,
+        })),
+      );
+    });
+
     it("selects 'Current Party' team on scene create when it exists", async () => {
       (localStorage.getItem as ReturnType<typeof vi.fn>).mockReturnValue(
         JSON.stringify([

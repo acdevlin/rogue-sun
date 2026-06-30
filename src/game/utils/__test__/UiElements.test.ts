@@ -1,7 +1,14 @@
 import { describe, it, expect, vi } from "vitest";
 import type { Scene } from "phaser";
 
-import { createBtn, createActorCard, createLaneBlock } from "../UiElements";
+import {
+  createBtn,
+  createActorCard,
+  createLaneBlock,
+  createPopupBg,
+  createPopupTitle,
+  createPopupClose,
+} from "../UiElements";
 import * as CONSTS from "../../../constants";
 
 const mockObj = () => ({
@@ -551,5 +558,104 @@ describe("createActorCard", () => {
     });
     const fill = scene.add.rectangle.mock.calls[2];
     expect(fill[4]).toBe(0xff0000);
+  });
+});
+
+describe("createPopupBg", () => {
+  it("creates a rectangle with popup dimensions, color, and depth", () => {
+    const scene = makeScene();
+    const rect = createPopupBg(scene as unknown as Scene, 400, 300, 200, 150);
+    expect(scene.add.rectangle).toHaveBeenCalledWith(
+      400,
+      300,
+      200,
+      150,
+      CONSTS.POPUP_BG,
+    );
+    expect(rect.setStrokeStyle).toHaveBeenCalledWith(
+      CONSTS.POPUP_STROKE_W,
+      CONSTS.POPUP_STROKE,
+    );
+    expect(rect.setDepth).toHaveBeenCalledWith(CONSTS.POPUP_DEPTH);
+  });
+});
+
+describe("createPopupTitle", () => {
+  it("creates title text with default titleY", () => {
+    const scene = makeScene();
+    const title = createPopupTitle(
+      scene as unknown as Scene,
+      400,
+      100,
+      "My Title",
+    );
+    expect(scene.add.text).toHaveBeenCalledWith(
+      400,
+      100 + CONSTS.POPUP_TITLE_Y,
+      "My Title",
+      expect.objectContaining({
+        fontFamily: CONSTS.UI_FONT_FAMILY,
+        fontSize: `${CONSTS.POPUP_TITLE_FS}px`,
+        color: CONSTS.LANE_HEADER_COLOR,
+      }),
+    );
+    expect(title.setOrigin).toHaveBeenCalledWith(0.5, 0);
+    expect(title.setDepth).toHaveBeenCalledWith(CONSTS.POPUP_DEPTH + 1);
+  });
+
+  it("creates title text with custom titleY", () => {
+    const scene = makeScene();
+    createPopupTitle(scene as unknown as Scene, 400, 100, "Custom Y Title", 50);
+    expect(scene.add.text).toHaveBeenCalledWith(
+      400,
+      150,
+      "Custom Y Title",
+      expect.any(Object),
+    );
+  });
+});
+
+describe("createPopupClose", () => {
+  it("creates close button at top-right of popup", () => {
+    const scene = makeScene();
+    const onClose = vi.fn();
+    const btn = createPopupClose(
+      scene as unknown as Scene,
+      100,
+      80,
+      300,
+      onClose,
+    );
+    expect(scene.add.text).toHaveBeenCalledWith(
+      100 + 300 - CONSTS.POPUP_CLOSE_INSET,
+      80 + CONSTS.POPUP_CLOSE_INSET,
+      "X",
+      expect.objectContaining({
+        fontFamily: CONSTS.UI_FONT_FAMILY,
+        fontSize: `${CONSTS.POPUP_CLOSE_FS}px`,
+        color: CONSTS.POPUP_CLOSE_COLOR,
+      }),
+    );
+    expect(btn.setOrigin).toHaveBeenCalledWith(1, 0);
+    expect(btn.setInteractive).toHaveBeenCalledWith({ useHandCursor: true });
+    expect(btn.setDepth).toHaveBeenCalledWith(CONSTS.POPUP_DEPTH + 1);
+  });
+
+  it("invokes onClose callback on pointerdown", () => {
+    const scene = makeScene();
+    const onClose = vi.fn();
+    const btn = createPopupClose(
+      scene as unknown as Scene,
+      100,
+      80,
+      300,
+      onClose,
+    );
+    const pointerdown = btn.on.mock.calls.find(
+      (call: string[]) => call[0] === "pointerdown",
+    );
+    expect(pointerdown).toBeTruthy();
+    pointerdown![1]();
+    expect(onClose).toHaveBeenCalledOnce();
   });
 });
