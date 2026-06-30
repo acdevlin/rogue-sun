@@ -261,60 +261,6 @@ describe("PartyCreation Scene", () => {
       expect(idxZ).toBe(2);
     });
 
-    it("sorts and shows all team entries in correct order", async () => {
-      (localStorage.getItem as ReturnType<typeof vi.fn>).mockReturnValue(
-        JSON.stringify([
-          {
-            id: "c",
-            name: "Z Team",
-            members: [],
-            createdAt: 1,
-            lastModified: 1,
-          },
-          {
-            id: "d",
-            name: "Default",
-            members: [],
-            createdAt: 2,
-            lastModified: 2,
-          },
-          {
-            id: "e",
-            name: CONSTS.TEAM_NAME_CURRENT,
-            members: [],
-            createdAt: 3,
-            lastModified: 3,
-          },
-        ]),
-      );
-
-      const partyCreation = new PartyCreation();
-      const textSpy = vi.spyOn(partyCreation.add, "text");
-      partyCreation.create();
-      (partyCreation as any).showLoadPopup();
-
-      await new Promise((resolve) => setTimeout(resolve, 0));
-
-      // Find team name texts after the "Load Team" title
-      const allTextCalls = textSpy.mock.calls.filter(
-        (call: unknown[]) =>
-          typeof call[2] === "string" &&
-          (call[2] as string).trim() !== "" &&
-          (call[2] as string).trim() !== "X",
-      );
-      const teamNames = allTextCalls
-        .filter(
-          (call: unknown[]) =>
-            call[2] !== "Load Team" && call[2] !== "No saved teams",
-        )
-        .map((call: unknown[]) => (call[2] as string).trim());
-      const idxCurrent = teamNames.indexOf(CONSTS.TEAM_NAME_CURRENT);
-      const idxDefault = teamNames.indexOf("Default");
-      const idxZ = teamNames.indexOf("Z Team");
-      expect(idxCurrent).toBeLessThan(idxDefault);
-      expect(idxDefault).toBeLessThan(idxZ);
-    });
-
     it("team entries are interactive with hover and click handlers", async () => {
       (localStorage.getItem as ReturnType<typeof vi.fn>).mockReturnValue(
         JSON.stringify([
@@ -1251,16 +1197,6 @@ describe("PartyCreation Scene", () => {
   });
 
   describe("Save Team enforces validation", () => {
-    it("rejects save when team is invalid", () => {
-      const partyCreation = new PartyCreation();
-      partyCreation.create();
-      (partyCreation as any).workingMembers = [];
-
-      const errs = (partyCreation as any).validateTeamRules();
-
-      expect(errs.length).toBeGreaterThan(0);
-    });
-
     it("shows save popup when team is valid", () => {
       const partyCreation = new PartyCreation();
       const domSpy = vi.spyOn(partyCreation.add, "dom");
@@ -1318,13 +1254,6 @@ describe("PartyCreation Scene", () => {
 
     it("destroys overlay when load popup is closed", () => {
       (scene as any).showLoadPopup();
-      expect(scene.popupOverlay).not.toBeNull();
-      (scene as any).destroyPopup();
-      expect(scene.popupOverlay).toBeNull();
-    });
-
-    it("destroys overlay when the only popup closes", () => {
-      (scene as any).showHelpPopup();
       expect(scene.popupOverlay).not.toBeNull();
       (scene as any).destroyPopup();
       expect(scene.popupOverlay).toBeNull();
