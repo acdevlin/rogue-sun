@@ -1,3 +1,5 @@
+import { ActorPosition } from "../../constants";
+
 export interface PlayerActorData {
   name: string;
   alias?: string;
@@ -5,5 +7,5 @@ export interface PlayerActorData {
   health: number;
   stamina: number;
   energy: number;
-  position: string;
+  position: ActorPosition;
 }

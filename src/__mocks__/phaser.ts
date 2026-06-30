@@ -83,5 +83,5 @@ const Scale = { FIT: 0, Center: { CENTER_BOTH: 0 } };
 const AUTO = 0;
 const Types = {};
 
-export { Scene, GameObjects, Cameras, Game, Scale, AUTO, Types };
+export { mockObj, Scene, GameObjects, Cameras, Game, Scale, AUTO, Types };
 export default { Scene, GameObjects, Cameras, Game, Scale, AUTO, Types };

@@ -1,15 +1,6 @@
 import { Scene } from "phaser";
 import { getSceneScale } from "../utils/SceneScaling";
-import {
-  PRELOADER_BAR_W,
-  PRELOADER_BAR_H,
-  PRELOADER_BAR_STROKE,
-  PRELOADER_FILLER_X,
-  PRELOADER_FILLER_W,
-  PRELOADER_FILLER_H,
-  PRELOADER_FILLER_MAX,
-  PRELOADER_BAR_COLOR,
-} from "../../constants";
+import * as CONSTS from "../../constants";
 
 /**
  * Preloader scene — displays a progress bar while loading game assets.
@@ -32,22 +23,23 @@ export class Preloader extends Scene {
     const bgImg = this.add.image(centerX, centerY, "background");
     bgImg.setScale(scale);
 
-    const barWidth = Math.round(PRELOADER_BAR_W * scale);
-    const barHeight = Math.round(PRELOADER_BAR_H * scale);
+    const barWidth = Math.round(CONSTS.PRELOADER_BAR_W * scale);
+    const barHeight = Math.round(CONSTS.PRELOADER_BAR_H * scale);
     this.add
       .rectangle(centerX, centerY, barWidth, barHeight)
-      .setStrokeStyle(PRELOADER_BAR_STROKE, PRELOADER_BAR_COLOR);
+      .setStrokeStyle(CONSTS.PRELOADER_BAR_STROKE, CONSTS.PRELOADER_BAR_COLOR);
 
     const bar = this.add.rectangle(
-      centerX - PRELOADER_FILLER_X * scale,
+      centerX - CONSTS.PRELOADER_FILLER_X * scale,
       centerY,
-      PRELOADER_FILLER_W,
-      Math.round(PRELOADER_FILLER_H * scale),
-      PRELOADER_BAR_COLOR,
+      CONSTS.PRELOADER_FILLER_W,
+      Math.round(CONSTS.PRELOADER_FILLER_H * scale),
+      CONSTS.PRELOADER_BAR_COLOR,
     );
 
     this.load.on("progress", (progress: number) => {
-      bar.width = PRELOADER_FILLER_W + PRELOADER_FILLER_MAX * progress;
+      bar.width =
+        CONSTS.PRELOADER_FILLER_W + CONSTS.PRELOADER_FILLER_MAX * progress;
     });
   }
 

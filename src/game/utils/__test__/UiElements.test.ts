@@ -10,18 +10,7 @@ import {
   createPopupClose,
 } from "../UiElements";
 import * as CONSTS from "../../../constants";
-
-const mockObj = () => ({
-  setOrigin: vi.fn().mockReturnThis(),
-  setStrokeStyle: vi.fn().mockReturnThis(),
-  setDepth: vi.fn().mockReturnThis(),
-  setInteractive: vi.fn().mockReturnThis(),
-  setFillStyle: vi.fn().mockReturnThis(),
-  setColor: vi.fn().mockReturnThis(),
-  on: vi.fn().mockReturnThis(),
-  width: 0,
-  height: 0,
-});
+import { mockObj } from "../../../__mocks__/phaser";
 
 type MockScene = {
   add: {

@@ -1,14 +1,6 @@
 import { Scene } from "phaser";
 import { getSceneScale } from "../utils/SceneScaling";
-import {
-  GAMEOVER_BG,
-  GAMEOVER_ALPHA,
-  TITLE_FONT_SIZE,
-  GAMEOVER_STROKE,
-  TITLE_TEXT_COLOR,
-  TITLE_STROKE_COLOR,
-  UI_FONT_FAMILY,
-} from "../../constants";
+import * as CONSTS from "../../constants";
 import { TEXT_RESOLUTION } from "../StartGame";
 
 /**
@@ -35,18 +27,18 @@ export class GameOver extends Scene {
     this.camera = this.cameras.main;
     const { centerX, centerY, scale } = getSceneScale(this);
 
-    this.camera.setBackgroundColor(GAMEOVER_BG);
+    this.camera.setBackgroundColor(CONSTS.GAMEOVER_BG);
 
     this.background = this.add.image(centerX, centerY, "background");
-    this.background.setAlpha(GAMEOVER_ALPHA);
+    this.background.setAlpha(CONSTS.GAMEOVER_ALPHA);
     this.background.setScale(scale);
 
     this.gameover_text = this.add.text(centerX, centerY, "Game Over", {
-      fontFamily: UI_FONT_FAMILY,
-      fontSize: Math.round(TITLE_FONT_SIZE * scale),
-      color: TITLE_TEXT_COLOR,
-      stroke: TITLE_STROKE_COLOR,
-      strokeThickness: Math.round(GAMEOVER_STROKE * scale),
+      fontFamily: CONSTS.UI_FONT_FAMILY,
+      fontSize: Math.round(CONSTS.TITLE_FONT_SIZE * scale),
+      color: CONSTS.TITLE_TEXT_COLOR,
+      stroke: CONSTS.TITLE_STROKE_COLOR,
+      strokeThickness: Math.round(CONSTS.GAMEOVER_STROKE * scale),
       align: "center",
       resolution: TEXT_RESOLUTION,
     });

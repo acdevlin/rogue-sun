@@ -1,4 +1,6 @@
+import { ActorPosition } from "../../constants";
+
 export interface TeamMember {
   actorClassId: string;
-  position: string;
+  position: ActorPosition;
 }
