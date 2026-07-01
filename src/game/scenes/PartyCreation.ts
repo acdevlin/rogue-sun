@@ -1,12 +1,12 @@
 import { Scene, GameObjects, Cameras } from "phaser";
+import * as CONSTS from "../../constants";
+import { TEXT_RESOLUTION } from "../StartGame";
 
 interface TransformAlpha {
   x: number;
   y: number;
   setAlpha(v: number): void;
 }
-import * as CONSTS from "../../constants";
-import { TEXT_RESOLUTION } from "../StartGame";
 import { getSceneScale } from "../utils/SceneScaling";
 import {
   createBtn,

@@ -16,8 +16,11 @@ export class ActionActor {
   /** Speed value used to calculate progress accumulation per second. */
   speed: number = 10;
   health: number = 100;
+  healthMax: number = 100;
   stamina: number = 100;
+  staminaMax: number = 100;
   energy: number = 100;
+  energyMax: number = 100;
   /** Current progress toward "readiness" (from 0 to readyThreshold). */
   progress: number = 0;
   /** Progress value at which the actor becomes ready to act. */
@@ -54,8 +57,11 @@ export class ActionActor {
     this.alias = params.alias;
     this.speed = params.speed;
     this.health = params.health;
+    this.healthMax = params.health;
     this.stamina = params.stamina;
+    this.staminaMax = params.stamina;
     this.energy = params.energy;
+    this.energyMax = params.energy;
     this.position = params.position;
   }
 

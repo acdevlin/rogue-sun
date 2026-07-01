@@ -385,9 +385,9 @@ export class Battle extends Scene {
         (actor.progress / actor.readyThreshold) *
         (actorUi.bg.width - CONSTS.FILL_INSET * 2);
 
-      actorUi.healthTxt.setText(`HP ${actor.health}/${actor.health}`);
-      actorUi.staminaTxt.setText(`SP ${actor.stamina}/${actor.stamina}`);
-      actorUi.energyTxt.setText(`EP ${actor.energy}/${actor.energy}`);
+      actorUi.healthTxt.setText(`HP ${actor.health}/${actor.healthMax}`);
+      actorUi.staminaTxt.setText(`SP ${actor.stamina}/${actor.staminaMax}`);
+      actorUi.energyTxt.setText(`EP ${actor.energy}/${actor.energyMax}`);
 
       const acting = actorUi.actor === this.actingActor;
       const ready = actorUi.actor.isReady();

@@ -10,7 +10,7 @@ import { TEXT_RESOLUTION } from "../StartGame";
 export class GameOver extends Scene {
   camera!: Phaser.Cameras.Scene2D.Camera;
   background!: Phaser.GameObjects.Image;
-  gameover_text!: Phaser.GameObjects.Text;
+  gameoverText!: Phaser.GameObjects.Text;
 
   /**
    * Default constructor.
@@ -33,7 +33,7 @@ export class GameOver extends Scene {
     this.background.setAlpha(CONSTS.GAMEOVER_ALPHA);
     this.background.setScale(scale);
 
-    this.gameover_text = this.add.text(centerX, centerY, "Game Over", {
+    this.gameoverText = this.add.text(centerX, centerY, "Game Over", {
       fontFamily: CONSTS.UI_FONT_FAMILY,
       fontSize: Math.round(CONSTS.TITLE_FONT_SIZE * scale),
       color: CONSTS.TITLE_TEXT_COLOR,
@@ -42,7 +42,7 @@ export class GameOver extends Scene {
       align: "center",
       resolution: TEXT_RESOLUTION,
     });
-    this.gameover_text.setOrigin(0.5);
+    this.gameoverText.setOrigin(0.5);
 
     this.input.once("pointerdown", () => {
       this.scene.start("MainMenu");
