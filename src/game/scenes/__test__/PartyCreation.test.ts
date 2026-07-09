@@ -683,10 +683,11 @@ describe("PartyCreation Scene", () => {
 
       const sceneCx = scene.cameras.main.centerX;
       const laneSpan =
-        (CONSTS.NUM_LANES - 1) * CONSTS.LANE_OFFSET + CONSTS.CARD_W;
+        (CONSTS.NUM_LANES - 1) * CONSTS.LANE_OFFSET + CONSTS.PROGRESS_BAR_W;
       const laneLeft = sceneCx - laneSpan / 2;
-      const dropX = laneLeft + 2 * CONSTS.LANE_OFFSET + CONSTS.CARD_W / 2;
-      const dropY = CONSTS.CARD_START_Y + 40 + 10;
+      const dropX =
+        laneLeft + 2 * CONSTS.LANE_OFFSET + CONSTS.PROGRESS_BAR_W / 2;
+      const dropY = CONSTS.LANE_FIRST_CARD_Y + 40 + 10;
       scene.input.emit("dragend", { x: dropX, y: dropY });
 
       expect(scene.workingMembers).toHaveLength(1);
@@ -751,7 +752,7 @@ describe("PartyCreation Scene", () => {
       const maxLane = 1;
       const laneAreaBot =
         geo.startY +
-        maxLane * CONSTS.CARD_GAP +
+        maxLane * CONSTS.LANE_CARD_GAP +
         CONSTS.CARD_HEIGHT +
         CONSTS.DROP_HIT_PADDING;
       const flankY = laneAreaBot + 10;
@@ -768,7 +769,7 @@ describe("PartyCreation Scene", () => {
       partyCreation.create();
 
       const geo = (partyCreation as any).laneGeometry;
-      const pointerX = geo.laneLeft + CONSTS.CARD_W + 5;
+      const pointerX = geo.laneLeft + CONSTS.PROGRESS_BAR_W + 5;
       const pointerY = geo.headerY + 10;
       const result = (partyCreation as any).pickDropPos(pointerX, pointerY);
 

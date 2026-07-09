@@ -312,7 +312,7 @@ describe("Battle scene", () => {
       scene.update(0, 16);
       expect(scene.currentlyActingHeader.setStroke).toHaveBeenCalledWith(
         CONSTS.PLAYER_ACTING_STROKE,
-        CONSTS.HEADER_STROKE,
+        CONSTS.ACTING_HEADER_STROKE,
       );
     });
 
@@ -325,7 +325,7 @@ describe("Battle scene", () => {
       scene.update(0, 16);
       expect(scene.currentlyActingHeader.setStroke).toHaveBeenCalledWith(
         CONSTS.ENEMY_ACTING_STROKE,
-        CONSTS.HEADER_STROKE,
+        CONSTS.ACTING_HEADER_STROKE,
       );
     });
   });
@@ -498,19 +498,20 @@ describe("Battle scene", () => {
     it("syncUI updates fill.width proportional to actor progress", () => {
       const elem = scene.actorsUi[0];
       const actor = elem.actor;
-      elem.bg.width = CONSTS.CARD_W;
+      elem.bg.width = CONSTS.PROGRESS_BAR_W;
       actor.progress = 50;
       scene.actingActor = actor;
       scene.update(0, 16);
       const expected =
-        (50 / actor.readyThreshold) * (CONSTS.CARD_W - CONSTS.FILL_INSET * 2);
+        (50 / actor.readyThreshold) *
+        (CONSTS.PROGRESS_BAR_W - CONSTS.FILL_INSET * 2);
       expect(elem.fill.width).toBeCloseTo(expected);
     });
 
     it("fill.width is 0 when actor has no progress", () => {
       const elem = scene.actorsUi[0];
       const actor = elem.actor;
-      elem.bg.width = CONSTS.CARD_W;
+      elem.bg.width = CONSTS.PROGRESS_BAR_W;
       actor.progress = 0;
       scene.actingActor = actor;
       scene.update(0, 16);
@@ -520,11 +521,11 @@ describe("Battle scene", () => {
     it("fill.width is max when actor is at threshold", () => {
       const elem = scene.actorsUi[0];
       const actor = elem.actor;
-      elem.bg.width = CONSTS.CARD_W;
+      elem.bg.width = CONSTS.PROGRESS_BAR_W;
       actor.progress = actor.readyThreshold;
       scene.actingActor = actor;
       scene.update(0, 16);
-      const expected = CONSTS.CARD_W - CONSTS.FILL_INSET * 2;
+      const expected = CONSTS.PROGRESS_BAR_W - CONSTS.FILL_INSET * 2;
       expect(elem.fill.width).toBeCloseTo(expected);
     });
   });
@@ -573,7 +574,7 @@ describe("Battle scene", () => {
         });
       }
 
-      const halfW = (CONSTS.CARD_W + CONSTS.CARD_EXTRA_W) / 2;
+      const halfW = (CONSTS.PROGRESS_BAR_W + CONSTS.CARD_EXTRA_W) / 2;
       const halfH = CONSTS.CARD_HEIGHT / 2;
 
       // Verify no two cards on the same side overlap by checking pairwise

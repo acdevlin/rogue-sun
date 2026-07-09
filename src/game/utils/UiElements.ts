@@ -289,9 +289,9 @@ export function createActorCard(opts: {
   const progressBg = opts.scene.add
     .rectangle(
       opts.x + opts.w / 2,
-      opts.y + CONSTS.CARD_H / 2,
+      opts.y + CONSTS.PROGRESS_BAR_H / 2,
       opts.w,
-      CONSTS.CARD_H,
+      CONSTS.PROGRESS_BAR_H,
       CONSTS.FILL_BG,
     )
     .setOrigin(0.5);
@@ -302,7 +302,7 @@ export function createActorCard(opts: {
       opts.x + CONSTS.FILL_INSET,
       opts.y + CONSTS.FILL_INSET,
       0,
-      CONSTS.CARD_H - CONSTS.FILL_INSET * 2,
+      CONSTS.PROGRESS_BAR_H - CONSTS.FILL_INSET * 2,
       opts.fillColor ?? CONSTS.PROGRESS_FILL,
     )
     .setOrigin(0, 0);

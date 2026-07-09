@@ -96,40 +96,45 @@ export class Battle extends Scene {
       const lidx = Math.max(0, CONSTS.NUM_LANES - 1 - idx);
       const x = isPlayer
         ? CONSTS.LANE_INSET + lidx * CONSTS.LANE_OFFSET
-        : width - CONSTS.LANE_INSET - CONSTS.CARD_W - lidx * CONSTS.LANE_OFFSET;
+        : width -
+          CONSTS.LANE_INSET -
+          CONSTS.PROGRESS_BAR_W -
+          lidx * CONSTS.LANE_OFFSET;
       const y =
-        CONSTS.CARD_START_Y + maxLane * CONSTS.CARD_GAP + CONSTS.FLANK_OFFSET;
+        CONSTS.LANE_FIRST_CARD_Y +
+        maxLane * CONSTS.LANE_CARD_GAP +
+        CONSTS.FLANK_OFFSET;
       this.createActorUIElement(
         actor,
         x,
         y,
-        CONSTS.CARD_W,
+        CONSTS.PROGRESS_BAR_W,
         CONSTS.PROGRESS_FILL,
       );
     }
 
     const pLaneSpan =
-      (CONSTS.NUM_LANES - 1) * CONSTS.LANE_OFFSET + CONSTS.CARD_W;
+      (CONSTS.NUM_LANES - 1) * CONSTS.LANE_OFFSET + CONSTS.PROGRESS_BAR_W;
     createLaneBlock({
       scene: this,
       laneLeft: CONSTS.LANE_INSET,
-      cardW: CONSTS.CARD_W,
-      gap: CONSTS.CARD_GAP,
+      cardW: CONSTS.PROGRESS_BAR_W,
+      gap: CONSTS.LANE_CARD_GAP,
       maxLane: playerMaxLane,
       flankIdx: playerFlankIdx,
       headerY: CONSTS.LANE_HEADER_Y,
-      startY: CONSTS.CARD_START_Y,
+      startY: CONSTS.LANE_FIRST_CARD_Y,
       controller: CONSTS.ActorController.PLAYER,
     });
     createLaneBlock({
       scene: this,
       laneLeft: width - CONSTS.LANE_INSET - pLaneSpan,
-      cardW: CONSTS.CARD_W,
-      gap: CONSTS.CARD_GAP,
+      cardW: CONSTS.PROGRESS_BAR_W,
+      gap: CONSTS.LANE_CARD_GAP,
       maxLane: enemyMaxLane,
       flankIdx: enemyFlankIdx,
       headerY: CONSTS.LANE_HEADER_Y,
-      startY: CONSTS.CARD_START_Y,
+      startY: CONSTS.LANE_FIRST_CARD_Y,
       controller: CONSTS.ActorController.ENEMY,
     });
 
@@ -185,12 +190,22 @@ export class Battle extends Scene {
     const width = this.cameras.main.width;
     const laneIdx = CONSTS.PRIMARY_LANES.indexOf(data.position);
     const x = isEnemy
-      ? width - CONSTS.LANE_INSET - CONSTS.CARD_W - laneIdx * CONSTS.LANE_OFFSET
+      ? width -
+        CONSTS.LANE_INSET -
+        CONSTS.PROGRESS_BAR_W -
+        laneIdx * CONSTS.LANE_OFFSET
       : CONSTS.LANE_INSET + laneIdx * CONSTS.LANE_OFFSET;
     const y =
-      CONSTS.CARD_START_Y + (laneCounts[data.position] ?? 0) * CONSTS.CARD_GAP;
+      CONSTS.LANE_FIRST_CARD_Y +
+      (laneCounts[data.position] ?? 0) * CONSTS.LANE_CARD_GAP;
     laneCounts[data.position] = (laneCounts[data.position] ?? 0) + 1;
-    this.createActorUIElement(actor, x, y, CONSTS.CARD_W, CONSTS.PROGRESS_FILL);
+    this.createActorUIElement(
+      actor,
+      x,
+      y,
+      CONSTS.PROGRESS_BAR_W,
+      CONSTS.PROGRESS_FILL,
+    );
   }
 
   /**
@@ -226,18 +241,18 @@ export class Battle extends Scene {
    */
   private createActingHeader(centerX: number) {
     this.currentlyActingHeader = this.add
-      .text(centerX, CONSTS.HEADER_Y, "", {
+      .text(centerX, CONSTS.ACTING_HEADER_Y, "", {
         fontFamily: CONSTS.UI_FONT_FAMILY,
-        fontSize: CONSTS.HEADER_FONT,
-        color: CONSTS.HEADER_TEXT_COLOR,
-        stroke: CONSTS.HEADER_STROKE_COLOR,
-        strokeThickness: CONSTS.HEADER_STROKE,
+        fontSize: CONSTS.ACTING_HEADER_FONT,
+        color: CONSTS.ACTING_HEADER_TEXT_COLOR,
+        stroke: CONSTS.ACTING_HEADER_STROKE_COLOR,
+        strokeThickness: CONSTS.ACTING_HEADER_STROKE,
         align: "center",
         resolution: TEXT_RESOLUTION,
       })
       .setOrigin(0.5);
     this.currentlyActingBg = this.add
-      .rectangle(centerX, CONSTS.HEADER_Y, 0, 0, CONSTS.HEADER_BG)
+      .rectangle(centerX, CONSTS.ACTING_HEADER_Y, 0, 0, CONSTS.ACTING_HEADER_BG)
       .setOrigin(0.5)
       .setDepth(-1)
       .setVisible(false);
@@ -334,13 +349,13 @@ export class Battle extends Scene {
         actor.controller === CONSTS.ActorController.PLAYER
           ? CONSTS.PLAYER_ACTING_STROKE
           : CONSTS.ENEMY_ACTING_STROKE,
-        CONSTS.HEADER_STROKE,
+        CONSTS.ACTING_HEADER_STROKE,
       );
     const headerWidth = this.currentlyActingHeader.width;
     this.currentlyActingBg
       .setSize(
-        headerWidth + CONSTS.HEADER_BG_PAD_X,
-        this.currentlyActingHeader.height + CONSTS.HEADER_BG_PAD_Y,
+        headerWidth + CONSTS.ACTING_HEADER_BG_PAD_X,
+        this.currentlyActingHeader.height + CONSTS.ACTING_HEADER_BG_PAD_Y,
       )
       .setVisible(true);
     this.syncUI();

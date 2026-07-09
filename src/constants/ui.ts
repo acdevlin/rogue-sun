@@ -1,26 +1,26 @@
 /** Y-position of the "currently acting" header from the top of the screen. */
-export const HEADER_Y = 20;
+export const ACTING_HEADER_Y = 20;
 /** Font size of the "currently acting" header text. */
-export const HEADER_FONT = "30px";
+export const ACTING_HEADER_FONT = "30px";
 /** Stroke thickness of the "currently acting" header text. */
-export const HEADER_STROKE = 6;
+export const ACTING_HEADER_STROKE = 6;
 /** Background color of the "currently acting" header. */
-export const HEADER_BG = 0xcccccc;
+export const ACTING_HEADER_BG = 0xcccccc;
 /** Horizontal padding for the acting header background. */
-export const HEADER_BG_PAD_X = 20;
+export const ACTING_HEADER_BG_PAD_X = 20;
 /** Vertical padding for the acting header background. */
-export const HEADER_BG_PAD_Y = 10;
+export const ACTING_HEADER_BG_PAD_Y = 10;
 /** Y-position of the title text in the PartyCreation scene. */
-export const HEADER_PARTYCREATION_Y = 40;
+export const PARTY_CREATION_TITLE_Y = 40;
 
 /** Width of each actor's progress bar. */
-export const CARD_W = 180;
+export const PROGRESS_BAR_W = 180;
 /** Height of each actor's progress bar. */
-export const CARD_H = 12;
-/** Vertical gap between actor cards. */
-export const CARD_GAP = 110;
-/** Y-position of the first actor card. */
-export const CARD_START_Y = 132;
+export const PROGRESS_BAR_H = 12;
+/** Vertical gap between stacked cards in a lane. */
+export const LANE_CARD_GAP = 110;
+/** Y-position of the first card row in the lane grid. */
+export const LANE_FIRST_CARD_Y = 132;
 /** Y-position for the lane header labels (BACKLINE/MIDLINE/FRONTLINE). */
 export const LANE_HEADER_Y = 55;
 /** Font size for lane header text. */
@@ -86,9 +86,9 @@ export const UI_FONT = 14;
 export const UI_FONT_FAMILY = "Arial Black";
 
 /** Color of the acting header text. */
-export const HEADER_TEXT_COLOR = "#ffffff";
+export const ACTING_HEADER_TEXT_COLOR = "#ffffff";
 /** Stroke color of the acting header text. */
-export const HEADER_STROKE_COLOR = "#000000";
+export const ACTING_HEADER_STROKE_COLOR = "#000000";
 
 /** Y-offset of the card center from the y-param. */
 export const CARD_Y_OFFSET = 1;
@@ -125,23 +125,6 @@ export const POOL_ROW_Y = 550;
 /** Alpha value for placed (inactive) pool cards. */
 export const POOL_DIM_ALPHA = 0.4;
 
-/** Right-side offset from camera edge for the saved teams panel. */
-export const SAVED_TEAMS_RIGHT_OFFSET = 280;
-/** Vertical offset from HEADER_PARTYCREATION_Y for the saved teams panel header. */
-export const SAVED_TEAMS_HEADER_OFFSET = 90;
-/** Horizontal padding for saved teams entry text. */
-export const SAVED_TEAMS_ENTRY_PAD_X = 6;
-/** Vertical padding for the first saved teams entry from the header. */
-export const SAVED_TEAMS_ENTRY_PAD_Y = 28;
-/** Vertical spacing between saved teams entries. */
-export const SAVED_TEAMS_ENTRY_SPACING = 26;
-/** Font size for the saved teams header label. */
-export const SAVED_TEAMS_FONT_SIZE = 18;
-/** Font size for each saved team entry. */
-export const SAVED_TEAMS_ENTRY_FONT_SIZE = 14;
-/** Color for the 'No saved teams' placeholder text. */
-export const SAVED_TEAMS_MUTED_COLOR = "#999999";
-
 /** Y-offset added to lane header and card start positions in PartyCreation. */
 export const LANE_Y_OFFSET = 40;
 /** Extra padding below the last lane card when detecting drop position. */
@@ -165,15 +148,15 @@ export const BTN_HOVER_FILL = 0x666666;
 export const BTN_HOVER_TEXT = "#ffff00";
 
 /** Center X-position of the Help and Save Team buttons on the left side. */
-export const HELP_X = 120;
+export const HELP_BTN_X = 120;
 /** Vertical gap between the Help button and the Save Team button below it. */
 export const HELP_SAVE_GAP = 72;
 /** Y-position of the Help button. */
-export const HELP_Y = 160;
+export const HELP_BTN_Y = 160;
 /** Scale factor for the compact left-side buttons in PartyCreation. */
 export const COMPACT_BTN_SCALE = 0.75;
-/** Word wrap width for the help popup text. */
-export const HELP_W = 400;
+/** Word wrap width for the help popup body text. */
+export const HELP_TEXT_W = 400;
 /** Font size for the help popup text. */
 export const HELP_FONT_SIZE = 14;
 /** Extra vertical space between lines in the help popup text. */
@@ -193,9 +176,9 @@ export const HELP_POPUP_TEXT_X = 20;
 export const HELP_POPUP_TEXT_Y = 50;
 
 /** Width of the lane picker popup. */
-export const POPUP_W = 180;
+export const LANE_PICKER_W = 180;
 /** Height of the lane picker popup. */
-export const POPUP_H = 200;
+export const LANE_PICKER_H = 200;
 /** Background color of the popup. */
 export const POPUP_BG = 0x333333;
 /** Stroke color of the popup border. */
@@ -234,6 +217,12 @@ export const LOAD_POPUP_H = 250;
 export const LOAD_POPUP_TEXT_X = 16;
 /** Y-offset from popup top to the first team entry text. */
 export const LOAD_POPUP_TEXT_Y = 48;
+/** Vertical spacing between saved team entries in the load popup. */
+export const SAVED_TEAMS_ENTRY_SPACING = 26;
+/** Font size for saved team entry text. */
+export const SAVED_TEAMS_ENTRY_FONT_SIZE = 14;
+/** Text color for muted/no-teams state in the load popup. */
+export const SAVED_TEAMS_MUTED_COLOR = "#999999";
 
 /** Width of the save-team popup. */
 export const SAVE_POPUP_W = 280;

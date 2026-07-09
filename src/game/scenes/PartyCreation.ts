@@ -78,11 +78,11 @@ export class PartyCreation extends Scene {
    * @returns An object with pixel coordinates and dimensions for lane rendering.
    */
   private get laneGeometry() {
-    const cardW = CONSTS.CARD_W;
-    const gap = CONSTS.CARD_GAP;
+    const cardW = CONSTS.PROGRESS_BAR_W;
+    const gap = CONSTS.LANE_CARD_GAP;
     const yOff = CONSTS.LANE_Y_OFFSET;
     const headerY = CONSTS.LANE_HEADER_Y + yOff;
-    const startY = CONSTS.CARD_START_Y + yOff;
+    const startY = CONSTS.LANE_FIRST_CARD_Y + yOff;
     const sceneCx = this.cameras.main.centerX;
     const span = (CONSTS.NUM_LANES - 1) * CONSTS.LANE_OFFSET + cardW;
     const laneLeft = sceneCx - span / 2;
@@ -152,7 +152,7 @@ export class PartyCreation extends Scene {
     // Render the scene title
     this.title = this.add.text(
       centerX,
-      CONSTS.HEADER_PARTYCREATION_Y,
+      CONSTS.PARTY_CREATION_TITLE_Y,
       "Party Creation",
       {
         fontFamily: CONSTS.UI_FONT_FAMILY,
@@ -169,18 +169,18 @@ export class PartyCreation extends Scene {
     // Render the Help button on the left side
     createBtn({
       scene: this,
-      cx: CONSTS.HELP_X,
-      y: CONSTS.HELP_Y,
+      cx: CONSTS.HELP_BTN_X,
+      y: CONSTS.HELP_BTN_Y,
       label: "Help!",
       onClick: () => this.showHelpPopup(),
       scale: scale * CONSTS.COMPACT_BTN_SCALE,
     });
 
     // Save Team button, prompts for a name and persists composition
-    const saveBtnY = CONSTS.HELP_Y + CONSTS.HELP_SAVE_GAP;
+    const saveBtnY = CONSTS.HELP_BTN_Y + CONSTS.HELP_SAVE_GAP;
     createBtn({
       scene: this,
-      cx: CONSTS.HELP_X,
+      cx: CONSTS.HELP_BTN_X,
       y: saveBtnY,
       label: "Save Team",
       onClick: () => {
@@ -195,7 +195,7 @@ export class PartyCreation extends Scene {
     const loadBtnY = saveBtnY + CONSTS.HELP_SAVE_GAP;
     createBtn({
       scene: this,
-      cx: CONSTS.HELP_X,
+      cx: CONSTS.HELP_BTN_X,
       y: loadBtnY,
       label: "Load Team",
       onClick: () => this.showLoadPopup(),
@@ -676,13 +676,13 @@ export class PartyCreation extends Scene {
     card.card.setInteractive({ useHandCursor: true });
     card.card.on("pointerdown", () => this.removeFromTeam(member.name));
     card.card.on("pointerover", () =>
-        this.showTooltip(
-          member.description,
-          card.card.x,
-          card.card.y - card.card.height / 2,
-        ),
-      );
-      card.card.on("pointerout", () => this.hideTooltip());
+      this.showTooltip(
+        member.description,
+        card.card.x,
+        card.card.y - card.card.height / 2,
+      ),
+    );
+    card.card.on("pointerout", () => this.hideTooltip());
     this.flattenActorCard(card);
   }
 
@@ -915,8 +915,8 @@ export class PartyCreation extends Scene {
    */
   private showLanePicker(actor: PlayerActorData): void {
     const { midX, top, objects } = this.withPopup(
-      CONSTS.POPUP_W,
-      CONSTS.POPUP_H,
+      CONSTS.LANE_PICKER_W,
+      CONSTS.LANE_PICKER_H,
       "Select Lane",
     );
 
@@ -967,7 +967,7 @@ export class PartyCreation extends Scene {
           fontSize: `${CONSTS.HELP_FONT_SIZE}px`,
           color: CONSTS.HELP_COLOR,
           resolution: TEXT_RESOLUTION,
-          wordWrap: { width: CONSTS.HELP_W },
+          wordWrap: { width: CONSTS.HELP_TEXT_W },
           lineSpacing: CONSTS.HELP_LINE_SPACING,
         },
       )

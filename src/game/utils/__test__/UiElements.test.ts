@@ -256,7 +256,7 @@ describe("createLaneBlock", () => {
     createLaneBlock({
       scene: scene as unknown as Scene,
       laneLeft: 40,
-      cardW: CONSTS.CARD_W,
+      cardW: CONSTS.PROGRESS_BAR_W,
       gap,
       maxLane: 2,
       flankIdx: 0,
@@ -275,7 +275,7 @@ describe("createLaneBlock", () => {
     createLaneBlock({
       scene: scene as unknown as Scene,
       laneLeft: 40,
-      cardW: CONSTS.CARD_W,
+      cardW: CONSTS.PROGRESS_BAR_W,
       gap,
       maxLane: 2,
       flankIdx: 0,
@@ -295,7 +295,7 @@ describe("createLaneBlock", () => {
     createLaneBlock({
       scene: scene as unknown as Scene,
       laneLeft: 40,
-      cardW: CONSTS.CARD_W,
+      cardW: CONSTS.PROGRESS_BAR_W,
       gap,
       maxLane: 2,
       flankIdx: 1,
@@ -314,7 +314,7 @@ describe("createLaneBlock", () => {
     createLaneBlock({
       scene: scene as unknown as Scene,
       laneLeft: 40,
-      cardW: CONSTS.CARD_W,
+      cardW: CONSTS.PROGRESS_BAR_W,
       gap,
       maxLane: 2,
       flankIdx: 0,
@@ -331,7 +331,7 @@ describe("createLaneBlock", () => {
   it("reverses lane order for non-PLAYER controller", () => {
     const scene = makeScene();
     const laneLeft = 40;
-    const cardW = CONSTS.CARD_W;
+    const cardW = CONSTS.PROGRESS_BAR_W;
     const laneSpan = (CONSTS.NUM_LANES - 1) * CONSTS.LANE_OFFSET + cardW;
     createLaneBlock({
       scene: scene as unknown as Scene,
@@ -360,7 +360,7 @@ describe("createLaneBlock", () => {
       scene: scene as unknown as Scene,
       laneLeft: 40,
       controller: CONSTS.ActorController.PLAYER,
-      cardW: CONSTS.CARD_W,
+      cardW: CONSTS.PROGRESS_BAR_W,
       gap,
       maxLane: 2,
       flankIdx: 1,
@@ -378,7 +378,7 @@ describe("createActorCard", () => {
   const cardOpts = {
     x: 100,
     y: 200,
-    w: CONSTS.CARD_W,
+    w: CONSTS.PROGRESS_BAR_W,
     name: "Hero",
     health: 50,
     stamina: 30,
@@ -389,9 +389,9 @@ describe("createActorCard", () => {
     const scene = makeScene();
     createActorCard({ scene: scene as unknown as Scene, ...cardOpts });
     expect(scene.add.rectangle).toHaveBeenCalledWith(
-      100 + CONSTS.CARD_W / 2,
+      100 + CONSTS.PROGRESS_BAR_W / 2,
       200 + CONSTS.CARD_Y_OFFSET,
-      CONSTS.CARD_W + CONSTS.CARD_EXTRA_W,
+      CONSTS.PROGRESS_BAR_W + CONSTS.CARD_EXTRA_W,
       CONSTS.CARD_HEIGHT,
       CONSTS.CARD_BG,
     );
@@ -499,10 +499,10 @@ describe("createActorCard", () => {
     const scene = makeScene();
     createActorCard({ scene: scene as unknown as Scene, ...cardOpts });
     const bar = scene.add.rectangle.mock.calls[1];
-    expect(bar[0]).toBe(100 + CONSTS.CARD_W / 2);
-    expect(bar[1]).toBe(200 + CONSTS.CARD_H / 2);
-    expect(bar[2]).toBe(CONSTS.CARD_W);
-    expect(bar[3]).toBe(CONSTS.CARD_H);
+    expect(bar[0]).toBe(100 + CONSTS.PROGRESS_BAR_W / 2);
+    expect(bar[1]).toBe(200 + CONSTS.PROGRESS_BAR_H / 2);
+    expect(bar[2]).toBe(CONSTS.PROGRESS_BAR_W);
+    expect(bar[3]).toBe(CONSTS.PROGRESS_BAR_H);
     expect(bar[4]).toBe(CONSTS.FILL_BG);
   });
 
@@ -520,7 +520,7 @@ describe("createActorCard", () => {
     expect(fill[0]).toBe(100 + CONSTS.FILL_INSET);
     expect(fill[1]).toBe(200 + CONSTS.FILL_INSET);
     expect(fill[2]).toBe(0);
-    expect(fill[3]).toBe(CONSTS.CARD_H - CONSTS.FILL_INSET * 2);
+    expect(fill[3]).toBe(CONSTS.PROGRESS_BAR_H - CONSTS.FILL_INSET * 2);
     expect(fill[4]).toBe(CONSTS.PROGRESS_FILL);
   });
 
