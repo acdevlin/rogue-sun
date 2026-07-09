@@ -56,6 +56,8 @@ export class PartyCreation extends Scene {
   popupOverlay: GameObjects.Rectangle | null = null;
   // Error text object in the save-team popup, or null if popup is closed.
   saveErrText: GameObjects.Text | null = null;
+  // Tooltip elements (background + text) shown when hovering a pool card, or null.
+  tooltip: GameObjects.GameObject[] | null = null;
   teamService = new PlayerTeamService();
 
   /**
@@ -250,6 +252,7 @@ export class PartyCreation extends Scene {
    * Re-renders the lane grid and resets pool visuals after any team change.
    */
   private rebuildLanesAndPool(): void {
+    this.hideTooltip();
     this.clearLanes();
     this.createPartyLanes(this.workingMembers);
     this.resetPoolPositions();
@@ -386,6 +389,14 @@ export class PartyCreation extends Scene {
         energy: actor.energy,
       });
       card.card.setInteractive({ useHandCursor: true });
+      card.card.on("pointerover", () =>
+        this.showTooltip(
+          actor.description,
+          card.card.x,
+          card.card.y - card.card.height / 2,
+        ),
+      );
+      card.card.on("pointerout", () => this.hideTooltip());
       const objects = this.cardObjects(card);
       this.poolCards.push({
         actor,
@@ -419,6 +430,49 @@ export class PartyCreation extends Scene {
         this.input.setDraggable(poolCard.card);
       }
     }
+  }
+
+  /**
+   * Shows a tooltip with the actor's description above the hovered pool card.
+   *
+   * @param desc - The description text to display.
+   * @param cardCx - The center x-position of the hovered card.
+   * @param cardTopY - The top y-position of the hovered card.
+   */
+  private showTooltip(desc: string, cardCx: number, cardTopY: number): void {
+    this.hideTooltip();
+    const pad = 8;
+    const maxW = 240;
+    const tooltipText = this.add
+      .text(cardCx, cardTopY - pad, desc, {
+        fontFamily: CONSTS.UI_FONT_FAMILY,
+        fontSize: "12px",
+        color: CONSTS.HELP_COLOR,
+        wordWrap: { width: maxW - pad * 2 },
+        resolution: TEXT_RESOLUTION,
+      })
+      .setOrigin(0.5, 1)
+      .setDepth(5);
+    const bgRect = this.add
+      .rectangle(
+        cardCx,
+        cardTopY - pad - tooltipText.height / 2,
+        tooltipText.width + pad * 2,
+        tooltipText.height + pad * 2,
+        0x1a1a1a,
+      )
+      .setStrokeStyle(1, 0x555555)
+      .setDepth(4);
+    this.tooltip = [bgRect, tooltipText];
+  }
+
+  /**
+   * Hides the active tooltip, if any.
+   */
+  private hideTooltip(): void {
+    if (!this.tooltip) return;
+    for (const obj of this.tooltip) obj.destroy();
+    this.tooltip = null;
   }
 
   /**
@@ -621,6 +675,14 @@ export class PartyCreation extends Scene {
     });
     card.card.setInteractive({ useHandCursor: true });
     card.card.on("pointerdown", () => this.removeFromTeam(member.name));
+    card.card.on("pointerover", () =>
+        this.showTooltip(
+          member.description,
+          card.card.x,
+          card.card.y - card.card.height / 2,
+        ),
+      );
+      card.card.on("pointerout", () => this.hideTooltip());
     this.flattenActorCard(card);
   }
 
@@ -650,6 +712,7 @@ export class PartyCreation extends Scene {
       (i) => i.name === poolCard.actor.name,
     );
     if (placed) return;
+    this.hideTooltip();
     this.drag = {
       actor: poolCard.actor,
       origX: poolCard.card.x,

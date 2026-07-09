@@ -8,4 +8,5 @@ export interface PlayerActorData {
   stamina: number;
   energy: number;
   position: ActorPosition;
+  description: string;
 }

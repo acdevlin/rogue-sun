@@ -8,6 +8,8 @@ export const enemies = [
     stamina: 40,
     energy: 20,
     position: CONSTS.ActorPosition.FLANK,
+    description:
+      "A small, green-skinned creature known for its cunning and agility.",
   },
   {
     name: "Orc",
@@ -16,6 +18,8 @@ export const enemies = [
     stamina: 80,
     energy: 40,
     position: CONSTS.ActorPosition.BACKLINE,
+    description:
+      "A fierce, muscular warrior known for its strength and aggression.",
   },
   {
     name: "Skeleton",
@@ -24,6 +28,7 @@ export const enemies = [
     stamina: 30,
     energy: 30,
     position: CONSTS.ActorPosition.MIDLINE,
+    description: "An undead creature, reanimated by dark magic.",
   },
   {
     name: "Dragon",
@@ -32,6 +37,8 @@ export const enemies = [
     stamina: 150,
     energy: 100,
     position: CONSTS.ActorPosition.FLANK,
+    description:
+      "A legendary creature, known for its thick scales and ability to breathe fire.",
   },
   {
     name: "Bat",
@@ -40,6 +47,7 @@ export const enemies = [
     stamina: 20,
     energy: 10,
     position: CONSTS.ActorPosition.FRONTLINE,
+    description: "A small, flying creature that typically attacks in swarms.",
   },
   {
     name: "Slime",
@@ -48,6 +56,8 @@ export const enemies = [
     stamina: 50,
     energy: 20,
     position: CONSTS.ActorPosition.BACKLINE,
+    description:
+      "A gelatinous creature that can split into smaller versions of itself.",
   },
   {
     name: "Twin 1",
@@ -56,6 +66,7 @@ export const enemies = [
     stamina: 40,
     energy: 30,
     position: CONSTS.ActorPosition.MIDLINE,
+    description: "One of a pair.",
   },
   {
     name: "Twin 2",
@@ -64,5 +75,6 @@ export const enemies = [
     stamina: 40,
     energy: 30,
     position: CONSTS.ActorPosition.MIDLINE,
+    description: "The other of a pair.",
   },
 ];
