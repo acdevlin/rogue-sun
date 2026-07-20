@@ -72,6 +72,7 @@ describe("Battle scene", () => {
           stamina: 50,
           energy: 50,
           position: CONSTS.ActorPosition.FRONTLINE,
+          description: "custom actor",
         },
       ];
       battle.create({ players: custom });
@@ -696,6 +697,7 @@ describe("Battle scene", () => {
         stamina: 100,
         energy: 100,
         position: pos,
+        description: "test actor",
       });
       const rectSpy = vi.spyOn(battle.add, "rectangle");
       expect(() =>
