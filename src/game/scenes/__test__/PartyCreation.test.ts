@@ -43,25 +43,32 @@ describe("PartyCreation Scene", () => {
     );
   });
 
+  /** Finds the Start Game rectangle among all created rectangles. */
+  function startBtn(party: PartyCreation): any {
+    const sp = vi.spyOn(party.add, "rectangle");
+    party.create();
+    for (let i = sp.mock.results.length - 1; i >= 0; i--) {
+      const rect = sp.mock.results[i].value;
+      if (rect.on?.mock?.calls?.some?.((c: string[]) => c[0] === "pointerdown"))
+        return rect;
+    }
+  }
+
   it("creates a clickable rectangle behind the button", () => {
     const partyCreation = new PartyCreation();
-    const rectSpy = vi.spyOn(partyCreation.add, "rectangle");
-    partyCreation.create();
-
-    const rect = rectSpy.mock.results[rectSpy.mock.results.length - 1].value;
-    expect(rect.setStrokeStyle).toHaveBeenCalledWith(
+    const rect = startBtn(partyCreation);
+    expect(rect).toBeTruthy();
+    expect(rect!.setStrokeStyle).toHaveBeenCalledWith(
       CONSTS.BTN_STROKE_W,
       CONSTS.BTN_STROKE,
     );
-    expect(rect.setInteractive).toHaveBeenCalledWith({ useHandCursor: true });
+    expect(rect!.setInteractive).toHaveBeenCalledWith({ useHandCursor: true });
   });
 
   it("transitions to Battle on Start Game button click", async () => {
     const partyCreation = new PartyCreation();
-    const rectSpy = vi.spyOn(partyCreation.add, "rectangle");
-    partyCreation.create();
-
-    const rect = rectSpy.mock.results[rectSpy.mock.results.length - 1].value;
+    partyCreation.workingMembers = [...players];
+    const rect = startBtn(partyCreation);
     const pointerdown = rect.on.mock.calls.find(
       (call: string[]) => call[0] === "pointerdown",
     );
@@ -75,10 +82,8 @@ describe("PartyCreation Scene", () => {
   describe("Start Game saves team", () => {
     it("creates a new 'Current Party' team in localStorage", async () => {
       const partyCreation = new PartyCreation();
-      const rectSpy = vi.spyOn(partyCreation.add, "rectangle");
-      partyCreation.create();
-
-      const rect = rectSpy.mock.results[rectSpy.mock.results.length - 1].value;
+      partyCreation.workingMembers = [...players];
+      const rect = startBtn(partyCreation);
       const pointerdown = rect.on.mock.calls.find(
         (call: string[]) => call[0] === "pointerdown",
       );
@@ -114,10 +119,49 @@ describe("PartyCreation Scene", () => {
       );
 
       const partyCreation = new PartyCreation();
-      const rectSpy = vi.spyOn(partyCreation.add, "rectangle");
-      partyCreation.create();
+      partyCreation.workingMembers = [...players];
+      const rect = startBtn(partyCreation);
+      const pointerdown = rect.on.mock.calls.find(
+        (call: string[]) => call[0] === "pointerdown",
+      );
+      await pointerdown![1]();
 
-      const rect = rectSpy.mock.results[rectSpy.mock.results.length - 1].value;
+      const calls = (localStorage.setItem as ReturnType<typeof vi.fn>).mock
+        .calls;
+      const last = calls[calls.length - 1];
+      const saved = JSON.parse(last[1]);
+      const current = saved.find(
+        (team: PlayerTeam) => team.id === "existing-id",
+      );
+      expect(current).toBeTruthy();
+      expect(
+        saved.filter(
+          (team: PlayerTeam) => team.name === CONSTS.TEAM_NAME_CURRENT,
+        ),
+      ).toHaveLength(1);
+      expect(current.members).toEqual(
+        players.map((player) => ({
+          actorClassId: player.name,
+          position: player.position,
+        })),
+      );
+    });
+
+    it("updates existing 'Current Party' instead of creating a duplicate", async () => {
+      const existing = {
+        id: "existing-id",
+        name: CONSTS.TEAM_NAME_CURRENT,
+        members: [{ actorClassId: "Fighter", position: "FRONTLINE" }],
+        createdAt: 100,
+        lastModified: 100,
+      };
+      (localStorage.getItem as ReturnType<typeof vi.fn>).mockReturnValue(
+        JSON.stringify([existing]),
+      );
+
+      const partyCreation = new PartyCreation();
+      partyCreation.workingMembers = [...players];
+      const rect = startBtn(partyCreation);
       const pointerdown = rect.on.mock.calls.find(
         (call: string[]) => call[0] === "pointerdown",
       );
@@ -1131,16 +1175,12 @@ describe("PartyCreation Scene", () => {
   describe("Start Game enforces validation", () => {
     it("shows alert popup and does not transition when team is invalid", async () => {
       const partyCreation = new PartyCreation();
-      const rectSpy = vi.spyOn(partyCreation.add, "rectangle");
-      partyCreation.create();
       (partyCreation as any).workingMembers = [];
-
-      const rect = rectSpy.mock.results[rectSpy.mock.results.length - 1].value;
+      const rect = startBtn(partyCreation);
       const pointerdown = rect.on.mock.calls.find(
         (call: string[]) => call[0] === "pointerdown",
       );
       await pointerdown![1]();
-
       expect(partyCreation.popup).not.toBeNull();
       expect(partyCreation.scene.start).not.toHaveBeenCalled();
     });

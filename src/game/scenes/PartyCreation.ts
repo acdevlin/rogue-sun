@@ -202,11 +202,7 @@ export class PartyCreation extends Scene {
       scale: scale * CONSTS.COMPACT_BTN_SCALE,
     });
 
-    // Initialize state, render pool, then register drag-and-drop
-    this.workingMembers = [...players];
-    this.poolCards = [];
-    this.renderPool();
-
+    // Register drag-and-drop handlers
     this.input.on("dragstart", this.onDragStart, this);
     this.input.on("drag", this.onDrag, this);
     this.input.on("dragend", this.onDragEnd, this);
@@ -235,9 +231,11 @@ export class PartyCreation extends Scene {
       scale,
     });
 
-    // Load persisted teams asynchronously after all UI is in place
+    // Create pool cards synchronously (no async dependency),
+    // then load team data and render lanes without flicker.
+    this.createPoolCards();
     await this.ensureDefaultTeam();
-    this.loadInitialTeam();
+    await this.loadInitialTeam();
   }
 
   /**
@@ -363,9 +361,10 @@ export class PartyCreation extends Scene {
   }
 
   /**
-   * Renders a horizontal row of available actor cards below the lane grid.
+   * Creates pool cards for all player classes. Called once on scene start
+   * after team data is loaded.
    */
-  private renderPool(): void {
+  private createPoolCards(): void {
     const sceneCx = this.cameras.main.centerX;
     const cardW = CONSTS.POOL_CARD_W;
     const gap = CONSTS.POOL_CARD_GAP;
@@ -406,8 +405,6 @@ export class PartyCreation extends Scene {
         origY: rowY,
       });
     }
-
-    this.syncPool();
   }
 
   /**
