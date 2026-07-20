@@ -1,6 +1,6 @@
 import { Scene, GameObjects, Cameras } from "phaser";
 import * as CONSTS from "../../constants";
-import { TEXT_RESOLUTION } from "../StartGame";
+import { TEXT_RESOLUTION } from "../../constants";
 
 interface TransformAlpha {
   x: number;

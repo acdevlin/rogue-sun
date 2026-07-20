@@ -1,7 +1,7 @@
 import { Scene, GameObjects } from "phaser";
 import * as CONSTS from "../../constants";
 import type { ActorController } from "../../constants";
-import { TEXT_RESOLUTION } from "../StartGame";
+import { TEXT_RESOLUTION } from "../../constants";
 
 /**
  * Creates a styled button (text + background rectangle) with hover effects

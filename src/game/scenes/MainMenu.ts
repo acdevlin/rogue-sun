@@ -1,7 +1,7 @@
 import { Scene, GameObjects } from "phaser";
 import { getSceneScale } from "../utils/SceneScaling";
 import * as CONSTS from "../../constants";
-import { TEXT_RESOLUTION } from "../StartGame";
+import { TEXT_RESOLUTION } from "../../constants";
 
 /**
  * MainMenu scene — shows the game title and logo.

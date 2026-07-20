@@ -5,10 +5,12 @@ import { PartyCreation } from "./scenes/PartyCreation";
 import { MainMenu } from "./scenes/MainMenu";
 import * as Phaser from "phaser";
 import { Preloader } from "./scenes/Preloader";
-import { BG_COLOR, GAME_WIDTH_SCALE, GAME_HEIGHT_SCALE } from "../constants";
-
-/** Resolution multiplier for crisp text on high-DPI displays. */
-export const TEXT_RESOLUTION = Math.ceil(globalThis.devicePixelRatio ?? 1);
+import {
+  BG_COLOR,
+  GAME_WIDTH_SCALE,
+  GAME_HEIGHT_SCALE,
+  TEXT_RESOLUTION,
+} from "../constants";
 
 /**
  * Core Phaser game configuration. Registers all scenes and configures resolution scaling.

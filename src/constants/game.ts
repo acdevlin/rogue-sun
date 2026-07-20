@@ -11,3 +11,6 @@ export const TURN_DELAY = 500;
 
 /** Conversion factor from milliseconds to seconds. */
 export const MS_TO_S = 1000;
+
+/** Resolution multiplier for crisp text on high-DPI displays. */
+export const TEXT_RESOLUTION = Math.ceil(globalThis.devicePixelRatio ?? 1);

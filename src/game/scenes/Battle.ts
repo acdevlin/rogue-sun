@@ -2,7 +2,7 @@ import { Scene, GameObjects } from "phaser";
 import { ActionActor } from "../systems/ActionActor";
 import { TimelineSystem } from "../systems/TimelineSystem";
 import * as CONSTS from "../../constants";
-import { TEXT_RESOLUTION } from "../StartGame";
+import { TEXT_RESOLUTION } from "../../constants";
 import { PlayerActorData } from "../data/PlayerActorData";
 import { players as defaultPlayers } from "../data/playerActorClasses";
 import { enemies as defaultEnemies } from "../data/enemyActorClasses";
