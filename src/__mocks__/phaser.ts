@@ -77,7 +77,17 @@ class Game {
   scale = { lockOrientation: vi.fn() };
 }
 
-const GameObjects = { Text: class {}, Rectangle: class {} };
+class GameObject {
+  x = 0;
+  y = 0;
+  setAlpha(_v?: number) {
+    return this;
+  }
+}
+const GameObjects = {
+  Text: class extends GameObject {},
+  Rectangle: class extends GameObject {},
+};
 const Cameras = { Scene2D: { Camera: class {} } };
 const Scale = { FIT: 0, Center: { CENTER_BOTH: 0 } };
 const AUTO = 0;

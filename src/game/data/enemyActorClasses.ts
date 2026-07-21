@@ -1,6 +1,7 @@
 import * as CONSTS from "../../constants";
+import type { PlayerActorData } from "./PlayerActorData";
 
-export const enemies = [
+export const enemies: PlayerActorData[] = [
   {
     name: "Goblin",
     speed: CONSTS.SPD_GOBLIN,

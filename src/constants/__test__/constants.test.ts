@@ -1,5 +1,7 @@
 import { describe, it, expect } from "vitest";
 import * as CONSTS from "..";
+import { enemies } from "../../game/data/enemyActorClasses";
+import type { PlayerActorData } from "../../game/data/PlayerActorData";
 
 describe("constants barrel exports", () => {
   it("exports all ui.ts constants", () => {
@@ -93,6 +95,24 @@ describe("constants barrel exports", () => {
     expect(CONSTS.BG_COLOR).toBe("#028af8");
     expect(CONSTS.TURN_DELAY).toBe(500);
     expect(CONSTS.MS_TO_S).toBe(1000);
+  });
+
+  it("validates all enemy actor data shapes", () => {
+    const fields: (keyof PlayerActorData)[] = [
+      "name",
+      "speed",
+      "health",
+      "stamina",
+      "energy",
+      "position",
+      "description",
+    ];
+    expect(enemies.length).toBeGreaterThan(0);
+    for (const enemy of enemies) {
+      for (const field of fields) {
+        expect(enemy).toHaveProperty(field);
+      }
+    }
   });
 
   it("exports all test.ts constants", () => {

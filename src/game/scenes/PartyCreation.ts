@@ -1,12 +1,6 @@
 import { Scene, GameObjects, Cameras } from "phaser";
 import * as CONSTS from "../../constants";
 import { TEXT_RESOLUTION } from "../../constants";
-
-interface TransformAlpha {
-  x: number;
-  y: number;
-  setAlpha(v: number): void;
-}
 import { getSceneScale } from "../utils/SceneScaling";
 import {
   createBtn,
@@ -265,8 +259,8 @@ export class PartyCreation extends Scene {
       const dx = poolCard.origX - poolCard.card.x;
       const dy = poolCard.origY - poolCard.card.y;
       for (const obj of poolCard.objects) {
-        (obj as unknown as TransformAlpha).x += dx;
-        (obj as unknown as TransformAlpha).y += dy;
+        (obj as GameObjects.Rectangle | GameObjects.Text).x += dx;
+        (obj as GameObjects.Rectangle | GameObjects.Text).y += dy;
       }
     }
   }
@@ -416,7 +410,7 @@ export class PartyCreation extends Scene {
         (i) => i.name === poolCard.actor.name,
       );
       for (const obj of poolCard.objects) {
-        (obj as unknown as TransformAlpha).setAlpha(
+        (obj as GameObjects.Rectangle | GameObjects.Text).setAlpha(
           placed ? CONSTS.POOL_DIM_ALPHA : 1,
         );
       }
@@ -735,8 +729,8 @@ export class PartyCreation extends Scene {
     const dx = dragX - poolCard.card.x;
     const dy = dragY - poolCard.card.y;
     for (const obj of poolCard.objects) {
-      (obj as unknown as TransformAlpha).x += dx;
-      (obj as unknown as TransformAlpha).y += dy;
+      (obj as GameObjects.Rectangle | GameObjects.Text).x += dx;
+      (obj as GameObjects.Rectangle | GameObjects.Text).y += dy;
     }
   }
 

@@ -75,6 +75,36 @@ describe("PlayerTeamService", () => {
       const storedData = JSON.parse(mockLocalStorage.setItem.mock.calls[0][1]);
       expect(storedData).toHaveLength(1);
     });
+
+    it("handles localStorage quota exceeded gracefully", async () => {
+      const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      mockLocalStorage.setItem.mockImplementationOnce(() => {
+        throw new Error("QuotaExceededError");
+      });
+      const result = await service.create({
+        name: "Fails to save",
+        members: sampleTeam.members,
+      });
+      expect(result.id).toBeDefined();
+      expect(consoleSpy).toHaveBeenCalledWith(
+        "Failed to save teams to localStorage",
+      );
+      consoleSpy.mockRestore();
+    });
+
+    it("handles localStorage quota exceeded on update", async () => {
+      mockStorage["rogue_sun_player_teams"] = JSON.stringify(teams);
+      const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      mockLocalStorage.setItem.mockImplementationOnce(() => {
+        throw new Error("QuotaExceededError");
+      });
+      const result = await service.update(sampleTeam.id, { name: "New Name" });
+      expect(result).toBe(true);
+      expect(consoleSpy).toHaveBeenCalledWith(
+        "Failed to save teams to localStorage",
+      );
+      consoleSpy.mockRestore();
+    });
   });
 
   describe("read", () => {
@@ -210,6 +240,15 @@ describe("PlayerTeamService", () => {
         existing,
       );
       expect(result.valid).toBe(true);
+    });
+
+    it("accepts team name at minimum length boundary", () => {
+      const result = service.validateTeam({
+        ...sampleTeam,
+        name: "AB",
+      });
+      expect(result.valid).toBe(true);
+      expect(result.errors).toEqual([]);
     });
   });
 });

@@ -1,6 +1,7 @@
 import { generateId } from "../utils/TeamUtils";
 import { players } from "../data/playerActorClasses";
 import type { PlayerTeam } from "../data/PlayerTeam";
+import { MIN_TEAM_NAME_LENGTH } from "../../constants";
 
 export class PlayerTeamService {
   private readonly STORAGE_KEY = "rogue_sun_player_teams";
@@ -96,7 +97,11 @@ export class PlayerTeamService {
    * @param teams - The complete list of teams to write.
    */
   private async writeAll(teams: PlayerTeam[]): Promise<void> {
-    localStorage.setItem(this.STORAGE_KEY, JSON.stringify(teams));
+    try {
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(teams));
+    } catch {
+      console.warn("Failed to save teams to localStorage");
+    }
   }
 
   /**
@@ -115,8 +120,10 @@ export class PlayerTeamService {
   } {
     const errors: string[] = [];
 
-    if (!team.name || team.name.trim().length < 2) {
-      errors.push("Team name must be at least 2 characters");
+    if (!team.name || team.name.trim().length < MIN_TEAM_NAME_LENGTH) {
+      errors.push(
+        `Team name must be at least ${MIN_TEAM_NAME_LENGTH} characters`,
+      );
     }
 
     const name = team.name?.trim();
