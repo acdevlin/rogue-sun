@@ -6,11 +6,7 @@ import { TEXT_RESOLUTION } from "../../constants";
 import { PlayerActorData } from "../data/PlayerActorData";
 import { players as defaultPlayers } from "../data/playerActorClasses";
 import { enemies as defaultEnemies } from "../data/enemyActorClasses";
-import {
-  createBtn,
-  createLaneBlock,
-  createActorCard,
-} from "../utils/UiElements";
+import { createLaneBlock, createActorCard } from "../utils/UiElements";
 
 interface ActorUI {
   actor: ActionActor;
@@ -34,8 +30,8 @@ export class Battle extends Scene {
   currentlyActingHeader!: GameObjects.Text;
   currentlyActingBg!: GameObjects.Rectangle;
   actingActor: ActionActor | null = null;
-  retreatBtn!: GameObjects.Text;
-  retreatBtnBg!: GameObjects.Rectangle;
+  // Tooltip elements (background + text) shown when hovering UI sprites, or null.
+  tooltip: GameObjects.GameObject[] | null = null;
 
   players = defaultPlayers;
   enemies = defaultEnemies;
@@ -139,15 +135,48 @@ export class Battle extends Scene {
     });
 
     const y = this.cameras.main.height - CONSTS.BTN_BOTTOM_OFFSET;
-    const btn = createBtn({
-      scene: this,
-      cx: width / 2,
-      y,
-      label: "Retreat!",
-      onClick: () => this.scene.start("PartyCreation"),
-    });
-    this.retreatBtn = btn.label;
-    this.retreatBtnBg = btn.bg;
+
+    /* BEGIN ACTIONBAR CREATION */
+
+    // Align action icons near the bottom of the screen, centered on X
+    const cx = width / 2;
+    const dx = 64 + 8; // icon width + gap
+    const iconCast = this.add.image(cx, y, "icon_cast");
+    const iconRetreat = this.add.image(cx + dx, y, "icon_retreat");
+    const iconAttack = this.add.image(cx - dx, y, "icon_attack");
+    // Add interactivity to actionbar buttons
+    iconCast.setInteractive({ useHandCursor: true });
+    iconRetreat.setInteractive({ useHandCursor: true });
+    iconAttack.setInteractive({ useHandCursor: true });
+    // Add mouseover text
+    iconCast.on("pointerover", () =>
+      this.showTooltip(
+        "MAGIC",
+        iconCast.x,
+        iconCast.y - iconCast.displayHeight / 2,
+      ),
+    );
+    iconCast.on("pointerout", () => this.hideTooltip());
+    iconRetreat.on("pointerover", () =>
+      this.showTooltip(
+        "RETREAT",
+        iconRetreat.x,
+        iconRetreat.y - iconRetreat.displayHeight / 2,
+      ),
+    );
+    iconRetreat.on("pointerout", () => this.hideTooltip());
+    iconAttack.on("pointerover", () =>
+      this.showTooltip(
+        "ATTACK",
+        iconAttack.x,
+        iconAttack.y - iconAttack.displayHeight / 2,
+      ),
+    );
+    iconAttack.on("pointerout", () => this.hideTooltip());
+    // Add onclick behavior
+    iconRetreat.on("pointerdown", () => this.scene.start("PartyCreation"));
+
+    /* END ACTIONBAR CREATION */
   }
 
   /**
@@ -432,5 +461,49 @@ export class Battle extends Scene {
       this.currentlyActingBg.setVisible(false);
       this.syncUI();
     }
+  }
+
+  /**
+   * Shows a small tooltip popup above a target point.
+   *
+   * @param text - The tooltip text to display.
+   *
+   * @param cx - Center x-position of the tooltip.
+   * @param topY - The top y-position of the anchor object (tooltip appears above).
+   */
+  private showTooltip(text: string, cx: number, topY: number): void {
+    this.hideTooltip();
+    const pad = 8;
+    const maxW = 240;
+    const body = this.add
+      .text(cx, topY - pad, text, {
+        fontFamily: CONSTS.UI_FONT_FAMILY,
+        fontSize: "12px",
+        color: CONSTS.HELP_COLOR,
+        wordWrap: { width: maxW - pad * 2 },
+        resolution: TEXT_RESOLUTION,
+      })
+      .setOrigin(0.5, 1)
+      .setDepth(5);
+    const bg = this.add
+      .rectangle(
+        cx,
+        topY - pad - body.height / 2,
+        body.width + pad * 2,
+        body.height + pad * 2,
+        0x1a1a1a,
+      )
+      .setStrokeStyle(1, 0x555555)
+      .setDepth(4);
+    this.tooltip = [bg, body];
+  }
+
+  /**
+   * Hides the active tooltip, if any.
+   */
+  private hideTooltip(): void {
+    if (!this.tooltip) return;
+    for (const obj of this.tooltip) obj.destroy();
+    this.tooltip = null;
   }
 }
