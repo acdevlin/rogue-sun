@@ -135,11 +135,8 @@ export class Battle extends Scene {
       controller: CONSTS.ActorController.ENEMY,
     });
 
+    // Align centered actionbar icons near the bottom of the screen
     const y = this.cameras.main.height - CONSTS.BTN_BOTTOM_OFFSET;
-
-    /* BEGIN ACTIONBAR CREATION */
-
-    // Align action icons near the bottom of the screen, centered on X
     const cx = width / 2;
     createBattleActionBar({
       scene: this,
@@ -150,7 +147,6 @@ export class Battle extends Scene {
       onRetreat: () => this.scene.start("PartyCreation"),
     });
 
-    /* END ACTIONBAR CREATION */
   }
 
   /**

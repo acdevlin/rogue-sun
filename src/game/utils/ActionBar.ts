@@ -2,6 +2,64 @@ import { Scene, GameObjects } from "phaser";
 import * as CONSTS from "../../constants";
 
 /**
+ * All action-bar icon texture keys, in display order (left to right).
+ * These are the names of the .svg icon_* files in public/assets
+ */
+export const ACTION_ICON_KEYS = [
+  "icon_attack",
+  "icon_tactics",
+  "icon_cast",
+  "icon_wait",
+  "icon_retreat",
+] as const;
+
+/**
+ * Icon definitions for the battle action bar.
+ */
+type IconDef = {
+  /** Phaser texture key used to render the icon. */
+  key: string;
+  /** Tooltip label shown on hover. */
+  label: string;
+  /** Horizontal offset (in icon-units) from the center icon. */
+  offset: number;
+  /** Callback fired on pointerdown, if any. */
+  onPress?: () => void;
+};
+
+/**
+ * Makes a game object interactive with a hand cursor.
+ *
+ * @param icon - The Phaser game object to enable interactivity on.
+ */
+export function makeInteractive(icon: GameObjects.Image): void {
+  icon.setInteractive({ useHandCursor: true });
+}
+
+/**
+ * Wires pointerover/pointerout events on an icon to show/hide a tooltip.
+ *
+ * The tooltip anchor is positioned at the icon's x and its top edge
+ * (y minus half its display height).
+ *
+ * @param icon - The icon to attach tooltip events to.
+ * @param label - The tooltip label text.
+ * @param showTooltip - Callback for showing a tooltip.
+ * @param hideTooltip - Callback for hiding the active tooltip.
+ */
+export function activateTooltip(
+  icon: GameObjects.Image,
+  label: string,
+  showTooltip: (text: string, cx: number, topY: number) => void,
+  hideTooltip: () => void,
+): void {
+  icon.on("pointerover", () =>
+    showTooltip(label, icon.x, icon.y - icon.displayHeight / 2),
+  );
+  icon.on("pointerout", hideTooltip);
+}
+
+/**
  * Creates the bottom action bar icons for the Battle scene.
  *
  * Includes icon placement, pointer interactivity, and tooltip wiring.
@@ -27,52 +85,44 @@ export function createBattleActionBar(opts: {
   iconRetreat: GameObjects.Image;
   iconAttack: GameObjects.Image;
 } {
-  // Align action icons near the bottom of the screen, centered on X.
+  // Align action icons near the bottom of the screen, centered on Cast sprite.
   const dx = CONSTS.ACTION_ICON_DX;
 
-  const iconCast = opts.scene.add.image(opts.cx, opts.y, "icon_cast");
-  const iconRetreat = opts.scene.add.image(
-    opts.cx + dx,
-    opts.y,
-    "icon_retreat",
-  );
-  const iconAttack = opts.scene.add.image(opts.cx - dx, opts.y, "icon_attack");
+  // Define all action-bar icons relative to the center (Cast).
+  const icons: IconDef[] = [
+    { key: "icon_attack", label: "ATTACK", offset: -2 },
+    { key: "icon_tactics", label: "TACTICS", offset: -1 },
+    { key: "icon_cast", label: "MAGIC", offset: 0 },
+    { key: "icon_wait", label: "WAIT", offset: 1 },
+    {
+      key: "icon_retreat",
+      label: "RETREAT",
+      offset: 2,
+      onPress: opts.onRetreat,
+    },
+  ];
 
-  // Add interactivity to actionbar buttons.
-  iconCast.setInteractive({ useHandCursor: true });
-  iconRetreat.setInteractive({ useHandCursor: true });
-  iconAttack.setInteractive({ useHandCursor: true });
+  // Create, position, and wire up all action-bar icons.
+  const created = icons.map((def) => {
+    const icon = opts.scene.add.image(
+      opts.cx + dx * def.offset,
+      opts.y,
+      def.key,
+    );
+    makeInteractive(icon);
+    activateTooltip(icon, def.label, opts.showTooltip, opts.hideTooltip);
+    if (def.onPress) {
+      icon.on("pointerdown", def.onPress);
+    }
+    return { def, icon };
+  });
 
-  // Add mouseover text.
-  iconCast.on("pointerover", () =>
-    opts.showTooltip(
-      "MAGIC",
-      iconCast.x,
-      iconCast.y - iconCast.displayHeight / 2,
-    ),
-  );
-  iconCast.on("pointerout", opts.hideTooltip);
+  const findByKey = (key: string) =>
+    created.find((entry) => entry.def.key === key)!.icon;
 
-  iconRetreat.on("pointerover", () =>
-    opts.showTooltip(
-      "RETREAT",
-      iconRetreat.x,
-      iconRetreat.y - iconRetreat.displayHeight / 2,
-    ),
-  );
-  iconRetreat.on("pointerout", opts.hideTooltip);
-
-  iconAttack.on("pointerover", () =>
-    opts.showTooltip(
-      "ATTACK",
-      iconAttack.x,
-      iconAttack.y - iconAttack.displayHeight / 2,
-    ),
-  );
-  iconAttack.on("pointerout", opts.hideTooltip);
-
-  // Add onclick behavior.
-  iconRetreat.on("pointerdown", opts.onRetreat);
-
-  return { iconCast, iconRetreat, iconAttack };
+  return {
+    iconCast: findByKey("icon_cast"),
+    iconRetreat: findByKey("icon_retreat"),
+    iconAttack: findByKey("icon_attack"),
+  };
 }
