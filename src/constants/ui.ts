@@ -133,12 +133,24 @@ export const DROP_HIT_PADDING = 10;
 /** Vertical offset from the bottom of the screen for UI buttons. */
 export const BTN_BOTTOM_OFFSET = 100;
 
-/** Width/height of SVG action-bar icons (cast/attack/retreat). */
+/** Width/height of SVG action-bar icons (cast/attack/retreat/etc.). */
 export const ACTION_ICON_SIZE = 64;
 /** Horizontal gap between action-bar icons. */
 export const ACTION_ICON_GAP = 8;
 /** Icon size plus gap (used for centered action-bar layout). */
 export const ACTION_ICON_DX = ACTION_ICON_SIZE + ACTION_ICON_GAP;
+/** Default scale for action-bar icons */
+export const ACTION_ICON_DEFAULT_SCALE = 1.0;
+/** Scale applied to an action-bar icon on mouseover */
+export const ACTION_ICON_MOUSEOVER_SCALE = 1.1;
+/** Scale applied to an action-bar icon when pressed (visual "press down"). */
+export const ACTION_ICON_PRESS_SCALE = 0.9;
+/** Base depth for action-bar icons when idle. */
+export const ACTION_ICON_DEPTH = -1;
+/** Depth shift applied to an action-bar icon when pressed (looks "lower"). */
+export const ACTION_ICON_PRESS_DEPTH = -2;
+/** Duration of the press tween in milliseconds. */
+export const ACTION_ICON_PRESS_TWEEN = 60;
 /** Padding between button text and its background rectangle. */
 export const BTN_PAD = 20;
 /** Fill color for button background. */

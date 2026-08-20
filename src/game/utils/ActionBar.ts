@@ -39,7 +39,7 @@ export function makeInteractive(icon: GameObjects.Image): void {
 /**
  * Wires pointerover/pointerout events on an icon to show/hide a tooltip.
  *
- * Additionally triggers a smooth scale tween (1.0 → 1.1 → 1.0) when the
+ * Additionally triggers a smooth scale tween (CONSTS.ACTION_ICON_DEFAULT_SCALE → ACTION_ICON_MOUSEOVER_SCALE → CONSTS.ACTION_ICON_DEFAULT_SCALE) when the
  * scene has a `tweens` system; otherwise the scale change is skipped.
  *
  * The tooltip anchor is positioned at the icon's x and its top edge
@@ -62,7 +62,7 @@ export function activateTooltip(
     showTooltip(label, icon.x, icon.y - icon.displayHeight / 2);
     scene.tweens?.add({
       targets: icon,
-      scale: 1.1,
+      scale: CONSTS.ACTION_ICON_MOUSEOVER_SCALE,
       duration: 100,
       ease: "Power2",
     });
@@ -71,10 +71,50 @@ export function activateTooltip(
     hideTooltip();
     scene.tweens?.add({
       targets: icon,
-      scale: 1.0,
+      scale: CONSTS.ACTION_ICON_DEFAULT_SCALE,
       duration: 100,
       ease: "Power2",
     });
+  });
+}
+
+/**
+ * Wires a press-down visual effect onto an icon's pointerdown/pointerup.
+ *
+ * On press the icon scales down and its depth drops (looks "pressed").
+ * On release it tweens back toward the hover scale/depth. If an
+ * `onPress` callback is provided, it is fired on pointerup.
+ * If the scene lacks a `tweens` system, the tween effects are skipped.
+ *
+ * @param scene - The Phaser scene owning the icon (used for tweens).
+ * @param icon - The icon to attach the press effect to.
+ * @param onPress - Optional callback fired when the icon is released (clicked).
+ */
+export function bindPressEffect(
+  scene: Scene,
+  icon: GameObjects.Image,
+  onPress?: () => void,
+): void {
+  icon.on("pointerdown", () => {
+    icon.setDepth(CONSTS.ACTION_ICON_PRESS_DEPTH);
+    scene.tweens?.add({
+      targets: icon,
+      scale: CONSTS.ACTION_ICON_PRESS_SCALE,
+      duration: CONSTS.ACTION_ICON_PRESS_TWEEN,
+      ease: "Power1",
+    });
+  });
+
+  icon.on("pointerup", () => {
+    scene.tweens?.add({
+      targets: icon,
+      scale: CONSTS.ACTION_ICON_MOUSEOVER_SCALE,
+      depth: CONSTS.ACTION_ICON_DEPTH,
+      duration: CONSTS.ACTION_ICON_PRESS_TWEEN,
+      ease: "Power1",
+    });
+
+    if (onPress) onPress();
   });
 }
 
@@ -129,6 +169,7 @@ export function createBattleActionBar(opts: {
       def.key,
     );
     makeInteractive(icon);
+    bindPressEffect(opts.scene, icon, def.onPress);
     activateTooltip(
       opts.scene,
       icon,
@@ -136,9 +177,6 @@ export function createBattleActionBar(opts: {
       opts.showTooltip,
       opts.hideTooltip,
     );
-    if (def.onPress) {
-      icon.on("pointerdown", def.onPress);
-    }
     return { def, icon };
   });
 

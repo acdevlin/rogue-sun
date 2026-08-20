@@ -5,6 +5,7 @@ import {
   createBattleActionBar,
   makeInteractive,
   activateTooltip,
+  bindPressEffect,
 } from "../ActionBar";
 import * as CONSTS from "../../../constants";
 
@@ -96,7 +97,7 @@ describe("createBattleActionBar", () => {
     }
   });
 
-  it("wires RETREAT click handler and enables hand cursor interactivity", () => {
+  it("wires RETREAT click handler via pointerup and enables hand cursor interactivity", () => {
     const scene = new Scene("test");
     const showTooltip = vi.fn();
     const hideTooltip = vi.fn();
@@ -119,7 +120,12 @@ describe("createBattleActionBar", () => {
       (call: unknown[]) => call[0] === "pointerdown",
     );
     expect(pointerDown).toBeTruthy();
-    pointerDown![1]();
+
+    const pointerUp = (iconRetreat as any).on.mock.calls.find(
+      (call: unknown[]) => call[0] === "pointerup",
+    );
+    expect(pointerUp).toBeTruthy();
+    pointerUp![1]();
     expect(onRetreat).toHaveBeenCalledOnce();
   });
 });
@@ -179,7 +185,7 @@ describe("activateTooltip", () => {
     over![1]();
     expect(tweensAdd).toHaveBeenCalledWith({
       targets: icon,
-      scale: 1.1,
+      scale: CONSTS.ACTION_ICON_MOUSEOVER_SCALE,
       duration: 100,
       ease: "Power2",
     });
@@ -190,7 +196,7 @@ describe("activateTooltip", () => {
     out![1]();
     expect(tweensAdd).toHaveBeenCalledWith({
       targets: icon,
-      scale: 1.0,
+      scale: CONSTS.ACTION_ICON_DEFAULT_SCALE,
       duration: 100,
       ease: "Power2",
     });
@@ -213,5 +219,81 @@ describe("activateTooltip", () => {
       (call: unknown[]) => call[0] === "pointerout",
     );
     expect(() => out![1]()).not.toThrow();
+  });
+});
+
+describe("bindPressEffect", () => {
+  it("scales down and raises depth on pointerdown, restores on pointerup", () => {
+    const scene = new Scene("test") as any;
+    const tweensAdd = vi.fn();
+    scene.tweens = { add: tweensAdd };
+    const icon = scene.add.image(100, 200, "icon_cast") as any;
+    const onPress = vi.fn();
+
+    bindPressEffect(scene, icon, onPress);
+
+    const down = icon.on.mock.calls.find(
+      (call: unknown[]) => call[0] === "pointerdown",
+    );
+    expect(down).toBeTruthy();
+    down![1]();
+    expect(icon.setDepth).toHaveBeenCalledWith(CONSTS.ACTION_ICON_PRESS_DEPTH);
+    expect(tweensAdd).toHaveBeenCalledWith({
+      targets: icon,
+      scale: CONSTS.ACTION_ICON_PRESS_SCALE,
+      duration: CONSTS.ACTION_ICON_PRESS_TWEEN,
+      ease: "Power1",
+    });
+
+    const up = icon.on.mock.calls.find(
+      (call: unknown[]) => call[0] === "pointerup",
+    );
+    expect(up).toBeTruthy();
+    up![1]();
+    expect(onPress).toHaveBeenCalledOnce();
+    expect(tweensAdd).toHaveBeenCalledWith({
+      targets: icon,
+      scale: CONSTS.ACTION_ICON_MOUSEOVER_SCALE,
+      depth: CONSTS.ACTION_ICON_DEPTH,
+      duration: CONSTS.ACTION_ICON_PRESS_TWEEN,
+      ease: "Power1",
+    });
+  });
+
+  it("always wires press effects even without onPress callback", () => {
+    const scene = new Scene("test") as any;
+    const tweensAdd = vi.fn();
+    scene.tweens = { add: tweensAdd };
+    const icon = scene.add.image(100, 200, "icon_cast") as any;
+
+    bindPressEffect(scene, icon);
+
+    // Press effects are wired regardless of whether onPress is provided.
+    const down = icon.on.mock.calls.find(
+      (call: unknown[]) => call[0] === "pointerdown",
+    );
+    expect(down).toBeTruthy();
+    down![1]();
+    expect(icon.setDepth).toHaveBeenCalledWith(CONSTS.ACTION_ICON_PRESS_DEPTH);
+    expect(tweensAdd).toHaveBeenCalled();
+  });
+
+  it("fires onPress on pointerup even without tweens system", () => {
+    const scene = new Scene("test");
+    const icon = scene.add.image(100, 200, "icon_cast") as any;
+    const onPress = vi.fn();
+
+    bindPressEffect(scene, icon, onPress);
+
+    const down = icon.on.mock.calls.find(
+      (call: unknown[]) => call[0] === "pointerdown",
+    );
+    expect(() => down![1]()).not.toThrow();
+
+    const up = icon.on.mock.calls.find(
+      (call: unknown[]) => call[0] === "pointerup",
+    );
+    up![1]();
+    expect(onPress).toHaveBeenCalledOnce();
   });
 });

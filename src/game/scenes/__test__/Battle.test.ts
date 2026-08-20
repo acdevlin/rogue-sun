@@ -99,11 +99,11 @@ describe("Battle scene", () => {
         useHandCursor: true,
       });
 
-      const pointerdown = iconRetreat.on.mock.calls.find(
-        (call: string[]) => call[0] === "pointerdown",
+      const pointerup = iconRetreat.on.mock.calls.find(
+        (call: string[]) => call[0] === "pointerup",
       );
-      expect(pointerdown).toBeTruthy();
-      pointerdown![1]();
+      expect(pointerup).toBeTruthy();
+      pointerup![1]();
       expect(battle.scene.start).toHaveBeenCalledWith("PartyCreation");
     });
   });
