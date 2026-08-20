@@ -132,6 +132,13 @@ export const DROP_HIT_PADDING = 10;
 
 /** Vertical offset from the bottom of the screen for UI buttons. */
 export const BTN_BOTTOM_OFFSET = 100;
+
+/** Width/height of SVG action-bar icons (cast/attack/retreat). */
+export const ACTION_ICON_SIZE = 64;
+/** Horizontal gap between action-bar icons. */
+export const ACTION_ICON_GAP = 8;
+/** Icon size plus gap (used for centered action-bar layout). */
+export const ACTION_ICON_DX = ACTION_ICON_SIZE + ACTION_ICON_GAP;
 /** Padding between button text and its background rectangle. */
 export const BTN_PAD = 20;
 /** Fill color for button background. */

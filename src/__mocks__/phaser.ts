@@ -17,6 +17,8 @@ const mockObj = () => ({
   on: vi.fn().mockReturnThis(),
   width: 0,
   height: 0,
+  displayWidth: 0,
+  displayHeight: 0,
   x: 0,
   y: 0,
 });
@@ -36,6 +38,16 @@ class Scene {
   add = {
     text: vi.fn(() => mockObj()),
     rectangle: vi.fn(() => mockObj()),
+    image: vi.fn((x: number, y: number) => {
+      const obj = mockObj();
+      obj.x = x;
+      obj.y = y;
+      obj.width = 64;
+      obj.height = 64;
+      obj.displayWidth = 64;
+      obj.displayHeight = 64;
+      return obj;
+    }),
     dom: vi.fn(() => ({ ...mockObj(), node: { value: "" } })),
   };
   load = { image: vi.fn() };
@@ -80,7 +92,8 @@ class Game {
 class GameObject {
   x = 0;
   y = 0;
-  setAlpha(_v?: number) {
+  setAlpha(v?: number) {
+    void v;
     return this;
   }
 }

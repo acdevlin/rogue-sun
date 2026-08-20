@@ -86,24 +86,20 @@ describe("Battle scene", () => {
 
     it("creates a Retreat button that transitions to PartyCreation", () => {
       const battle = new Battle();
-      const rectSpy = vi.spyOn(battle.add, "rectangle");
+      const imageSpy = vi.spyOn(battle.add, "image");
       battle.create();
 
-      expect(battle.add.text).toHaveBeenCalledWith(
-        expect.any(Number),
-        expect.any(Number),
-        "Retreat!",
-        expect.any(Object),
+      const retreatCallIdx = imageSpy.mock.calls.findIndex(
+        (call: unknown[]) => call[2] === "icon_retreat",
       );
+      expect(retreatCallIdx).toBeGreaterThanOrEqual(0);
 
-      const rect = rectSpy.mock.results[rectSpy.mock.results.length - 1].value;
-      expect(rect.setStrokeStyle).toHaveBeenCalledWith(
-        CONSTS.BTN_STROKE_W,
-        CONSTS.BTN_STROKE,
-      );
-      expect(rect.setInteractive).toHaveBeenCalledWith({ useHandCursor: true });
+      const iconRetreat = imageSpy.mock.results[retreatCallIdx].value;
+      expect(iconRetreat.setInteractive).toHaveBeenCalledWith({
+        useHandCursor: true,
+      });
 
-      const pointerdown = rect.on.mock.calls.find(
+      const pointerdown = iconRetreat.on.mock.calls.find(
         (call: string[]) => call[0] === "pointerdown",
       );
       expect(pointerdown).toBeTruthy();

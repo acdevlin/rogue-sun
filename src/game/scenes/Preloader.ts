@@ -49,9 +49,18 @@ export class Preloader extends Scene {
   preload() {
     this.load.setPath("assets");
     this.load.image("logo", "logo.png");
-    this.load.svg("icon_cast", "icon_cast.svg", { width: 64, height: 64 });
-    this.load.svg("icon_retreat", "icon_retreat.svg", { width: 64, height: 64 });
-    this.load.svg("icon_attack", "icon_attack.svg", { width: 64, height: 64 });
+    this.load.svg("icon_cast", "icon_cast.svg", {
+      width: CONSTS.ACTION_ICON_SIZE,
+      height: CONSTS.ACTION_ICON_SIZE,
+    });
+    this.load.svg("icon_retreat", "icon_retreat.svg", {
+      width: CONSTS.ACTION_ICON_SIZE,
+      height: CONSTS.ACTION_ICON_SIZE,
+    });
+    this.load.svg("icon_attack", "icon_attack.svg", {
+      width: CONSTS.ACTION_ICON_SIZE,
+      height: CONSTS.ACTION_ICON_SIZE,
+    });
   }
 
   /**

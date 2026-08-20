@@ -7,6 +7,7 @@ import { PlayerActorData } from "../data/PlayerActorData";
 import { players as defaultPlayers } from "../data/playerActorClasses";
 import { enemies as defaultEnemies } from "../data/enemyActorClasses";
 import { createLaneBlock, createActorCard } from "../utils/UiElements";
+import { createBattleActionBar } from "../utils/ActionBar";
 
 interface ActorUI {
   actor: ActionActor;
@@ -140,41 +141,14 @@ export class Battle extends Scene {
 
     // Align action icons near the bottom of the screen, centered on X
     const cx = width / 2;
-    const dx = 64 + 8; // icon width + gap
-    const iconCast = this.add.image(cx, y, "icon_cast");
-    const iconRetreat = this.add.image(cx + dx, y, "icon_retreat");
-    const iconAttack = this.add.image(cx - dx, y, "icon_attack");
-    // Add interactivity to actionbar buttons
-    iconCast.setInteractive({ useHandCursor: true });
-    iconRetreat.setInteractive({ useHandCursor: true });
-    iconAttack.setInteractive({ useHandCursor: true });
-    // Add mouseover text
-    iconCast.on("pointerover", () =>
-      this.showTooltip(
-        "MAGIC",
-        iconCast.x,
-        iconCast.y - iconCast.displayHeight / 2,
-      ),
-    );
-    iconCast.on("pointerout", () => this.hideTooltip());
-    iconRetreat.on("pointerover", () =>
-      this.showTooltip(
-        "RETREAT",
-        iconRetreat.x,
-        iconRetreat.y - iconRetreat.displayHeight / 2,
-      ),
-    );
-    iconRetreat.on("pointerout", () => this.hideTooltip());
-    iconAttack.on("pointerover", () =>
-      this.showTooltip(
-        "ATTACK",
-        iconAttack.x,
-        iconAttack.y - iconAttack.displayHeight / 2,
-      ),
-    );
-    iconAttack.on("pointerout", () => this.hideTooltip());
-    // Add onclick behavior
-    iconRetreat.on("pointerdown", () => this.scene.start("PartyCreation"));
+    createBattleActionBar({
+      scene: this,
+      cx,
+      y,
+      showTooltip: (text, cx2, topY) => this.showTooltip(text, cx2, topY),
+      hideTooltip: () => this.hideTooltip(),
+      onRetreat: () => this.scene.start("PartyCreation"),
+    });
 
     /* END ACTIONBAR CREATION */
   }
