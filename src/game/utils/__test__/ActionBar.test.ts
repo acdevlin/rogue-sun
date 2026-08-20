@@ -151,7 +151,7 @@ describe("activateTooltip", () => {
     const showTooltip = vi.fn();
     const hideTooltip = vi.fn();
 
-    activateTooltip(icon, "MAGIC", showTooltip, hideTooltip);
+    activateTooltip(scene, icon, "MAGIC", showTooltip, hideTooltip);
 
     const over = icon.on.mock.calls.find(
       (call: unknown[]) => call[0] === "pointerover",
@@ -168,6 +168,7 @@ describe("activateTooltip", () => {
       (call: unknown[]) => call[0] === "pointerout",
     );
     expect(out).toBeTruthy();
-    expect(out![1]).toBe(hideTooltip);
+    out![1]();
+    expect(hideTooltip).toHaveBeenCalled();
   });
 });

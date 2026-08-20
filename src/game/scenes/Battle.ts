@@ -146,7 +146,6 @@ export class Battle extends Scene {
       hideTooltip: () => this.hideTooltip(),
       onRetreat: () => this.scene.start("PartyCreation"),
     });
-
   }
 
   /**

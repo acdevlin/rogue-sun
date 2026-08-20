@@ -39,24 +39,43 @@ export function makeInteractive(icon: GameObjects.Image): void {
 /**
  * Wires pointerover/pointerout events on an icon to show/hide a tooltip.
  *
+ * Additionally triggers a smooth scale tween (1.0 → 1.1 → 1.0) when the
+ * scene has a `tweens` system; otherwise the scale change is skipped.
+ *
  * The tooltip anchor is positioned at the icon's x and its top edge
  * (y minus half its display height).
  *
+ * @param scene - The Phaser scene owning the icon (used for tweens).
  * @param icon - The icon to attach tooltip events to.
  * @param label - The tooltip label text.
  * @param showTooltip - Callback for showing a tooltip.
  * @param hideTooltip - Callback for hiding the active tooltip.
  */
 export function activateTooltip(
+  scene: Scene,
   icon: GameObjects.Image,
   label: string,
   showTooltip: (text: string, cx: number, topY: number) => void,
   hideTooltip: () => void,
 ): void {
-  icon.on("pointerover", () =>
-    showTooltip(label, icon.x, icon.y - icon.displayHeight / 2),
-  );
-  icon.on("pointerout", hideTooltip);
+  icon.on("pointerover", () => {
+    showTooltip(label, icon.x, icon.y - icon.displayHeight / 2);
+    scene.tweens?.add({
+      targets: icon,
+      scale: 1.1,
+      duration: 100,
+      ease: "Power2",
+    });
+  });
+  icon.on("pointerout", () => {
+    hideTooltip();
+    scene.tweens?.add({
+      targets: icon,
+      scale: 1.0,
+      duration: 100,
+      ease: "Power2",
+    });
+  });
 }
 
 /**
@@ -110,7 +129,13 @@ export function createBattleActionBar(opts: {
       def.key,
     );
     makeInteractive(icon);
-    activateTooltip(icon, def.label, opts.showTooltip, opts.hideTooltip);
+    activateTooltip(
+      opts.scene,
+      icon,
+      def.label,
+      opts.showTooltip,
+      opts.hideTooltip,
+    );
     if (def.onPress) {
       icon.on("pointerdown", def.onPress);
     }
