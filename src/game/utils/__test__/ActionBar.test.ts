@@ -50,13 +50,13 @@ describe("createBattleActionBar", () => {
     ]);
   });
 
-  it("wires tooltips for MAGIC/ATTACK/RETREAT with correct anchor math", () => {
+  it("wires tooltips for all icons with correct labels and anchor math", () => {
     const scene = new Scene("test");
     const showTooltip = vi.fn();
     const hideTooltip = vi.fn();
     const onRetreat = vi.fn();
 
-    const { iconCast, iconRetreat, iconAttack } = createBattleActionBar({
+    createBattleActionBar({
       scene,
       cx: CONSTS.BTN_CX,
       y: CONSTS.BTN_CY,
@@ -65,44 +65,35 @@ describe("createBattleActionBar", () => {
       onRetreat,
     });
 
-    const castOver = (iconCast as any).on.mock.calls.find(
-      (call: unknown[]) => call[0] === "pointerover",
-    );
-    expect(castOver).toBeTruthy();
-    castOver![1]();
-    expect(showTooltip).toHaveBeenCalledWith(
-      "MAGIC",
-      CONSTS.BTN_CX,
-      CONSTS.BTN_CY - iconCast.displayHeight / 2,
-    );
-    const castOut = (iconCast as any).on.mock.calls.find(
-      (call: unknown[]) => call[0] === "pointerout",
-    );
-    expect(castOut).toBeTruthy();
-    castOut![1]();
-    expect(hideTooltip).toHaveBeenCalled();
+    // Icons are created in order: attack, tactics, cast, wait, retreat.
+    const icons = [
+      { label: "ATTACK", idx: 0 },
+      { label: "TACTICS", idx: 1 },
+      { label: "MAGIC", idx: 2 },
+      { label: "WAIT", idx: 3 },
+      { label: "RETREAT", idx: 4 },
+    ];
 
-    const retreatOver = (iconRetreat as any).on.mock.calls.find(
-      (call: unknown[]) => call[0] === "pointerover",
-    );
-    expect(retreatOver).toBeTruthy();
-    retreatOver![1]();
-    expect(showTooltip).toHaveBeenCalledWith(
-      "RETREAT",
-      iconRetreat.x,
-      CONSTS.BTN_CY - iconRetreat.displayHeight / 2,
-    );
+    for (const { label, idx } of icons) {
+      const icon = (scene.add.image as any).mock.results[idx].value;
+      const over = icon.on.mock.calls.find(
+        (call: unknown[]) => call[0] === "pointerover",
+      );
+      expect(over).toBeTruthy();
+      over[1]();
+      expect(showTooltip).toHaveBeenCalledWith(
+        label,
+        icon.x,
+        CONSTS.BTN_CY - icon.displayHeight / 2,
+      );
 
-    const attackOver = (iconAttack as any).on.mock.calls.find(
-      (call: unknown[]) => call[0] === "pointerover",
-    );
-    expect(attackOver).toBeTruthy();
-    attackOver![1]();
-    expect(showTooltip).toHaveBeenCalledWith(
-      "ATTACK",
-      iconAttack.x,
-      CONSTS.BTN_CY - iconAttack.displayHeight / 2,
-    );
+      const out = icon.on.mock.calls.find(
+        (call: unknown[]) => call[0] === "pointerout",
+      );
+      expect(out).toBeTruthy();
+      out[1]();
+      expect(hideTooltip).toHaveBeenCalled();
+    }
   });
 
   it("wires RETREAT click handler and enables hand cursor interactivity", () => {
@@ -170,5 +161,57 @@ describe("activateTooltip", () => {
     expect(out).toBeTruthy();
     out![1]();
     expect(hideTooltip).toHaveBeenCalled();
+  });
+
+  it("triggers scale tween on pointerover and revert on pointerout", () => {
+    const scene = new Scene("test") as any;
+    const tweensAdd = vi.fn();
+    scene.tweens = { add: tweensAdd };
+    const icon = scene.add.image(100, 200, "icon_cast") as any;
+    const showTooltip = vi.fn();
+    const hideTooltip = vi.fn();
+
+    activateTooltip(scene, icon, "MAGIC", showTooltip, hideTooltip);
+
+    const over = icon.on.mock.calls.find(
+      (call: unknown[]) => call[0] === "pointerover",
+    );
+    over![1]();
+    expect(tweensAdd).toHaveBeenCalledWith({
+      targets: icon,
+      scale: 1.1,
+      duration: 100,
+      ease: "Power2",
+    });
+
+    const out = icon.on.mock.calls.find(
+      (call: unknown[]) => call[0] === "pointerout",
+    );
+    out![1]();
+    expect(tweensAdd).toHaveBeenCalledWith({
+      targets: icon,
+      scale: 1.0,
+      duration: 100,
+      ease: "Power2",
+    });
+  });
+
+  it("does not call tweens when scene.tweens is undefined", () => {
+    const scene = new Scene("test");
+    const icon = scene.add.image(100, 200, "icon_cast") as any;
+    const showTooltip = vi.fn();
+    const hideTooltip = vi.fn();
+
+    activateTooltip(scene, icon, "MAGIC", showTooltip, hideTooltip);
+
+    const over = icon.on.mock.calls.find(
+      (call: unknown[]) => call[0] === "pointerover",
+    );
+    expect(() => over![1]()).not.toThrow();
+
+    const out = icon.on.mock.calls.find(
+      (call: unknown[]) => call[0] === "pointerout",
+    );
+    expect(() => out![1]()).not.toThrow();
   });
 });
