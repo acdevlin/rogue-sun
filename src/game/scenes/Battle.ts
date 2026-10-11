@@ -144,7 +144,7 @@ export class Battle extends Scene {
       y,
       showTooltip: (text, cx2, topY) => this.showTooltip(text, cx2, topY),
       hideTooltip: () => this.hideTooltip(),
-      onRetreat: () => this.scene.start("PartyCreation"),
+      onRetreat: () => this.retreatActingActor(),
     });
   }
 
@@ -357,7 +357,7 @@ export class Battle extends Scene {
       )
       .setVisible(true);
     this.syncUI();
-    this.time.delayedCall(CONSTS.TURN_DELAY, () => this.completeAction());
+    this.time.delayedCall(CONSTS.TURN_DELAY, () => this.completeAction(actor));
   }
 
   /**
@@ -421,15 +421,76 @@ export class Battle extends Scene {
 
   /**
    * Cleanup after an actor's turn is completed.
+   *
+   * @param actor - The actor whose turn-completion timer fired. Used to ignore
+   *   stale completions from a turn that already ended (e.g. via retreat).
    */
-  private completeAction() {
-    if (this.actingActor) {
-      this.actingActor.reset();
-      this.actingActor = null;
-      this.currentlyActingHeader.setText("");
-      this.currentlyActingBg.setVisible(false);
-      this.syncUI();
+  private completeAction(actor?: ActionActor) {
+    // Ignore stale completions from a turn that already ended (e.g. via retreat).
+    if (!this.actingActor || (actor && this.actingActor !== actor)) return;
+    this.actingActor.reset();
+    this.actingActor = null;
+    this.currentlyActingHeader.setText("");
+    this.currentlyActingBg.setVisible(false);
+    this.syncUI();
+  }
+
+  /**
+   * Removes the currently acting player character from combat.
+   *
+   * Only applies while a player-controlled character is taking its turn;
+   * enemy turns and idle time are unaffected. The actor is dropped from
+   * the timeline and its UI card is destroyed. If no player-controlled
+   * characters remain on the field afterwards, the scene transitions
+   * back to PartyCreation.
+   */
+  private retreatActingActor(): void {
+    // Retreat is a player action — only the acting player character may leave.
+    const actor = this.actingActor;
+    if (!actor || actor.controller !== CONSTS.ActorController.PLAYER) return;
+
+    // Drop the actor from turn order and erase its card from the board.
+    this.timeline.removeActor(actor);
+    this.removeActorUI(actor);
+
+    // End the turn and clear the acting header.
+    this.actingActor = null;
+    this.currentlyActingHeader.setText("");
+    this.currentlyActingBg.setVisible(false);
+    this.syncUI();
+
+    // With no player characters left on the field, the battle is over.
+    const playersLeft = this.timeline.actors.some(
+      (actorOnField) =>
+        actorOnField.controller === CONSTS.ActorController.PLAYER,
+    );
+    if (!playersLeft) {
+      this.scene.start("PartyCreation");
     }
+  }
+
+  /**
+   * Destroys all Phaser objects backing an actor's UI card and drops
+   * its entry from the actorsUi list.
+   *
+   * @param actor The actor whose UI should be removed.
+   */
+  private removeActorUI(actor: ActionActor): void {
+    const actorUi = this.actorsUi.find((entry) => entry.actor === actor);
+    if (!actorUi) return;
+    for (const obj of [
+      actorUi.card,
+      actorUi.fill,
+      actorUi.bg,
+      actorUi.highlight,
+      actorUi.label,
+      actorUi.healthTxt,
+      actorUi.staminaTxt,
+      actorUi.energyTxt,
+    ]) {
+      obj.destroy();
+    }
+    this.actorsUi = this.actorsUi.filter((entry) => entry.actor !== actor);
   }
 
   /**

@@ -84,7 +84,7 @@ describe("Battle scene", () => {
       expect(scene.players.length).toBeGreaterThan(1);
     });
 
-    it("creates a Retreat button that transitions to PartyCreation", () => {
+    it("creates a Retreat button that removes the acting character", () => {
       const battle = new Battle();
       const imageSpy = vi.spyOn(battle.add, "image");
       battle.create();
@@ -103,8 +103,15 @@ describe("Battle scene", () => {
         (call: string[]) => call[0] === "pointerup",
       );
       expect(pointerup).toBeTruthy();
+
+      const actor = battle.timeline.actors[0];
+      battle.timeline.readyQueue.push(actor);
+      battle.update(0, 16);
+      expect(battle.actingActor).toBe(actor);
+
       pointerup![1]();
-      expect(battle.scene.start).toHaveBeenCalledWith("PartyCreation");
+      expect(battle.timeline.actors).not.toContain(actor);
+      expect(battle.actingActor).toBeNull();
     });
   });
 
@@ -154,6 +161,189 @@ describe("Battle scene", () => {
       scene.actingActor = null;
       expect(() => runDelayedAction(scene)).not.toThrow();
       expect(scene.actingActor).toBeNull();
+    });
+  });
+
+  describe("retreat", () => {
+    /**
+     * Creates a Battle with the RETREAT icon's pointerup handler exposed.
+     *
+     * @returns The battle scene and a function that simulates clicking RETREAT.
+     */
+    function createWithRetreatClick() {
+      const battle = new Battle();
+      const imageSpy = vi.spyOn(battle.add, "image");
+      battle.create();
+      const retreatCallIdx = imageSpy.mock.calls.findIndex(
+        (call: unknown[]) => call[2] === "icon_retreat",
+      );
+      const iconRetreat = imageSpy.mock.results[retreatCallIdx].value;
+      const pointerup = iconRetreat.on.mock.calls.find(
+        (call: string[]) => call[0] === "pointerup",
+      );
+      return { battle, clickRetreat: pointerup![1] as () => void };
+    }
+
+    /**
+     * Starts a turn for the first actor in the ready queue.
+     *
+     * @param battle The battle scene.
+     * @returns The actor whose turn was started.
+     */
+    function startFirstTurn(battle: Battle) {
+      const actor = battle.timeline.actors[0];
+      actor.progress = actor.readyThreshold;
+      battle.timeline.readyQueue.push(actor);
+      battle.update(0, 16);
+      return actor;
+    }
+
+    it("removes the acting character from the timeline and UI", () => {
+      const { battle, clickRetreat } = createWithRetreatClick();
+      const actor = startFirstTurn(battle);
+      expect(battle.actingActor).toBe(actor);
+
+      clickRetreat();
+      expect(battle.timeline.actors).not.toContain(actor);
+      expect(battle.timeline.readyQueue).not.toContain(actor);
+      expect(
+        battle.actorsUi.find((entry) => entry.actor === actor),
+      ).toBeUndefined();
+      expect(battle.actingActor).toBeNull();
+    });
+
+    it("destroys all game objects of the retreated actor's card", () => {
+      const { battle, clickRetreat } = createWithRetreatClick();
+      const actor = startFirstTurn(battle);
+      const actorUi = battle.actorsUi.find((entry) => entry.actor === actor)!;
+
+      clickRetreat();
+      for (const obj of [
+        actorUi.card,
+        actorUi.fill,
+        actorUi.bg,
+        actorUi.highlight,
+        actorUi.label,
+        actorUi.healthTxt,
+        actorUi.staminaTxt,
+        actorUi.energyTxt,
+      ]) {
+        expect(obj.destroy).toHaveBeenCalled();
+      }
+    });
+
+    it("clears the acting header when the character retreats", () => {
+      const { battle, clickRetreat } = createWithRetreatClick();
+      startFirstTurn(battle);
+
+      clickRetreat();
+      expect(battle.currentlyActingHeader.setText).toHaveBeenCalledWith("");
+      expect(battle.currentlyActingBg.setVisible).toHaveBeenCalledWith(false);
+    });
+
+    it("does nothing when no character is acting", () => {
+      const { battle, clickRetreat } = createWithRetreatClick();
+      const actorsBefore = battle.timeline.actors.length;
+      const uiBefore = battle.actorsUi.length;
+
+      clickRetreat();
+      expect(battle.timeline.actors).toHaveLength(actorsBefore);
+      expect(battle.actorsUi).toHaveLength(uiBefore);
+      expect(battle.scene.start).not.toHaveBeenCalled();
+    });
+
+    it("does nothing when an enemy is acting", () => {
+      const { battle, clickRetreat } = createWithRetreatClick();
+      const enemy = battle.timeline.actors.find(
+        (actor) => actor.controller === CONSTS.ActorController.ENEMY,
+      )!;
+      enemy.progress = enemy.readyThreshold;
+      battle.timeline.readyQueue.push(enemy);
+      battle.update(0, 16);
+      expect(battle.actingActor).toBe(enemy);
+
+      clickRetreat();
+      expect(battle.timeline.actors).toContain(enemy);
+      expect(
+        battle.actorsUi.find((entry) => entry.actor === enemy),
+      ).toBeTruthy();
+      expect(battle.actingActor).toBe(enemy);
+      expect(battle.scene.start).not.toHaveBeenCalled();
+    });
+
+    it("keeps the battle running when other players remain", () => {
+      const { battle, clickRetreat } = createWithRetreatClick();
+      const actor = startFirstTurn(battle);
+      expect(actor.controller).toBe(CONSTS.ActorController.PLAYER);
+
+      clickRetreat();
+      expect(battle.scene.start).not.toHaveBeenCalled();
+
+      // The next character in line can still take a turn.
+      const next = battle.timeline.actors[0];
+      battle.timeline.readyQueue.push(next);
+      battle.update(0, 16);
+      expect(battle.actingActor).toBe(next);
+    });
+
+    it("returns to PartyCreation when the last player character retreats", () => {
+      const battle = new Battle();
+      const imageSpy = vi.spyOn(battle.add, "image");
+      const soloPlayer = {
+        name: "Solo",
+        alias: "Solo",
+        speed: 10,
+        health: 100,
+        stamina: 100,
+        energy: 100,
+        position: CONSTS.ActorPosition.FRONTLINE,
+        description: "solo actor",
+      };
+      battle.create({ players: [soloPlayer], enemies: defaultEnemies });
+
+      const retreatCallIdx = imageSpy.mock.calls.findIndex(
+        (call: unknown[]) => call[2] === "icon_retreat",
+      );
+      const iconRetreat = imageSpy.mock.results[retreatCallIdx].value;
+      const pointerup = iconRetreat.on.mock.calls.find(
+        (call: string[]) => call[0] === "pointerup",
+      );
+
+      const actor = battle.timeline.actors[0];
+      battle.timeline.readyQueue.push(actor);
+      battle.update(0, 16);
+      expect(battle.actingActor).toBe(actor);
+
+      pointerup![1]();
+      expect(battle.scene.start).toHaveBeenCalledWith("PartyCreation");
+    });
+
+    it("ignores the stale turn-completion timer from a retreated turn", () => {
+      const { battle, clickRetreat } = createWithRetreatClick();
+      const first = startFirstTurn(battle);
+
+      clickRetreat();
+
+      const second = battle.timeline.actors[0];
+      second.progress = second.readyThreshold;
+      battle.timeline.readyQueue.push(second);
+      battle.update(0, 16);
+      expect(battle.actingActor).toBe(second);
+
+      // Fire first's stale timer — it must not end second's turn.
+      const turnCalls = (
+        battle.time.delayedCall as ReturnType<typeof vi.fn>
+      ).mock.calls.filter((call: unknown[]) => call[0] === CONSTS.TURN_DELAY);
+      (turnCalls[0][1] as () => void)();
+      expect(battle.actingActor).toBe(second);
+      expect(second.progress).toBe(second.readyThreshold);
+
+      // second's own timer still completes its turn normally.
+      (turnCalls[1][1] as () => void)();
+      expect(battle.actingActor).toBeNull();
+      expect(second.progress).toBe(0);
+      // The retreated actor left combat with its state untouched.
+      expect(first.progress).toBe(first.readyThreshold);
     });
   });
 
